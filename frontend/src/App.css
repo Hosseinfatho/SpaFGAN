@@ -1,23 +1,22 @@
 /* Make the main App container a flex container */
-.App-container {
+.app {
   height: 100vh;
   width: 100vw;
-  display: flex;
   margin: 0;
   padding: 0;
   position: relative;
   overflow: hidden;
+  background-color: #242424;
 }
 
 /* Base styles for each view area */
 .view-area {
   position: relative;
   overflow: hidden;
-  border: 1px solid #555;
-  display: flex;
-  flex-direction: column;
   height: 100%;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Remove grid-specific positioning */
@@ -30,8 +29,8 @@
 
 /* Positioning the grid areas */
 #main-view-area {
-  grid-row: 1 / 2;    /* Row 1 */
-  grid-column: 1 / 2; /* Column 1 */
+  grid-row: 1 / 1;    /* Row 1 */
+  grid-column: 1 / 1; /* Column 1 */
 }
 
 #roi-view-area {
@@ -44,12 +43,11 @@
   grid-column: 2 / 3; /* Column 2 */
 }
 
-
-/* Ensure Vitessce container fills the flex parent (.view-area) */
+/* Ensure Vitessce container fills the flex parent */
 .view-area > div:first-child { 
-   flex-grow: 1;
-   min-height: 0; 
-   position: relative; 
+  flex-grow: 1;
+  min-height: 0; 
+  position: relative; 
 }
 
 /* Ensure the react-grid-layout fills its container */
@@ -58,8 +56,6 @@
   width: 100%;
   height: 100%;
 }
-
-
 
 /* --- RE-ADD Specific Overrides WITHIN each .view-area --- */
 
@@ -79,15 +75,15 @@
 /* Using the final styles from before the grid change */
 .view-area .react-grid-layout > .react-grid-item:nth-child(2) {
   position: absolute !important;
-  right: 5px !important;        /* Final position from right */
-  top: 15px !important;          /* Final position from top */
+  right: 15px !important;        /* Final position from right */
+  top: 25px !important;          /* Final position from top */
   width: 340px !important;       /* Final width */
   height: auto !important;       /* Final height */
   /* Use the max-height from user's edit */
 
-  max-height: calc(80% ) !important;
+  max-height: calc(100% ) !important;
   /* Add scaling */
-  transform: scale(.65) !important;
+  transform: scale(1) !important;
   transform-origin: top right !important; /* Scale from top right corner */
 
 
@@ -263,6 +259,7 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  color: #ffffff;
 }
 
 button:hover {
@@ -276,17 +273,13 @@ button:focus-visible {
 
 /* Light Theme Styles */
 @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
+  .app {
     background-color: #ffffff;
-  }
-  
-  a:hover {
-    color: #747bff;
   }
   
   button {
     background-color: #f9f9f9;
+    color: #213547;
   }
 }
 

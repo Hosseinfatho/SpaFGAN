@@ -57,7 +57,9 @@ wheels/
 !backend/input/
 !backend/output/
 !backend/0/output/
+backend/input/
 
 # Project specific
 Input/
 Output/
+SPA/

@@ -9,39 +9,72 @@ function Mainview() {
   const viewState = {
     spatialTargetZ: 0,
     spatialTargetT: 0,
-    spatialZoom: -3.54,
-    spatialTargetX: 5230,
-    spatialTargetY: 2880,
-    // spatialTargetZ repeated in input, using 0
+    spatialZoom: -1.1,
+    spatialTargetX: 2914,
+    spatialTargetY: 1267,
     spatialRenderingMode: "3D",
-    // Represent layers and channels as plain arrays/objects
-    // The backend will wrap these with CL()
     imageLayer: [
       {
-        spatialTargetResolution: 5,
+        spatialTargetResolution: 3,
         spatialLayerOpacity: 1.0,
         spatialLayerVisible: true,
         photometricInterpretation: "BlackIsZero",
         imageChannel: [
           {
-            spatialTargetC: 0,
-            spatialChannelColor: [0, 0, 255],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            // spatialChannelWindow: [?,?] // Window omitted as not in input
+            "spatialTargetC": 19,  // CD31
+            "spatialChannelColor": [0, 255, 0],
+            "spatialChannelVisible": true,
+            "spatialChannelOpacity": 1.0,
+            "spatialChannelWindow": [300, 20000]
+          },
+          {
+            "spatialTargetC": 27,  // CD20
+            "spatialChannelColor": [255, 255, 0],
+            "spatialChannelVisible": true,
+            "spatialChannelOpacity": 1.0,
+            "spatialChannelWindow": [1000, 7000]
+          },
+          {
+            "spatialTargetC": 37,  // CD11b
+            "spatialChannelColor": [255, 0, 255],
+            "spatialChannelVisible": true,
+            "spatialChannelOpacity": 1.0,
+            "spatialChannelWindow": [700, 6000]
+          },
+          {
+            "spatialTargetC": 25,  // CD4
+            "spatialChannelColor": [0, 255, 255],
+            "spatialChannelVisible": true,
+            "spatialChannelOpacity": 1.0,
+            "spatialChannelWindow": [1638, 10000]
+          },
+          {
+            "spatialTargetC": 42,  // Catalase
+            "spatialChannelColor": [65, 51, 97],
+            "spatialChannelVisible": true,
+            "spatialChannelOpacity": 1.0,
+            "spatialChannelWindow": [370, 1432]
+          },
+          {
+            "spatialTargetC": 59,  // Catalase
+            "spatialChannelColor": [255, 0, 0],
+            "spatialChannelVisible": true,
+            "spatialChannelOpacity": 1.0,
+            "spatialChannelWindow": [1638, 7000]
           }
+
         ]
       }
     ]
   };
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/generate_config', { // New endpoint
-      method: 'POST', // Use POST
+    fetch('http://127.0.0.1:5000/api/generate_config', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(viewState) // Send the view state object
+      body: JSON.stringify(viewState)
     })
       .then(response => {
         if (!response.ok) {
@@ -51,13 +84,13 @@ function Mainview() {
       })
       .then(data => {
         console.log("Mainview config generated successfully:", data)
-        setConfig(data) // Set the complete config received from backend
+        setConfig(data)
       })
       .catch(err => {
         console.error("Error generating Mainview config:", err)
         setError(err.message)
       })
-  }, []); // Fetch only once on mount
+  }, []);
 
   if (error) {
     return <p style={{ color: 'red', padding: '10px' }}>Error generating Mainview: {error}</p>;
@@ -69,8 +102,8 @@ function Mainview() {
     <Vitessce
       config={config}
       theme="light"
-      height={null} // Let CSS handle height
-      width={null} // Let CSS handle width
+      height={null}
+      width={null}
     />
   );
 }
