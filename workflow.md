@@ -237,4 +237,8 @@ SpaFGAN/
 - Perform biological analysis on extracted ROIs
 
 ## Notes
-- Automatic ROI extraction after SpaFGAN training 
+- Automatic ROI extraction after SpaFGAN training
+- Visualization using Vitessce:
+  - Load `vitessce_config.json` in Vitessce Viewer
+  - View spatial data, cell features, and ROI overlays
+  - Interactive exploration of immune ROIs 
