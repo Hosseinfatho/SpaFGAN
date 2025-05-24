@@ -1,125 +1,121 @@
-// Mainview.jsx
 import React, { useState, useEffect } from 'react';
-import { Vitessce } from 'vitessce';
-import ROISelector from './ROISelector';
-
-function Mainview() {
-  const [config, setConfig] = useState(null);
-  const [error, setError] = useState(null);
-  const [viewState, setViewState] = useState({
-    spatialTargetZ: 0,
-    spatialTargetT: 0,
-    spatialZoom: -3.0,
-    spatialTargetX: 5500,
-    spatialTargetY: 2700,
-    spatialRenderingMode: "3D",
-    imageLayer: [
-      {
-        spatialTargetResolution: 3,
-        spatialLayerOpacity: 1.0,
-        spatialLayerVisible: true,
-        photometricInterpretation: "BlackIsZero",
-        imageChannel: [
-          {
-            spatialTargetC: 19,
-            spatialChannelColor: [0, 255, 0],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [300, 20000]
-          },
-          {
-            spatialTargetC: 27,
-            spatialChannelColor: [255, 255, 0],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [1000, 7000]
-          },
-          {
-            spatialTargetC: 37,
-            spatialChannelColor: [255, 0, 255],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [700, 6000]
-          },
-          {
-            spatialTargetC: 25,
-            spatialChannelColor: [0, 255, 255],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [1638, 10000]
-          },
-          {
-            spatialTargetC: 42,
-            spatialChannelColor: [65, 51, 97],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [370, 1432]
-          },
-          {
-            spatialTargetC: 59,
-            spatialChannelColor: [255, 0, 0],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [1638, 7000]
-          }
-        ]
-      }
-    ]
-  });
-
-  const fetchConfig = (stateData) => {
-    fetch('http://127.0.0.1:5000/api/generate_config', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(stateData)
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log("Mainview config generated successfully:", data);
-        setConfig(data);
-      })
-      .catch(err => {
-        console.error("Error generating Mainview config:", err);
-        setError(err.message);
-      });
-  };
+const factor = 8;
+function ROISelector({ onSetView }) {
+  const [rois, setRois] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const [interactionGroups, setInteractionGroups] = useState([]);
 
   useEffect(() => {
-    fetchConfig(viewState);
-  }, [viewState]);
+    fetch("http://localhost:5000/api/roi_shapes")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.features || !Array.isArray(data.features)) {
+          console.error("Invalid ROI data structure:", data);
+          return;
+        }
 
-  const handleSetView = (roiView) => {
-    setViewState(prev => ({
-      ...prev,
-      ...roiView
-    }));
+        const extracted = data.features.map((feature, index) => {
+          let coords = feature.geometry?.coordinates;
+
+          // Handle both Polygon and MultiPolygon
+          if (feature.geometry?.type === "Polygon") {
+            coords = coords?.[0];
+          } else if (feature.geometry?.type === "MultiPolygon") {
+            coords = coords?.[0]?.[0]; // first polygon in multipolygon
+          }
+
+          if (!Array.isArray(coords) || coords.length === 0) return null;
+
+          const centroid = coords.reduce(
+            (acc, [x, y]) => [acc[0] + x, acc[1] + y],
+            [0, 0]
+          ).map(v => v / coords.length);
+
+          return {
+            id: feature.properties.name || `ROI_${index}`,
+            x: centroid[0]*factor,
+            y: centroid[1]*factor,
+            score: feature.properties.score || 0,
+            interactions: feature.properties.interactions || []
+          };
+        }).filter(Boolean);
+
+        setRois(extracted);
+
+        // Extract unique interaction labels
+        const allInteractions = extracted.flatMap(r => r.interactions);
+        const uniqueGroups = [...new Set(allInteractions)];
+        setInteractionGroups(uniqueGroups);
+        setSelectedGroup(uniqueGroups[0] || "");
+      })
+      .catch((err) => console.error("Failed to load ROI shapes:", err));
+  }, []);
+
+  const filteredRois = rois.filter(roi =>
+    roi.interactions.includes(selectedGroup)
+  );
+  const currentROI = filteredRois[currentIndex] || {};
+
+  const handleSet = () => {
+    if (filteredRois.length > 0 && onSetView) {
+      const roi = filteredRois[currentIndex];
+      onSetView({
+        spatialTargetX: roi.x,
+        spatialTargetY: roi.y,
+        spatialTargetZ: 0,
+        spatialZoom: -1.1,
+      });
+    }
   };
 
-  if (error) {
-    return <p style={{ color: 'red', padding: '10px' }}>Error generating Mainview: {error}</p>;
+  const next = () => {
+    setCurrentIndex((i) => (i + 1) % filteredRois.length);
+  };
+
+  const prev = () => {
+    setCurrentIndex((i) => (i - 1 + filteredRois.length) % filteredRois.length);
+  };
+
+  if (interactionGroups.length === 0) {
+    return <p>Loading ROIs or no interactions found...</p>;
   }
-  if (!config) {
-    return <p style={{ padding: '10px' }}>Generating Mainview config...</p>;
+
+  if (filteredRois.length === 0) {
+    return <p>No ROIs found for selected group: {selectedGroup}</p>;
   }
 
   return (
-    <div>
-      <ROISelector onSetView={handleSetView} />
-      <Vitessce
-        config={config}
-        theme="light"
-        height={null}
-        width={null}
-      />
+    <div style={{ padding: "10px", border: "1px solid #ccc", marginBottom: "10px" }}>
+      <h4>ROI Navigator</h4>
+
+      <label htmlFor="interaction-select">Select Interaction Type:</label>
+      <select
+        id="interaction-select"
+        value={selectedGroup}
+        onChange={(e) => {
+          setSelectedGroup(e.target.value);
+          setCurrentIndex(0);
+        }}
+      >
+        {interactionGroups.map(group => (
+          <option key={group} value={group}>{group}</option>
+        ))}
+      </select>
+
+      <p><strong>{currentROI.id}</strong></p>
+      <p>
+        X: {currentROI.x?.toFixed(0)} | Y: {currentROI.y?.toFixed(0)} | Score: {currentROI.score}
+      </p>
+      <p>
+        Interactions: {currentROI.interactions.join(", ")}
+      </p>
+
+      <button onClick={prev}>Previous</button>
+      <button onClick={next}>Next</button>
+      <button onClick={handleSet}>Set View</button>
     </div>
   );
 }
 
-export default Mainview;
+export default ROISelector;

@@ -50,3 +50,15 @@ This project displays OME-Zarr data using Vitessce, with a Flask backend and a R
 
 3.  **View:**
     *   Open your web browser and navigate to the frontend URL (e.g., `http://localhost:5173`). 
+
+
+
+1.  segment.py                → Labeled cell volume
+2.  extract_features.py       → CSV with cell x, y, z and markers
+3.  build_graph.py            → Graph of cells and features
+4.  train_spafgan.py          → Trained SpaFGAN model
+5.  extract_rois.py           → ROIs + interactions
+6.  generate_roi_shapes.py    → (optional override for shapes)
+7.  convert_to_anndata.py     → (optional for omics/scanpy)
+8.  generate_vitnesse_config.py → Visualization setup
+9. generate_vitessce_config_sdk  dynamic Visualization setup

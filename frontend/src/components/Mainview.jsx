@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Vitessce } from 'vitessce';
 import ROISelector from './ROISelector';
 
-
 function Mainview() {
   const [config, setConfig] = useState(null);
   const [error, setError] = useState(null);
@@ -108,15 +107,19 @@ function Mainview() {
     return <p style={{ padding: '10px' }}>Generating Mainview config...</p>;
   }
   return (
-
-    <Vitessce
-      config={config}
-      theme="light"
-      height={null}
-      width={null}
-    />
- 
-
+    <div className="view-area">
+      <div className="fullscreen-vitessce">
+        <Vitessce
+          config={config}
+          theme="light"
+          height={null}
+          width={null}
+        />
+        <div className="left-panel">
+          <ROISelector onSetView={handleSetView} />
+        </div>
+      </div>
+    </div>
   );
 }
 

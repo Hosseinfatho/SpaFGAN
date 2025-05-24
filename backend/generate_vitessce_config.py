@@ -44,17 +44,19 @@ vitessce_config = {
                         ]
                     }
                 },
-                {
+                    {
                     "type": "cells",
                     "fileType": "anndata-cells.zarr",
                     "url": "backend/output/cells.zarr",
                     "options": {
                         "mappings": {
-                            "UMAP": ["X_umap_0", "X_umap_1"],
-                            "tSNE": ["X_tsne_0", "X_tsne_1"]
-                        }
+                        "UMAP": ["X_umap_0", "X_umap_1"],
+                        "tSNE": ["X_tsne_0", "X_tsne_1"]
+                        },
+                        "cellSetObservationField": "interactions"
                     }
-                }
+                    }
+
             ]
         }
     ],

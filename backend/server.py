@@ -136,7 +136,7 @@ def print_channel_names(image_group, root_group=None, target_array=None):
     groups_to_check = {
         "Image Group (/0)": image_group,
         "Root Group (/) ": root_group,
-        "Target Array (/0/2)": target_array
+        "Target Array (/0/3)": target_array
     }
 
     found_channels = False
@@ -387,7 +387,7 @@ def open_target_zarr_array():
         return target_image_arr
 
     except Exception as e:
-        logger.error(f"❌ Failed to open target Zarr array: {e}", exc_info=True)
+        logger.error(f" Failed to open target Zarr array: {e}", exc_info=True)
         logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}")
         return None
 # ---
@@ -444,10 +444,10 @@ def generate_vitessce_config(view_state_data):
         vc.layout(spatial | lc)
 
         config_dict = vc.to_dict()
-        logger.info(f"✅ Vitessce Configuration generated successfully from POST data.")
+        logger.info(f" Vitessce Configuration generated successfully from POST data.")
         return config_dict
     except Exception as e:
-        logger.error(f"❌ Error generating Vitessce config from POST data: {e}", exc_info=True)
+        logger.error(f"Error generating Vitessce config from POST data: {e}", exc_info=True)
         return None
 # --- New POST Endpoint --- 
 @app.route('/api/generate_config', methods=['POST'])
@@ -507,12 +507,10 @@ def zarr_proxy():
         logger.error(f"Unexpected error in Zarr proxy: {e}", exc_info=True)
         return jsonify({"error": "Internal server error in proxy"}), 500
 # --- End of New Zarr Proxy Endpoint --- 
-
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
-    """Serve the ROI shape overlay (GeoJSON-style) for Vitessce."""
     try:
-        roi_path = Path("backend/output/roi_shapes.json")
+        roi_path = Path(__file__).parent / "output" / "roi_shapes.json"  # <-- FIXED
         if not roi_path.exists():
             logger.warning("ROI shapes file not found.")
             return jsonify({"error": "ROI shapes not found"}), 404
@@ -524,7 +522,7 @@ def serve_roi_shapes():
         return jsonify(roi_json)
 
     except Exception as e:
-        logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
+        logger.error(f" Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": "Failed to load ROI shapes"}), 500
 if __name__ == '__main__':
     logger.info("Starting Flask backend server on http://127.0.0.1:5000")
