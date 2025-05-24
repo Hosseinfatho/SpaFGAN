@@ -105,6 +105,33 @@ SpaFGAN/
      python backend/train_spafgan.py
      ```
 
+### 6. Extract ROIs (Immune ROIs)
+- **Purpose**: Extract immune ROIs from the trained model
+- **Process**:
+  - Load the trained model and spatial graph
+  - Compute ROI scores for each cell
+  - Threshold the scores (e.g., 0.7)
+  - Extract connected components from cells with high scores
+  - Save cell information for each ROI in `backend/output/roi_cells.csv`
+  - Each row contains: ROI ID, cell ID, coordinates (x, y, z), and model score.
+
+### 7.1 Convert Cells + ROIs to AnnData (Zarr)
+- **Purpose**: Convert cell features and ROI information to AnnData format for visualization with Vitessce
+- **Process**:
+  - Load cell features from `backend/output/cell_features.csv`
+  - Load ROI information from `backend/output/roi_cells.csv`
+  - Merge ROI scores and IDs into cell data
+  - Create AnnData object with features, metadata, and spatial coordinates
+  - Save AnnData as Zarr in `backend/output/cells.zarr`
+- **Dependencies**:
+  - anndata
+  - zarr
+- **Installation**:
+  ```bash
+  pip install anndata zarr
+  ```
+- **Output**: `backend/output/cells.zarr`
+
 ## Data Formats
 
 ### Input Data
@@ -136,6 +163,18 @@ SpaFGAN/
    - Type: networkx.Graph
    - Contains nodes and edges with spatial relationships
 
+5. **ROIs**:
+   - Format: CSV
+   - Columns:
+     - roi_id
+     - cell_id
+     - x, y, z (centroid coordinates)
+     - score
+
+6. **Cells**:
+   - Format: Zarr
+   - Contains cell features and ROI information
+
 ## Dependencies
 - zarr
 - numpy
@@ -149,6 +188,7 @@ SpaFGAN/
 - torch-geometric
 - torch-scatter
 - torch-sparse
+- anndata
 
 ## Usage
 1. Download data:
@@ -179,4 +219,22 @@ SpaFGAN/
 6. Train SpaFGAN (coming soon):
    ```bash
    python backend/train_spafgan.py
-   ``` 
+   ```
+
+7. Extract ROIs:
+   ```bash
+   python backend/extract_rois.py
+   ```
+
+8. Convert cells + ROIs to AnnData (Zarr):
+   ```bash
+   pip install anndata zarr
+   python backend/convert_to_anndata.py
+   ```
+
+## Visualization and Analysis
+- Visualize ROIs using tools like Vitessce
+- Perform biological analysis on extracted ROIs
+
+## Notes
+- Automatic ROI extraction after SpaFGAN training 
