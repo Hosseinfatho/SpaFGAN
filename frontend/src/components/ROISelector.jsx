@@ -1,10 +1,23 @@
 import React, { useState, useEffect } from 'react';
-const factor = 8;
+
+// Define scale factors (Zarr level 3 to full-res)
+const factorX = 10908 / 1363;
+const factorY = 5508 / 688;
+const fullHeight = 5508; // needed for Y flip
+
 function ROISelector({ onSetView }) {
   const [rois, setRois] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedGroups, setSelectedGroups] = useState([]);
   const [interactionGroups, setInteractionGroups] = useState([]);
+  const [manualX, setManualX] = useState("");
+  const [manualY, setManualY] = useState("");
+
+  const computeCentroid = (allCoords) => {
+    const flatCoords = allCoords.flat();
+    const sum = flatCoords.reduce((acc, [x, y]) => [acc[0] + x, acc[1] + y], [0, 0]);
+    return [sum[0] / flatCoords.length, sum[1] / flatCoords.length];
+  };
 
   useEffect(() => {
     fetch("http://localhost:5000/api/roi_shapes")
@@ -16,26 +29,25 @@ function ROISelector({ onSetView }) {
         }
 
         const extracted = data.features.map((feature, index) => {
-          let coords = feature.geometry?.coordinates;
+          const geometry = feature.geometry;
+          if (!geometry || !geometry.coordinates) return null;
 
-          // Handle both Polygon and MultiPolygon
-          if (feature.geometry?.type === "Polygon") {
-            coords = coords?.[0];
-          } else if (feature.geometry?.type === "MultiPolygon") {
-            coords = coords?.[0]?.[0]; // first polygon in multipolygon
+          let allCoords = [];
+
+          if (geometry.type === "Polygon") {
+            allCoords = geometry.coordinates;
+          } else if (geometry.type === "MultiPolygon") {
+            allCoords = geometry.coordinates.flat();
+          } else {
+            return null;
           }
 
-          if (!Array.isArray(coords) || coords.length === 0) return null;
-
-          const centroid = coords.reduce(
-            (acc, [x, y]) => [acc[0] + x, acc[1] + y],
-            [0, 0]
-          ).map(v => v / coords.length);
+          const [cx, cy] = computeCentroid(allCoords);
 
           return {
             id: feature.properties.name || `ROI_${index}`,
-            x: centroid[0]*factor,
-            y: centroid[1]*factor,
+            x: cx * factorX,
+            y: fullHeight - (cy * factorY), // Flip Y for bottom-left origin
             score: feature.properties.score || 0,
             interactions: feature.properties.interactions || []
           };
@@ -43,38 +55,47 @@ function ROISelector({ onSetView }) {
 
         setRois(extracted);
 
-        // Extract unique interaction labels
-        const allInteractions = extracted.flatMap(r => r.interactions);
-        const uniqueGroups = [...new Set(allInteractions)];
+        const uniqueGroups = [...new Set(extracted.flatMap(r => r.interactions))];
         setInteractionGroups(uniqueGroups);
-        setSelectedGroup(uniqueGroups[0] || "");
+        setSelectedGroups(uniqueGroups.slice(0, 1));
       })
       .catch((err) => console.error("Failed to load ROI shapes:", err));
   }, []);
 
-  const filteredRois = rois.filter(roi =>
-    roi.interactions.includes(selectedGroup)
-  );
+  const filteredRois = selectedGroups.length > 0
+    ? rois.filter(roi => roi.interactions.some(i => selectedGroups.includes(i)))
+    : rois;
+
   const currentROI = filteredRois[currentIndex] || {};
+  const displayX = manualX !== "" ? manualX : currentROI.x?.toFixed(0) || "";
+  const displayY = manualY !== "" ? manualY : currentROI.y?.toFixed(0) || "";
 
   const handleSet = () => {
     if (filteredRois.length > 0 && onSetView) {
-      const roi = filteredRois[currentIndex];
+      const x = manualX !== "" ? Number(manualX) : currentROI.x;
+      const y = manualY !== "" ? Number(manualY) : currentROI.y;
       onSetView({
-        spatialTargetX: roi.x,
-        spatialTargetY: roi.y,
+        spatialTargetX: x,
+        spatialTargetY: y,
         spatialTargetZ: 0,
-        spatialZoom: -1.1,
+        spatialZoom: -1.0,
       });
     }
   };
 
+  const toggleGroup = (group) => {
+    setSelectedGroups(prev =>
+      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
+    );
+    setCurrentIndex(0);
+  };
+
   const next = () => {
-    setCurrentIndex((i) => (i + 1) % filteredRois.length);
+    setCurrentIndex(i => (i + 1) % filteredRois.length);
   };
 
   const prev = () => {
-    setCurrentIndex((i) => (i - 1 + filteredRois.length) % filteredRois.length);
+    setCurrentIndex(i => (i - 1 + filteredRois.length) % filteredRois.length);
   };
 
   if (interactionGroups.length === 0) {
@@ -82,33 +103,34 @@ function ROISelector({ onSetView }) {
   }
 
   if (filteredRois.length === 0) {
-    return <p>No ROIs found for selected group: {selectedGroup}</p>;
+    return <p>No ROIs found for selected groups: {selectedGroups.join(", ")}</p>;
   }
 
   return (
     <div style={{ padding: "10px", border: "1px solid #ccc", marginBottom: "10px" }}>
       <h4>ROI Navigator</h4>
+      <p>Select Interaction Types:</p>
+      {interactionGroups.map(group => (
+        <label key={group} style={{ display: "block", marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={selectedGroups.includes(group)}
+            onChange={() => toggleGroup(group)}
+          />
+          {group}
+        </label>
+      ))}
 
-      <label htmlFor="interaction-select">Select Interaction Type:</label>
-      <select
-        id="interaction-select"
-        value={selectedGroup}
-        onChange={(e) => {
-          setSelectedGroup(e.target.value);
-          setCurrentIndex(0);
-        }}
-      >
-        {interactionGroups.map(group => (
-          <option key={group} value={group}>{group}</option>
-        ))}
-      </select>
-
+      <hr />
       <p><strong>{currentROI.id}</strong></p>
       <p>
-        X: {currentROI.x?.toFixed(0)} | Y: {currentROI.y?.toFixed(0)} | Score: {currentROI.score}
+        X: <input type="number" value={displayX} onChange={e => setManualX(e.target.value)} style={{ width: 80 }} />
+        &nbsp;|&nbsp;
+        Y: <input type="number" value={displayY} onChange={e => setManualY(e.target.value)} style={{ width: 80 }} />
+        &nbsp;|&nbsp; Score: {currentROI.score}
       </p>
       <p>
-        Interactions: {currentROI.interactions.join(", ")}
+        Interactions: {currentROI.interactions?.join(", ") || "None"}
       </p>
 
       <button onClick={prev}>Previous</button>
