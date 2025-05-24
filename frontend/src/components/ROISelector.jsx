@@ -1,7 +1,7 @@
+// Mainview.jsx
 import React, { useState, useEffect } from 'react';
 import { Vitessce } from 'vitessce';
 import ROISelector from './ROISelector';
-
 
 function Mainview() {
   const [config, setConfig] = useState(null);
@@ -101,23 +101,25 @@ function Mainview() {
       ...roiView
     }));
   };
+
   if (error) {
     return <p style={{ color: 'red', padding: '10px' }}>Error generating Mainview: {error}</p>;
   }
   if (!config) {
     return <p style={{ padding: '10px' }}>Generating Mainview config...</p>;
   }
+
   return (
-
-    <Vitessce
-      config={config}
-      theme="light"
-      height={null}
-      width={null}
-    />
- 
-
+    <div>
+      <ROISelector onSetView={handleSetView} />
+      <Vitessce
+        config={config}
+        theme="light"
+        height={null}
+        width={null}
+      />
+    </div>
   );
 }
 
-export default Mainview; 
+export default Mainview;

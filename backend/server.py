@@ -508,7 +508,24 @@ def zarr_proxy():
         return jsonify({"error": "Internal server error in proxy"}), 500
 # --- End of New Zarr Proxy Endpoint --- 
 
+@app.route('/api/roi_shapes', methods=['GET'])
+def serve_roi_shapes():
+    """Serve the ROI shape overlay (GeoJSON-style) for Vitessce."""
+    try:
+        roi_path = Path("backend/output/roi_shapes.json")
+        if not roi_path.exists():
+            logger.warning("ROI shapes file not found.")
+            return jsonify({"error": "ROI shapes not found"}), 404
 
+        with open(roi_path, "r") as f:
+            roi_json = json.load(f)
+
+        logger.info(" ROI shapes successfully served.")
+        return jsonify(roi_json)
+
+    except Exception as e:
+        logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
+        return jsonify({"error": "Failed to load ROI shapes"}), 500
 if __name__ == '__main__':
     logger.info("Starting Flask backend server on http://127.0.0.1:5000")
     # Port 5000 is common for backend APIs
