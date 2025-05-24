@@ -12,7 +12,9 @@ SpaFGAN/
 │   ├── download.py     # Data download script
 │   ├── segment.py      # Cell segmentation script
 │   ├── extract_features.py  # Feature extraction script
-│   └── build_graph.py  # Spatial graph construction script
+│   ├── build_graph.py  # Spatial graph construction script
+│   ├── install_dependencies.py  # Dependency installation script
+│   └── train_spafgan.py  # SpaFGAN training script (coming soon)
 └── frontend/          # Frontend visualization (not covered in this documentation)
 ```
 
@@ -83,6 +85,26 @@ SpaFGAN/
   - Node attributes: Position (z,y,x) and cell ID
   - Edge attributes: None (binary connections)
 
+### 5. SpaFGAN Training (Coming Soon)
+- **Purpose**: Train a Graph Attention Network for immune ROI prediction
+- **Components**:
+  - PyTorch-based Graph Attention Network
+  - Node scoring head for immune ROI prediction
+  - Training loop (supervised or contrastive)
+- **Dependencies**:
+  - PyTorch
+  - PyTorch Geometric
+  - Additional ML libraries
+- **Process**:
+  1. Install dependencies:
+     ```bash
+     python backend/install_dependencies.py
+     ```
+  2. Train model (coming soon):
+     ```bash
+     python backend/train_spafgan.py
+     ```
+
 ## Data Formats
 
 ### Input Data
@@ -123,6 +145,10 @@ SpaFGAN/
 - s3fs
 - networkx
 - scikit-learn
+- torch
+- torch-geometric
+- torch-scatter
+- torch-sparse
 
 ## Usage
 1. Download data:
@@ -143,4 +169,14 @@ SpaFGAN/
 4. Build spatial graph:
    ```bash
    python backend/build_graph.py
+   ```
+
+5. Install dependencies for SpaFGAN:
+   ```bash
+   python backend/install_dependencies.py
+   ```
+
+6. Train SpaFGAN (coming soon):
+   ```bash
+   python backend/train_spafgan.py
    ``` 
