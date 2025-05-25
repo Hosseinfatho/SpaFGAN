@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 // Define scale factors (Zarr level 3 to full-res)
-const factorX = 10908 / 1363;
-const factorY = 5508 / 688;
-const fullHeight = 5508; // needed for Y flip
+const factorX = 1; //10908 / 1363;
+const factorY = 1; //5508 / 688;
+const fullHeight =5508 // 5508; // needed for Y flip
 
 function ROISelector({ onSetView }) {
   const [rois, setRois] = useState([]);
@@ -47,7 +47,7 @@ function ROISelector({ onSetView }) {
           return {
             id: feature.properties.name || `ROI_${index}`,
             x: cx * factorX,
-            y: fullHeight - (cy * factorY), // Flip Y for bottom-left origin
+            y: -(cy * factorY) + fullHeight, // Flip Y for bottom-left origin
             score: feature.properties.score || 0,
             interactions: feature.properties.interactions || []
           };

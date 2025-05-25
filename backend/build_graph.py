@@ -10,8 +10,10 @@ import pickle
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+MARKERS = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]
+
 def build_spatial_graph(csv_path, marker_name, radius):
-    """Build a spatial graph for one biomarker CSV"""
+    """Build a spatial graph using all markers as features, based on a specific marker's CSV and radius"""
     try:
         df = pd.read_csv(csv_path)
         if df.empty:
@@ -20,7 +22,8 @@ def build_spatial_graph(csv_path, marker_name, radius):
 
         logger.info(f"Loaded {len(df)} cells from {csv_path}")
 
-        features = df[[marker_name]].values
+        # Use all 6 markers as node features
+        features = df[MARKERS].values
         coords = df[["z", "y", "x"]].values
         node_ids = df["cell_id"].values
 
@@ -69,5 +72,5 @@ def main():
         build_spatial_graph(file, marker, radius)
 
 if __name__ == "__main__":
-    logger.info("Starting multi-marker spatial graph construction...")
+    logger.info(" Starting multi-marker spatial graph construction...")
     main()
