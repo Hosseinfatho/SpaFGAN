@@ -5,100 +5,67 @@ from scipy.ndimage import center_of_mass
 from pathlib import Path
 import logging
 
-# Setup
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def extract_cell_features(image_zarr_path, segmentation_zarr_path, output_csv_path):
-    """Extract features from segmented cells"""
-    try:
-        # Load image (6, Z, Y, X)
-        logger.info("Loading image data...")
-        store = zarr.DirectoryStore(str(image_zarr_path))
-        z = zarr.open(store, mode="r")
-        img = z["data"][:][0]  # remove batch dim
-        logger.info(f"Image shape: {img.shape}")
+# Channel names in the same order as selected_channels.zarr
+channel_names = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]
 
-        # Load labels (Z, Y, X)
-        logger.info("Loading segmentation mask...")
-        store = zarr.DirectoryStore(str(segmentation_zarr_path))
-        z = zarr.open(store, mode="r")
-        labels = z["segmentation"][:]
-        logger.info(f"Labels shape: {labels.shape}")
+# Define markers for separate segmentation and output
+MARKERS = {
+    "CD31": "segmentation_CD31.zarr",
+    "CD11b": "segmentation_CD11b.zarr",
+    "CD11c": "segmentation_CD11c.zarr"
+}
 
-        # Get unique cell IDs (excluding background)
-        cell_ids = np.unique(labels)
-        cell_ids = cell_ids[cell_ids != 0]  # remove background
-        logger.info(f"Found {len(cell_ids)} segmented cells")
+def extract_cell_features(image, labels, marker_name):
+    """Extract cell features for one marker"""
+    cell_ids = np.unique(labels)
+    cell_ids = cell_ids[cell_ids != 0]  # remove background
+    logger.info(f"[{marker_name}] Found {len(cell_ids)} segmented cells")
 
-        # Initialize features list
-        features = []
-        channel_names = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]
+    features = []
+    for cid in cell_ids:
+        mask = labels == cid
+        zc, yc, xc = center_of_mass(mask)
+        intensity_means = [image[ch][mask].mean() for ch in range(image.shape[0])]
+        features.append([cid, zc, yc, xc] + intensity_means)
 
-        # Process each cell
-        for cid in cell_ids:
-            logger.info(f"Processing cell {cid}")
-            mask = labels == cid
-
-            # Get centroid
-            centroid = center_of_mass(mask)
-            zc, yc, xc = centroid
-
-            # Mean intensity per channel
-            intensity_means = [img[ch][mask].mean() for ch in range(img.shape[0])]
-
-            # Append row: [ID, Z, Y, X, CD31, CD20, CD11b, CD4, CD11c, Catalase]
-            features.append([cid, zc, yc, xc] + intensity_means)
-
-        # Create DataFrame
-        cols = ["cell_id", "z", "y", "x"] + channel_names
-        df = pd.DataFrame(features, columns=cols)
-
-        # Save to CSV
-        output_csv_path = Path(output_csv_path)
-        output_csv_path.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(output_csv_path, index=False)
-        logger.info(f"Saved features to {output_csv_path}")
-
-        # Print summary statistics
-        logger.info("\nFeature Summary:")
-        logger.info(f"Total cells: {len(df)}")
-        logger.info("\nCentroid Statistics:")
-        logger.info(df[["z", "y", "x"]].describe())
-        logger.info("\nIntensity Statistics:")
-        logger.info(df[channel_names].describe())
-
-        return df
-
-    except Exception as e:
-        logger.error(f"Error extracting features: {e}", exc_info=True)
-        return None
+    cols = ["cell_id", "z", "y", "x"] + channel_names
+    return pd.DataFrame(features, columns=cols)
 
 def main():
-    # Get the absolute path to the backend directory
     backend_dir = Path(__file__).parent.resolve()
-    
-    # Define paths
-    image_zarr_path = backend_dir / "input" / "selected_channels.zarr"
-    segmentation_zarr_path = backend_dir / "input" / "segmentation.zarr"
-    output_csv_path = backend_dir / "output" / "cell_features.csv"
-    
-    logger.info(f"Image Zarr path: {image_zarr_path}")
-    logger.info(f"Segmentation Zarr path: {segmentation_zarr_path}")
-    logger.info(f"Output CSV path: {output_csv_path}")
-    
-    # Extract features
-    df = extract_cell_features(
-        image_zarr_path=image_zarr_path,
-        segmentation_zarr_path=segmentation_zarr_path,
-        output_csv_path=output_csv_path
-    )
-    
-    if df is not None:
-        logger.info("✅ Feature extraction completed successfully")
-    else:
-        logger.error("❌ Feature extraction failed")
+    input_dir = backend_dir / "input"
+    output_dir = backend_dir / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    image_zarr_path = input_dir / "selected_channels.zarr"
+    logger.info(f"Loading image from {image_zarr_path}")
+    store = zarr.DirectoryStore(str(image_zarr_path))
+    img = zarr.open(store, mode="r")["data"][:][0]  # (6, Z, Y, X)
+    logger.info(f"Image shape: {img.shape}")
+
+    for marker, seg_file in MARKERS.items():
+        seg_path = input_dir / seg_file
+        if not seg_path.exists():
+            logger.warning(f"Segmentation file for {marker} not found: {seg_path}")
+            continue
+
+        logger.info(f"Loading segmentation for {marker} from {seg_path}")
+        labels = zarr.open(zarr.DirectoryStore(str(seg_path)), mode="r")["segmentation"][:]
+
+        df = extract_cell_features(img, labels, marker)
+        output_csv_path = output_dir / f"cell_features_{marker}.csv"
+        df.to_csv(output_csv_path, index=False)
+        logger.info(f"[{marker}] Features saved to {output_csv_path}")
+
+        # Print summary statistics
+        logger.info(f"\n[{marker}] Centroid Stats:\n{df[['z', 'y', 'x']].describe()}")
+        logger.info(f"\n[{marker}] Intensity Stats:\n{df[channel_names].describe()}")
 
 if __name__ == "__main__":
-    logger.info("Starting feature extraction...")
-    main() 
+    logger.info("🚀 Starting multi-marker feature extraction...")
+    main()
+    logger.info("✅ Done.")
