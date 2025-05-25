@@ -1,4 +1,4 @@
-# Workflow Documentation
+# SpaFGAN Workflow Documentation
 
 ## Overview
 This document outlines the workflow for processing and analyzing 3D multi-channel microscopy data, focusing on cell segmentation and feature extraction.
@@ -140,40 +140,50 @@ SpaFGAN/
 - Shape: (1, 70, 194, 688, 1363)
 - Chunk size: (1, 1, 1, 688, 1024)
 
-### Output Data
-1. **Selected Channels**:
-   - Format: Zarr
-   - Shape: (1, 6, 194, 688, 1363)
-   - Compression: zstd
+- **Processing Steps**:
+  1. Load Zarr data
+  2. Apply coordinate transformations:
+     ```
+     X_scaled = X * (10908/1363)
+     Y_scaled = Y * (5508/688)
+     Y_flipped = 5508 - Y_scaled
+     ```
+  3. Extract ROI information:
+     * Parse GeoJSON features
+     * Calculate centroids
+     * Extract properties
 
-2. **Segmentation**:
-   - Format: Zarr
-   - Shape: (194, 688, 1363)
-   - Contains labeled cells
+### 2. Backend Operations
+- **API Endpoints**:
+  * `/api/roi_shapes`: GET
+    - Returns: GeoJSON with ROI data
+    - Properties: name, score, interactions
 
-3. **Cell Features**:
-   - Format: CSV
-   - Columns:
-     - cell_id
-     - z, y, x (centroid coordinates)
-     - CD31, CD20, CD11b, CD4, CD11c, Catalase (mean intensities)
+- **Data Management**:
+  * Coordinate system handling
+  * ROI grouping
+  * Interaction type filtering
 
-4. **Spatial Graph**:
-   - Format: Pickle
-   - Type: networkx.Graph
-   - Contains nodes and edges with spatial relationships
+### 3. Frontend Operations
+- **Component Lifecycle**:
+  1. Mount
+  2. Data fetching
+  3. State initialization
+  4. User interaction handling
+  5. View updates
 
-5. **ROIs**:
-   - Format: CSV
-   - Columns:
-     - roi_id
-     - cell_id
-     - x, y, z (centroid coordinates)
-     - score
+- **State Management**:
+  * Selected interaction types
+  * Current ROI index
+  * Coordinate values
+  * View parameters
 
-6. **Cells**:
-   - Format: Zarr
-   - Contains cell features and ROI information
+### 4. User Interaction Patterns
+- **Selection Flow**:
+  1. View available interactions
+  2. Toggle selections
+  3. See filtered ROIs
+  4. Navigate results
 
 ## Dependencies
 - zarr
