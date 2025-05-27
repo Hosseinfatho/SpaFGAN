@@ -1,55 +1,57 @@
 import pandas as pd
 import json
 from pathlib import Path
-import alphashape
-from shapely.geometry import mapping, Polygon, MultiPoint
-import numpy as np
 import logging
+from shapely.geometry import box
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Define interaction logic
-INTERACTIONS = {
-    "T-cell entry site": {"CD31": "high", "CD4": "high"},
-    "Inflammatory zone": {"CD11b": "high", "CD20": "high"},
-    "Oxidative stress niche": {"CD11b": "high", "Catalase": "high"},
-    "B-cell infiltration": {"CD20": "high", "CD31": "high"},
-    "Dendritic signal": {"CD11c": "high"}  # ✅ NEW interaction for CD11c
-}
-
-
-# Thresholds based on previous marker visualizations
-THRESHOLDS = {
-    "CD31": 1000,
-    "CD4": 500,
-    "CD11b": 700,
-    "CD20": 600,
-    "Catalase": 800,
-    "CD11c": 400
-}
-
-def detect_interactions(marker_means, roi_id):
-    matches = []
-    for label, rule in INTERACTIONS.items():
-        match = True
-        for marker, level in rule.items():
-            value = marker_means.get(marker, 0)
-            threshold = THRESHOLDS.get(marker, 500)
-            if level == "high" and value <= threshold:
-                logger.debug(f"[{roi_id}] ❌ {label} NOT matched: {marker}={value} <= {threshold}")
-                match = False
-                break
-        if match:
-            logger.debug(f"[{roi_id}]  MATCHED: {label}")
-            matches.append(label)
-    return matches
-
-def round_polygon_coordinates(feature):
-    coords = feature["geometry"]["coordinates"]
-    if feature["geometry"]["type"] == "Polygon":
-        feature["geometry"]["coordinates"] = [[[round(x), round(y)] for x, y in coords[0]]]
-    return feature
+def create_cube_shape(center_x, center_y, z_min, z_max, size=50, factor=8):
+    """
+    Create a cube shape centered at (center_x, center_y) with ±size range in x and y,
+    and full z range. x and y are multiplied by factor for real size.
+    
+    Args:
+        center_x (float): Center x coordinate
+        center_y (float): Center y coordinate
+        z_min (float): Minimum z value
+        z_max (float): Maximum z value
+        size (float): Half-width of the cube in x and y directions
+        factor (float): Scaling factor for real size
+        
+    Returns:
+        dict: GeoJSON feature with cube shape
+    """
+    # Apply scaling
+    center_x *= factor
+    center_y *= factor
+    min_x = center_x - size * factor
+    max_x = center_x + size * factor
+    min_y = center_y - size * factor
+    max_y = center_y + size * factor
+    
+    # Create box shape
+    cube = box(min_x, min_y, max_x, max_y)
+    
+    return {
+        "type": "Feature",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [min_x, min_y],
+                [max_x, min_y],
+                [max_x, max_y],
+                [min_x, max_y],
+                [min_x, min_y]
+            ]]
+        },
+        "properties": {
+            "z_range": [z_min, z_max],
+            "center": [center_x, center_y],
+            "size": size * factor
+        }
+    }
 
 def process_roi_csv(csv_path):
     try:
@@ -62,67 +64,73 @@ def process_roi_csv(csv_path):
         return []
 
     shapes = []
+    
+    # Get z range for the entire dataset
+    z_min = df['z'].min()
+    z_max = df['z'].max()
 
     for roi_id, group in df.groupby("roi_id"):
-        points = group[["x", "y"]].dropna().values
-
-        marker_means = {
-            marker: float(group[marker].mean()) if marker in group.columns else 0
-            for marker in THRESHOLDS
-        }
-
-        interactions = detect_interactions(marker_means, roi_id)
-
-        if len(points) < 1:
-            continue
-        elif len(points) < 3:
-            x, y = points[0]
-            poly = Polygon([(x, y), (x + 1, y), (x + 1, y + 1), (x, y + 1), (x, y)])
-        else:
-            try:
-                poly = alphashape.alphashape(points, alpha=0.1)
-                if poly is None or poly.is_empty:
-                    poly = MultiPoint(points).convex_hull
-            except Exception:
-                poly = MultiPoint(points).convex_hull
-
-        shape = {
-            "type": "Feature",
-            "geometry": mapping(poly),
-            "properties": {
-                "name": roi_id,
-                "type": "ROI",
-                "score": float(round(group["score"].mean(), 3)),
-                "interactions": interactions
+        # Get center coordinates
+        center_x = group['x'].mean()
+        center_y = group['y'].mean()
+        
+        # Get interaction scores
+        interactions = []
+        for col in group.columns:
+            if col in ['T-cell_entry_site', 'B-cell_infiltration', 'Oxidative_stress_niche', 
+                      'Inflammatory_zone', 'Dendritic_signal']:
+                if group[col].mean() > 0.5:  # Threshold for interaction
+                    interactions.append(col)
+        
+        # Create cube shape
+        shape = create_cube_shape(center_x, center_y, z_min, z_max)
+        
+        # Add ROI properties
+        shape["properties"].update({
+            "name": roi_id,
+            "type": "ROI",
+            "score": float(round(group["spafgan_score"].mean(), 3)),
+            "interactions": interactions,
+            "marker_values": {
+                marker: float(group[marker].mean())
+                for marker in ['CD31', 'CD4', 'CD20', 'CD11b', 'CD11c', 'Catalase']
+                if marker in group.columns
             }
-        }
-        shapes.append(round_polygon_coordinates(shape))
+        })
+        
+        shapes.append(shape)
 
     return shapes
 
 def main():
-    output_dir = Path(__file__).parent.resolve() / "output"
-    csv_files = list(output_dir.glob("roi_cells_*.csv"))
-    if not csv_files:
-        logger.error(" No ROI cell CSV files found.")
-        return
-
+    backend_dir = Path(__file__).parent.resolve()
+    output_dir = backend_dir / "output"
+    
     all_shapes = []
-    for csv_file in csv_files:
-        logger.info(f" Processing {csv_file.name}")
-        shapes = process_roi_csv(csv_file)
-        if shapes:
-            all_shapes.extend(shapes)
-
-    if not all_shapes:
-        logger.warning(" No valid ROI shapes generated.")
-        return
-
-    out_path = output_dir / "roi_shapes.json"
-    with open(out_path, "w") as f:
-        json.dump({"type": "FeatureCollection", "features": all_shapes}, f, indent=2)
-
-    logger.info(f" ROI shapes written to: {out_path}")
+    
+    # Process both CD31 and CD11b ROIs
+    for marker in ["CD31", "CD11b"]:
+        input_file = output_dir / f"roi_cells_{marker}_interactions.csv"
+        if not input_file.exists():
+            logger.warning(f"Input file not found: {input_file}")
+            continue
+            
+        logger.info(f"Processing {input_file}")
+        shapes = process_roi_csv(input_file)
+        all_shapes.extend(shapes)
+    
+    # Create GeoJSON structure
+    geojson = {
+        "type": "FeatureCollection",
+        "features": all_shapes
+    }
+    
+    # Save to file
+    output_file = output_dir / "roi_shapes.geojson"
+    with open(output_file, 'w') as f:
+        json.dump(geojson, f, indent=2)
+    
+    logger.info(f"Saved {len(all_shapes)} ROI shapes to {output_file}")
 
 if __name__ == "__main__":
     main()

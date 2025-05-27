@@ -9,13 +9,13 @@ dataset = vc.add_dataset(name="Melanoma", uid="ds")
 # Add image.ome-zarr
 dataset.add_file(
     file_type="image.ome-zarr",
-    url="backend/input/selected_channels.zarr"
+    url="input/selected_channels.zarr"
 )
 
 # Add AnnData cells.zarr
 dataset.add_file(
     file_type="anndata.zarr",
-    url="backend/output/cells.zarr",
+    url="output/cells.zarr",
     options={
         "obsIndex": "cell_id",
         "obsEmbedding": {
@@ -31,7 +31,7 @@ dataset.add_file(
 # Add ROI shapes as GeoJSON
 dataset.add_file(
     file_type="geojson",
-    url="backend/output/roi_shapes.json"
+    url="output/roi_shapes.geojson"  # Changed from .json to .geojson
 )
 
 # Views
@@ -54,10 +54,10 @@ vc.link_views_by_dict([spatial, lc, cs], {
 vc.layout(spatial | lc / cs)
 
 # Save config
-out_path = Path("backend/output/vitessce_config.json")
-out_path.parent.mkdir(parents=True, exist_ok=True)  # ✅ Ensure directory exists
+out_path = Path("output/vitessce_config.json")
+out_path.parent.mkdir(parents=True, exist_ok=True)  #  Ensure directory exists
 
 with open(out_path, "w") as f:
     json.dump(vc.to_dict(), f, indent=2)
 
-print(f"✅ Saved Vitessce config to {out_path}")
+print(f" Saved Vitessce config to {out_path}")

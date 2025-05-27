@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 from sklearn.neighbors import NearestNeighbors
 import logging
+import os
 from pathlib import Path
 import pickle
 
@@ -10,67 +11,156 @@ import pickle
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MARKERS = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]
+# Define marker groups
+PRIMARY_MARKERS = ["CD31", "CD11b"]  # ROI centers
+SECONDARY_MARKERS = ["CD4", "CD20", "Catalase"]  # Cells to connect
+ALL_MARKERS = PRIMARY_MARKERS + SECONDARY_MARKERS
 
-def build_spatial_graph(csv_path, marker_name, radius):
-    """Build a spatial graph using all markers as features, based on a specific marker's CSV and radius"""
-    try:
-        df = pd.read_csv(csv_path)
-        if df.empty:
-            logger.warning(f"No cells found in {csv_path}, skipping.")
-            return None
+def calculate_edge_weight(cell1_type, cell2_type, distance):
+    """Calculate edge weight based on cell types and distance"""
+    # Base weight from distance (closer = higher weight)
+    distance_weight = 1.0 / (1.0 + distance)
+    
+    # Type weights (higher for connections between different types)
+    type_weights = {
+        ("CD31", "CD11b"): 1.5,  # Strong connection between primary markers
+        ("CD31", "CD4"): 1.2,    # Moderate connection with CD4
+        ("CD31", "CD20"): 1.2,   # Moderate connection with CD20
+        ("CD31", "Catalase"): 1.1,  # Weak connection with Catalase
+        ("CD11b", "CD4"): 1.2,
+        ("CD11b", "CD20"): 1.2,
+        ("CD11b", "Catalase"): 1.1,
+    }
+    
+    # Get type weight (default to 1.0 if not specified)
+    type_key = tuple(sorted([cell1_type, cell2_type]))
+    type_weight = type_weights.get(type_key, 1.0)
+    
+    return distance_weight * type_weight
 
-        logger.info(f"Loaded {len(df)} cells from {csv_path}")
+def build_spatial_graph(marker, radius=50.0):
+    """Build a spatial graph using ROIs as centers and connecting nearby cells"""
+    logger.info(f"Processing marker: {marker} (radius={radius})")
+    
+    # Load ROI and cell data
+    backend_dir = Path(__file__).parent.resolve()
+    output_dir = backend_dir / "output"
+    roi_file = output_dir / f"roi_cells_{marker}.csv"
+    cell_file = output_dir / f"cell_features_{marker}.csv"
+    
+    if not roi_file.exists() or not cell_file.exists():
+        logger.error(f"Required files not found for {marker}")
+        return None
+    
+    # Load and clean data
+    roi_data = pd.read_csv(roi_file)
+    cell_data = pd.read_csv(cell_file)
+    
+    # Convert cell_id to clean string format (no decimal, no prefix)
+    roi_data['cell_id'] = roi_data['cell_id'].apply(lambda x: str(int(float(x))))
+    cell_data['cell_id'] = cell_data['cell_id'].apply(lambda x: str(int(float(x))))
+    
+    logger.info(f"Loaded {len(roi_data)} ROIs and {len(cell_data)} cells")
 
-        # Use all 6 markers as node features
-        features = df[MARKERS].values
-        coords = df[["z", "y", "x"]].values
-        node_ids = df["cell_id"].values
+    # Create graph
+    G = nx.Graph()
 
-        G = nx.Graph()
+    for _, row in roi_data.iterrows():
+        roi_id = str(int(float(row['cell_id'])))
+        if roi_id in cell_data['cell_id'].values and roi_id not in G.nodes():
+            cell_row = cell_data[cell_data['cell_id'] == roi_id].iloc[0]
+            pos = [float(cell_row['x']), float(cell_row['y']), float(cell_row['z'])]
+            G.add_node(roi_id, 
+                      type="roi",
+                      pos=pos,
+                      marker=marker)
+            for marker_name in ALL_MARKERS:
+                if marker_name in cell_row:
+                    G.nodes[roi_id][marker_name] = float(cell_row[marker_name])
+                else:
+                    G.nodes[roi_id][marker_name] = 0.0
 
-        for idx, nid in enumerate(node_ids):
-            G.add_node(nid, features=features[idx], pos=coords[idx])
+    for _, row in cell_data.iterrows():
+        cell_id = str(int(float(row['cell_id'])))
+        if cell_id not in G.nodes():
+            pos = [float(row['x']), float(row['y']), float(row['z'])]
+            G.add_node(cell_id,
+                      type="cell",
+                      pos=pos,
+                      marker=marker)
+            for marker_name in ALL_MARKERS:
+                if marker_name in row:
+                    G.nodes[cell_id][marker_name] = float(row[marker_name])
+                else:
+                    G.nodes[cell_id][marker_name] = 0.0
 
-        nbrs = NearestNeighbors(radius=radius)
-        nbrs.fit(coords)
-        neighbors = nbrs.radius_neighbors(coords, return_distance=False)
-
-        for i, indices in enumerate(neighbors):
-            src_id = node_ids[i]
-            for j in indices:
-                tgt_id = node_ids[j]
-                if src_id != tgt_id and not G.has_edge(src_id, tgt_id):
-                    G.add_edge(src_id, tgt_id)
-
-        logger.info(f"Graph for {marker_name}: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
-
-        output_path = Path(csv_path).parent / f"spatial_graph_{marker_name}.pkl"
-        with open(output_path, "wb") as f:
+    # Connect nodes within radius
+    roi_coords = np.array([G.nodes[n]['pos'] 
+                          for n in G.nodes() if G.nodes[n]['type'] == 'roi'])
+    cell_coords = np.array([G.nodes[n]['pos'] 
+                           for n in G.nodes() if G.nodes[n]['type'] == 'cell'])
+    
+    if len(roi_coords) > 0 and len(cell_coords) > 0:
+        nn = NearestNeighbors(n_neighbors=1, radius=radius)
+        nn.fit(roi_coords)
+        distances, indices = nn.kneighbors(cell_coords)
+        
+        for i, (dist, idx) in enumerate(zip(distances, indices)):
+            if dist[0] <= radius:
+                cell_node = list(G.nodes())[i + len(roi_data)]
+                roi_node = list(G.nodes())[idx[0]]
+                weight = calculate_edge_weight(marker, marker, dist[0])
+                G.add_edge(cell_node, roi_node, weight=weight)
+    
+    # Connect nearby cells
+    if len(cell_coords) > 1:
+        # Adjust number of neighbors based on available cells
+        n_neighbors = min(5, len(cell_coords) - 1)
+        nn = NearestNeighbors(n_neighbors=n_neighbors, radius=radius)
+        nn.fit(cell_coords)
+        distances, indices = nn.kneighbors(cell_coords)
+        
+        for i, (dists, idxs) in enumerate(zip(distances, indices)):
+            for j, (dist, idx) in enumerate(zip(dists, idxs)):
+                if i != idx and dist <= radius:
+                    cell1 = list(G.nodes())[i]
+                    cell2 = list(G.nodes())[idx]
+                    weight = calculate_edge_weight(marker, marker, dist)
+                    G.add_edge(cell1, cell2, weight=weight)
+    
+    # Remove isolated nodes
+    isolated_nodes = list(nx.isolates(G))
+    G.remove_nodes_from(isolated_nodes)
+    
+    if len(G.nodes()) > 0:
+        logger.info(f"Created graph with {len(G.nodes())} nodes and {len(G.edges())} edges")
+        logger.info(f"Average degree: {2*len(G.edges())/len(G.nodes()):.2f}")
+        
+        # Log marker and output file before saving
+        output_file = output_dir / f"spatial_graph_{marker}.pkl"
+        logger.info(f"[DEBUG] About to save graph for marker: {marker} to {output_file}")
+        # Save graph
+        with open(str(output_file), 'wb') as f:
             pickle.dump(G, f)
-        logger.info(f"Saved graph to {output_path}")
+        logger.info(f"Graph saved to {output_file}")
 
+        # Set spafgan_score for ROI nodes
+        for node in G.nodes():
+            if G.nodes[node].get('type') == 'roi':
+                G.nodes[node]['spafgan_score'] = 1.0  # Set a default nonzero score for ROI nodes
         return G
-
-    except Exception as e:
-        logger.error(f"Failed to build graph for {marker_name}: {e}", exc_info=True)
+    else:
+        logger.error(f"Failed to create graph for {marker}")
         return None
 
 def main():
-    backend_dir = Path(__file__).parent.resolve()
-    output_dir = backend_dir / "output"
-    marker_files = list(output_dir.glob("cell_features_*.csv"))
-
-    if not marker_files:
-        logger.error("No cell_features_*.csv files found in output directory.")
-        return
-
-    for file in marker_files:
-        marker = file.stem.replace("cell_features_", "")
-        radius = 30.0 if marker == "CD31" else 150.0
-        logger.info(f" Processing marker: {marker} (radius={radius})")
-        build_spatial_graph(file, marker, radius)
+    """Main function to build spatial graphs"""
+    logger.info("Starting ROI-based spatial graph construction...")
+    
+    # Build graph for each primary marker
+    for marker in PRIMARY_MARKERS:
+        radius = 150.0 if marker == "CD11b" else 50.0
+        build_spatial_graph(marker, radius)
 
 if __name__ == "__main__":
-    logger.info(" Starting multi-marker spatial graph construction...")
     main()

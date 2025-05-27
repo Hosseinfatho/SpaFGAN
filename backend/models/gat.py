@@ -7,39 +7,71 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SpaFGAN(nn.Module):
-    def __init__(self, in_dim=6, hidden=32, heads=2):
+    def __init__(self, in_channels, hidden_channels=32, out_channels=1, heads=2, dropout=0.2):
         """
-        Initialize the SpaFGAN model.
+        Graph Attention Network for spatial feature analysis
         
         Args:
-            in_dim (int): Number of input features
-            hidden (int): Number of hidden channels
+            in_channels (int): Number of input features
+            hidden_channels (int): Number of hidden units
+            out_channels (int): Number of output classes
             heads (int): Number of attention heads
+            dropout (float): Dropout rate
         """
         super(SpaFGAN, self).__init__()
-        self.gat1 = GATConv(in_dim, hidden, heads=heads)
-        self.gat2 = GATConv(hidden * heads, hidden, heads=1)
-        self.out = nn.Linear(hidden, 1)
+        
+        # First GAT layer with multiple heads
+        self.gat1 = GATConv(
+            in_channels=in_channels,
+            out_channels=hidden_channels,
+            heads=heads,
+            dropout=dropout,
+            concat=True
+        )
+        
+        # Second GAT layer with single head
+        self.gat2 = GATConv(
+            in_channels=hidden_channels * heads,
+            out_channels=hidden_channels,
+            heads=1,
+            dropout=dropout,
+            concat=False
+        )
+        
+        # Output layer
+        self.out = nn.Linear(hidden_channels, out_channels)
+        
+        # Dropout layer
+        self.dropout = nn.Dropout(dropout)
         
         logger.info(f"Initialized SpaFGAN model:")
-        logger.info(f"Input dimension: {in_dim}")
-        logger.info(f"Hidden dimension: {hidden}")
+        logger.info(f"Input dimension: {in_channels}")
+        logger.info(f"Hidden dimension: {hidden_channels}")
         logger.info(f"Number of attention heads: {heads}")
     
     def forward(self, x, edge_index):
         """
-        Forward pass of the model.
+        Forward pass
         
         Args:
-            x (torch.Tensor): Node features
-            edge_index (torch.Tensor): Graph connectivity
+            x (torch.Tensor): Node features [N, in_channels]
+            edge_index (torch.Tensor): Graph connectivity [2, E]
             
         Returns:
-            torch.Tensor: ROI scores for each node
+            torch.Tensor: Node predictions [N, out_channels]
         """
-        x = F.relu(self.gat1(x, edge_index))
-        x = F.relu(self.gat2(x, edge_index))
-        return torch.sigmoid(self.out(x)).squeeze()
+        # First GAT layer with multi-head attention
+        x = F.elu(self.gat1(x, edge_index))
+        x = self.dropout(x)
+        
+        # Second GAT layer
+        x = F.elu(self.gat2(x, edge_index))
+        x = self.dropout(x)
+        
+        # Output layer
+        x = self.out(x)
+        
+        return x
     
     def predict(self, data):
         """

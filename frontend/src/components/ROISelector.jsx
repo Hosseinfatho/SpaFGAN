@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // Define scale factors (Zarr level 3 to full-res)
 const factorX = 1; //10908 / 1363;
 const factorY = 1; //5508 / 688;
-const fullHeight =5508 // 5508; // needed for Y flip
+const fullHeight = 5508; // needed for Y flip
 
 function ROISelector({ onSetView }) {
   const [rois, setRois] = useState([]);
@@ -33,7 +33,6 @@ function ROISelector({ onSetView }) {
           if (!geometry || !geometry.coordinates) return null;
 
           let allCoords = [];
-
           if (geometry.type === "Polygon") {
             allCoords = geometry.coordinates;
           } else if (geometry.type === "MultiPolygon") {
@@ -47,9 +46,10 @@ function ROISelector({ onSetView }) {
           return {
             id: feature.properties.name || `ROI_${index}`,
             x: cx * factorX,
-            y: -(cy * factorY) + fullHeight, // Flip Y for bottom-left origin
+            y: -(cy * factorY) + fullHeight,
             score: feature.properties.score || 0,
-            interactions: feature.properties.interactions || []
+            interactions: feature.properties.interactions || [],
+            raw: feature.properties // Store all original metadata
           };
         }).filter(Boolean);
 
@@ -132,7 +132,18 @@ function ROISelector({ onSetView }) {
       <p>
         Interactions: {currentROI.interactions?.join(", ") || "None"}
       </p>
-
+      {currentROI.raw && (
+        <div style={{ fontSize: "small", marginTop: "5px" }}>
+          <p><strong>Raw Marker Means:</strong></p>
+          <ul>
+            {Object.entries(currentROI.raw).map(([k, v]) => (
+              ["name", "type", "score", "interactions"].includes(k) ? null : (
+                <li key={k}>{k}: {v}</li>
+              )
+            ))}
+          </ul>
+        </div>
+      )}
       <button onClick={prev}>Previous</button>
       <button onClick={next}>Next</button>
       <button onClick={handleSet}>Set View</button>

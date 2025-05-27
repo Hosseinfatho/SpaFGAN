@@ -85,7 +85,7 @@ SpaFGAN/
   - Node attributes: Position (z,y,x) and cell ID
   - Edge attributes: None (binary connections)
 
-### 5. SpaFGAN Training (Coming Soon)
+### 5. SpaFGAN Training 
 - **Purpose**: Train a Graph Attention Network for immune ROI prediction
 - **Components**:
   - PyTorch-based Graph Attention Network

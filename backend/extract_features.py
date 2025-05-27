@@ -28,12 +28,21 @@ def extract_cell_features(image, labels, marker_name):
     features = []
     for cid in cell_ids:
         mask = labels == cid
-        zc, yc, xc = center_of_mass(mask)
-        intensity_means = [image[ch][mask].mean() for ch in range(image.shape[0])]
-        features.append([cid, zc, yc, xc] + intensity_means)
+        # Calculate centroid and round to nearest integer
+        zc, yc, xc = [int(round(coord)) for coord in center_of_mass(mask)]
+        # Calculate mean intensities and round to 2 decimal places
+        intensity_means = [round(image[ch][mask].mean(), 2) for ch in range(image.shape[0])]
+        features.append([int(cid), zc, yc, xc] + intensity_means)
 
     cols = ["cell_id", "z", "y", "x"] + channel_names
-    return pd.DataFrame(features, columns=cols)
+    df = pd.DataFrame(features, columns=cols)
+    
+    # Convert all columns to appropriate types
+    df['cell_id'] = df['cell_id'].astype(int)
+    df[['z', 'y', 'x']] = df[['z', 'y', 'x']].astype(int)
+    df[channel_names] = df[channel_names].round(2)
+    
+    return df
 
 def main():
     backend_dir = Path(__file__).parent.resolve()
@@ -66,6 +75,6 @@ def main():
         logger.info(f"\n[{marker}] Intensity Stats:\n{df[channel_names].describe()}")
 
 if __name__ == "__main__":
-    logger.info("🚀 Starting multi-marker feature extraction...")
+    logger.info(" Starting multi-marker feature extraction...")
     main()
-    logger.info("✅ Done.")
+    logger.info(" Done.")
