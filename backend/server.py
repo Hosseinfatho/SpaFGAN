@@ -108,7 +108,7 @@ def get_channel_names():
             return jsonify({"error": "Channel metadata ('omero' with 'channels') not found in Zarr store"}), 404
 
     except Exception as e:
-        logger.error(f"❌ Failed during channel name retrieval: {e}", exc_info=True)
+        logger.error(f" Failed during channel name retrieval: {e}", exc_info=True)
         # Log details about variables at the time of error
         logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}, root_store={'Exists' if root_store else 'None'}, root_group={'Exists' if root_group else 'None'}")
         return jsonify({"error": f"Failed to read channel names: {e}"}), 500
@@ -510,7 +510,7 @@ def zarr_proxy():
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
     try:
-        roi_path = Path(__file__).parent / "output" / "roi_shapes.json"  # <-- FIXED
+        roi_path = Path(__file__).parent / "output" / "roi_shapes.geojson"  # Changed from .json to .geojson
         if not roi_path.exists():
             logger.warning("ROI shapes file not found.")
             return jsonify({"error": "ROI shapes not found"}), 404

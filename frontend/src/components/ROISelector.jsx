@@ -136,10 +136,8 @@ function ROISelector({ onSetView }) {
         <div style={{ fontSize: "small", marginTop: "5px" }}>
           <p><strong>Raw Marker Means:</strong></p>
           <ul>
-            {Object.entries(currentROI.raw).map(([k, v]) => (
-              ["name", "type", "score", "interactions"].includes(k) ? null : (
-                <li key={k}>{k}: {v}</li>
-              )
+            {Object.entries(currentROI.raw.marker_values || {}).map(([k, v]) => (
+              <li key={k}>{k}: {v.toFixed(2)}</li>
             ))}
           </ul>
         </div>
