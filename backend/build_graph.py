@@ -23,19 +23,24 @@ def calculate_edge_weight(cell1_type, cell2_type, distance):
     
     # Type weights (higher for connections between different types)
     type_weights = {
-        ("CD31", "CD11b"): 1.5,  # Strong connection between primary markers
-        ("CD31", "CD11c"): 1.4,  # Strong connection with CD11c
-        ("CD31", "CD4"): 1.2,    # Moderate connection with CD4
-        ("CD31", "CD20"): 1.2,   # Moderate connection with CD20
-        ("CD31", "Catalase"): 1.1,  # Weak connection with Catalase
-        ("CD11b", "CD11c"): 1.5,  # Strong connection between immune markers
-        ("CD11b", "CD4"): 1.2,
-        ("CD11b", "CD20"): 1.2,
-        ("CD11b", "Catalase"): 1.1,
-        ("CD11c", "CD4"): 1.3,    # Moderate-strong connection
-        ("CD11c", "CD20"): 1.3,   # Moderate-strong connection
-        ("CD11c", "Catalase"): 1.2,  # Moderate connection
-    }
+    ("CD31", "CD11b"): 1.6,   # Strong: myeloid cells interacting with vasculature (monocyte entry)
+    ("CD31", "CD11c"): 1.5,   # Strong: dendritic cells near endothelial layers
+    ("CD31", "CD4"): 1.3,     # Moderate: T cell migration through vessels
+    ("CD31", "CD20"): 1.2,    # Moderate: B cell circulation near vasculature
+    ("CD31", "Catalase"): 1.0, # Weak: general oxidative stress near vessels
+
+    ("CD11b", "CD11c"): 1.6,  # Strong: myeloid lineage coordination (macrophage–dendritic)
+    ("CD11b", "CD4"): 1.3,    # Moderate: T cell activation by myeloid cells
+    ("CD11b", "CD20"): 1.2,   # Moderate: general immune co-localization
+    ("CD11b", "Catalase"): 1.3, # Moderate: inflammation with oxidative stress
+
+    ("CD11c", "CD4"): 1.5,    # Strong: dendritic priming T cells (immune niche)
+    ("CD11c", "CD20"): 1.3,   # Moderate: APC–B cell neighborhood
+    ("CD11c", "Catalase"): 1.3, # Moderate: oxidative microenvironments with APCs
+
+    ("CD4", "CD20"): 1.2,     # Moderate: lymphoid zone interaction (T–B cells)
+     }
+
     
     # Get type weight (default to 1.0 if not specified)
     type_key = tuple(sorted([cell1_type, cell2_type]))
