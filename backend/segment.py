@@ -6,6 +6,7 @@ import logging
 from models.gat import SpaFGAN
 import time
 from sklearn.preprocessing import MinMaxScaler
+from torch_geometric.utils import dense_to_sparse
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -101,22 +102,35 @@ def detect_interactions(row, df, marker_name):
     
     return interactions, interaction_scores, interaction_values
 
-def create_spatial_graph(features, positions, k_neighbors=5):
+def create_spatial_graph(features, positions, radius=50):
     """
-    Create a spatial graph based on k-nearest neighbors
+    Create a spatial graph based on radius-based neighborhood with weighted edges
+    
+    Args:
+        features (torch.Tensor): Node features
+        positions (torch.Tensor): Node positions (x, y, z)
+        radius (float): Maximum distance for connecting nodes
+        
+    Returns:
+        tuple: (edge_index, edge_weights)
     """
     # Calculate pairwise distances
     dist = torch.cdist(positions, positions)
     
-    # Get k-nearest neighbors for each node
-    _, indices = torch.topk(dist, k=k_neighbors + 1, dim=1, largest=False)
-    indices = indices[:, 1:]  # Remove self-loops
+    # Create adjacency matrix based on radius
+    adj = (dist <= radius).float()
     
-    # Create edge index
-    rows = torch.arange(indices.size(0)).view(-1, 1).repeat(1, k_neighbors)
-    edge_index = torch.stack([rows.flatten(), indices.flatten()])
+    # Remove self-loops
+    adj.fill_diagonal_(0)
     
-    return edge_index
+    # Calculate edge weights based on distance
+    edge_weights = torch.exp(-dist / radius) * adj
+    
+    # Convert to edge index and weights
+    edge_index = dense_to_sparse(adj)[0]
+    edge_weights = edge_weights[edge_index[0], edge_index[1]]
+    
+    return edge_index, edge_weights
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -144,9 +158,9 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     for i, col in enumerate(feature_columns):
         logger.info(f"{col}: Min={normalized_features[:, i].min():.3f}, Max={normalized_features[:, i].max():.3f}, Mean={normalized_features[:, i].mean():.3f}")
     
-    logger.info("Building spatial graph based on k-nearest neighbors...")
+    logger.info("Building spatial graph based on radius-based neighborhood...")
     t0 = time.time()
-    edge_index = create_spatial_graph(features, positions)
+    edge_index, edge_weights = create_spatial_graph(features, positions, radius=50)
     logger.info(f"Graph built. Number of edges: {edge_index.shape[1]}")
     logger.info(f"Graph construction time: {time.time() - t0:.2f} seconds")
     
@@ -154,7 +168,7 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     logger.info(f"Loading model from: {model_path}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = SpaFGAN(
-        in_channels=5,
+        in_channels=12,  # Updated to match saved model
         hidden_channels=32,
         out_channels=1,
         heads=2
@@ -164,13 +178,17 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     logger.info("Model loaded successfully.")
     
     # Move data to device
-    features = features.to(device)
+    # Pad features to match model input dimension
+    padded_features = torch.zeros((features.shape[0], 12), dtype=torch.float32, device=device)
+    padded_features[:, :5] = features  # Copy original features
+    features = padded_features
     edge_index = edge_index.to(device)
+    edge_weights = edge_weights.to(device)
     
     logger.info("Starting model prediction...")
     t1 = time.time()
     with torch.no_grad():
-        scores = model(features, edge_index).cpu().numpy()
+        scores = model(features, edge_index, edge_weights).cpu().numpy()
     logger.info(f"Model prediction completed. Prediction time: {time.time() - t1:.2f} seconds")
     scores = np.atleast_1d(scores)
     

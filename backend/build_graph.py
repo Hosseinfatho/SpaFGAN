@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Define marker groups
-PRIMARY_MARKERS = ["CD31", "CD11b"]  # ROI centers
+PRIMARY_MARKERS = ["CD31", "CD11b", "CD11c"]  # ROI centers
 SECONDARY_MARKERS = ["CD4", "CD20", "Catalase"]  # Cells to connect
 ALL_MARKERS = PRIMARY_MARKERS + SECONDARY_MARKERS
 
@@ -24,12 +24,17 @@ def calculate_edge_weight(cell1_type, cell2_type, distance):
     # Type weights (higher for connections between different types)
     type_weights = {
         ("CD31", "CD11b"): 1.5,  # Strong connection between primary markers
+        ("CD31", "CD11c"): 1.4,  # Strong connection with CD11c
         ("CD31", "CD4"): 1.2,    # Moderate connection with CD4
         ("CD31", "CD20"): 1.2,   # Moderate connection with CD20
         ("CD31", "Catalase"): 1.1,  # Weak connection with Catalase
+        ("CD11b", "CD11c"): 1.5,  # Strong connection between immune markers
         ("CD11b", "CD4"): 1.2,
         ("CD11b", "CD20"): 1.2,
         ("CD11b", "Catalase"): 1.1,
+        ("CD11c", "CD4"): 1.3,    # Moderate-strong connection
+        ("CD11c", "CD20"): 1.3,   # Moderate-strong connection
+        ("CD11c", "Catalase"): 1.2,  # Moderate connection
     }
     
     # Get type weight (default to 1.0 if not specified)
@@ -65,6 +70,7 @@ def build_spatial_graph(marker, radius=50.0):
     # Create graph
     G = nx.Graph()
 
+    # Add ROI nodes with all marker values
     for _, row in roi_data.iterrows():
         roi_id = str(int(float(row['cell_id'])))
         if roi_id in cell_data['cell_id'].values and roi_id not in G.nodes():
@@ -73,13 +79,15 @@ def build_spatial_graph(marker, radius=50.0):
             G.add_node(roi_id, 
                       type="roi",
                       pos=pos,
-                      marker=marker)
+                      marker=marker,
+                      spafgan_score=float(row.get('spafgan_score', 1.0)))  # Use actual score if available
             for marker_name in ALL_MARKERS:
                 if marker_name in cell_row:
                     G.nodes[roi_id][marker_name] = float(cell_row[marker_name])
                 else:
                     G.nodes[roi_id][marker_name] = 0.0
 
+    # Add cell nodes with all marker values
     for _, row in cell_data.iterrows():
         cell_id = str(int(float(row['cell_id'])))
         if cell_id not in G.nodes():
@@ -136,18 +144,11 @@ def build_spatial_graph(marker, radius=50.0):
         logger.info(f"Created graph with {len(G.nodes())} nodes and {len(G.edges())} edges")
         logger.info(f"Average degree: {2*len(G.edges())/len(G.nodes()):.2f}")
         
-        # Log marker and output file before saving
-        output_file = output_dir / f"spatial_graph_{marker}.pkl"
-        logger.info(f"[DEBUG] About to save graph for marker: {marker} to {output_file}")
         # Save graph
+        output_file = output_dir / f"spatial_graph_{marker}.pkl"
         with open(str(output_file), 'wb') as f:
             pickle.dump(G, f)
         logger.info(f"Graph saved to {output_file}")
-
-        # Set spafgan_score for ROI nodes
-        for node in G.nodes():
-            if G.nodes[node].get('type') == 'roi':
-                G.nodes[node]['spafgan_score'] = 1.0  # Set a default nonzero score for ROI nodes
         return G
     else:
         logger.error(f"Failed to create graph for {marker}")
@@ -159,7 +160,7 @@ def main():
     
     # Build graph for each primary marker
     for marker in PRIMARY_MARKERS:
-        radius = 150.0 if marker == "CD11b" else 50.0
+        radius = 50.0 if marker in ["CD11b", "CD11c"] else 50.0  # Larger radius for immune markers
         build_spatial_graph(marker, radius)
 
 if __name__ == "__main__":

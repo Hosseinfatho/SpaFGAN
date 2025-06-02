@@ -38,6 +38,10 @@ class SpaFGAN(nn.Module):
             concat=False
         )
         
+        # Layer normalization
+        self.norm1 = nn.LayerNorm(hidden_channels * heads)
+        self.norm2 = nn.LayerNorm(hidden_channels)
+        
         # Output layer
         self.out = nn.Linear(hidden_channels, out_channels)
         
@@ -49,23 +53,28 @@ class SpaFGAN(nn.Module):
         logger.info(f"Hidden dimension: {hidden_channels}")
         logger.info(f"Number of attention heads: {heads}")
     
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, edge_weights=None):
         """
         Forward pass
         
         Args:
             x (torch.Tensor): Node features [N, in_channels]
             edge_index (torch.Tensor): Graph connectivity [2, E]
+            edge_weights (torch.Tensor, optional): Edge weights [E]
             
         Returns:
             torch.Tensor: Node predictions [N, out_channels]
         """
         # First GAT layer with multi-head attention
-        x = F.elu(self.gat1(x, edge_index))
+        x = self.gat1(x, edge_index, edge_weights)
+        x = self.norm1(x)
+        x = F.elu(x)
         x = self.dropout(x)
         
         # Second GAT layer
-        x = F.elu(self.gat2(x, edge_index))
+        x = self.gat2(x, edge_index, edge_weights)
+        x = self.norm2(x)
+        x = F.elu(x)
         x = self.dropout(x)
         
         # Output layer
@@ -85,4 +94,4 @@ class SpaFGAN(nn.Module):
         """
         self.eval()
         with torch.no_grad():
-            return self(data.x, data.edge_index) 
+            return self(data.x, data.edge_index, data.edge_weights if hasattr(data, 'edge_weights') else None) 

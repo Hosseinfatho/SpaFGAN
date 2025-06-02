@@ -66,16 +66,16 @@ def main():
         
         # Aggregate scores and ROI IDs per cell (in case of duplicates)
         df_roi_grouped = df_roi.groupby("cell_id").agg({
-            "score": "max",         # Use max score per cell_id
+            "spafgan_score": "max",  # Use max score per cell_id
             "roi_id": "first"       # Or use any consistent rule like 'first'
         })
          
         duplicates = df_roi[df_roi.duplicated("cell_id", keep=False)]
         if not duplicates.empty:
-         print(" Duplicate cell_id rows:\n", duplicates)
+            print(" Duplicate cell_id rows:\n", duplicates)
 
         # Map to main cell table
-        df_cells["roi_score"] = df_cells["cell_id"].map(df_roi_grouped["score"])
+        df_cells["roi_score"] = df_cells["cell_id"].map(df_roi_grouped["spafgan_score"])
         df_cells["roi_id"] = df_cells["cell_id"].map(df_roi_grouped["roi_id"])
 
         df_cells["roi_score"] = df_cells["roi_score"].fillna(0)

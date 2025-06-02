@@ -100,10 +100,18 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     """Process a single marker to extract ROIs"""
     logger.info(f"Processing ROI extraction for {marker_name}")
     
-    # Load the trained model
-    model = SpaFGAN(in_channels=len(INTERACTIONS))
-    model.load_state_dict(torch.load(model_path))
+    # Load model
+    logger.info(f"Loading model from: {model_path}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = SpaFGAN(
+        in_channels=12,  # Updated to match saved model
+        hidden_channels=32,
+        out_channels=1,
+        heads=2
+    ).to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
+    logger.info("Model loaded successfully.")
     
     # Load cell features
     df = pd.read_csv(feature_path)

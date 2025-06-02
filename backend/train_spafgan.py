@@ -19,30 +19,35 @@ logger = logging.getLogger(__name__)
 # Define markers
 MARKERS = ["CD31", "CD20", "CD11b", "CD4", "Catalase"]
 
-def create_spatial_graph(features, positions, k_neighbors=5):
+def create_spatial_graph(features, positions, radius=50):
     """
-    Create a spatial graph based on k-nearest neighbors
+    Create a spatial graph based on radius-based neighborhood with weighted edges
     
     Args:
         features (torch.Tensor): Node features
         positions (torch.Tensor): Node positions (x, y, z)
-        k_neighbors (int): Number of nearest neighbors
+        radius (float): Maximum distance for connecting nodes FFN
         
     Returns:
-        torch.Tensor: Edge index tensor [2, num_edges]
+        tuple: (edge_index, edge_weights)
     """
     # Calculate pairwise distances
     dist = torch.cdist(positions, positions)
     
-    # Get k-nearest neighbors for each node
-    _, indices = torch.topk(dist, k=k_neighbors + 1, dim=1, largest=False)
-    indices = indices[:, 1:]  # Remove self-loops
+    # Create adjacency matrix based on radius
+    adj = (dist <= radius).float()
     
-    # Create edge index
-    rows = torch.arange(indices.size(0)).view(-1, 1).repeat(1, k_neighbors)
-    edge_index = torch.stack([rows.flatten(), indices.flatten()])
+    # Remove self-loops
+    adj.fill_diagonal_(0)
     
-    return edge_index
+    # Calculate edge weights based on distance
+    edge_weights = torch.exp(-dist / radius) * adj
+    
+    # Convert to edge index and weights
+    edge_index = dense_to_sparse(adj)[0]
+    edge_weights = edge_weights[edge_index[0], edge_index[1]]
+    
+    return edge_index, edge_weights
 
 def prepare_data(feature_path, marker):
     """
@@ -53,7 +58,7 @@ def prepare_data(feature_path, marker):
         marker (str): Name of the marker
         
     Returns:
-        tuple: (features, edge_index, labels, train_mask, val_mask)
+        tuple: (features, edge_index, edge_weights, labels, train_mask, val_mask)
     """
     # Load cell features
     df = pd.read_csv(feature_path)
@@ -61,17 +66,27 @@ def prepare_data(feature_path, marker):
     # Prepare features (all marker intensities)
     features = df[MARKERS].values
     
+    # Add spatial features
+    positions = df[['x', 'y', 'z']].values
+    spatial_features = np.concatenate([
+        positions,
+        positions ** 2,  # Quadratic terms
+        np.prod(positions, axis=1, keepdims=True)  # Interaction terms
+    ], axis=1)
+    
+    # Combine marker and spatial features
+    all_features = np.concatenate([features, spatial_features], axis=1)
+    
     # Normalize features using MinMaxScaler
     scaler = MinMaxScaler()
-    features = scaler.fit_transform(features)
-    features = torch.tensor(features, dtype=torch.float32)
+    all_features = scaler.fit_transform(all_features)
+    all_features = torch.tensor(all_features, dtype=torch.float32)
     
-    # Get spatial positions
-    positions = df[['x', 'y', 'z']].values
+    # Get spatial positions for graph construction
     positions = torch.tensor(positions, dtype=torch.float32)
     
-    # Create spatial graph
-    edge_index = create_spatial_graph(features, positions)
+    # Create spatial graph with weighted edges
+    edge_index, edge_weights = create_spatial_graph(all_features, positions, radius=50)
     
     # Create labels based on the primary marker
     primary_marker = df[marker].values
@@ -84,35 +99,12 @@ def prepare_data(feature_path, marker):
     labels = (normalized > threshold).astype(float)
     labels = torch.tensor(labels, dtype=torch.float32)
     
-    # For CD11b, use CD31 data as additional training data
-    if marker == "CD11b":
-        cd31_path = Path(feature_path).parent / "cell_features_CD31.csv"
-        if cd31_path.exists():
-            cd31_df = pd.read_csv(cd31_path)
-            cd31_features = cd31_df[MARKERS].values
-            cd31_features = scaler.transform(cd31_features)  # Use same scaler
-            cd31_features = torch.tensor(cd31_features, dtype=torch.float32)
-            
-            cd31_positions = cd31_df[['x', 'y', 'z']].values
-            cd31_positions = torch.tensor(cd31_positions, dtype=torch.float32)
-            
-            # Combine features and positions
-            features = torch.cat([features, cd31_features], dim=0)
-            positions = torch.cat([positions, cd31_positions], dim=0)
-            
-            # Create labels for CD31 data (all zeros as they are not CD11b cells)
-            cd31_labels = torch.zeros(len(cd31_df), dtype=torch.float32)
-            labels = torch.cat([labels, cd31_labels], dim=0)
-            
-            # Recreate spatial graph with combined data
-            edge_index = create_spatial_graph(features, positions)
-    
     # Create train/val split
     train_idx, val_idx = train_test_split(
         np.arange(len(labels)),
         test_size=0.2,
         random_state=42,
-        stratify=labels.numpy()  # Stratify by labels to maintain class balance
+        stratify=labels.numpy()
     )
     
     # Create masks
@@ -121,9 +113,9 @@ def prepare_data(feature_path, marker):
     train_mask[train_idx] = True
     val_mask[val_idx] = True
     
-    return features, edge_index, labels, train_mask, val_mask
+    return all_features, edge_index, edge_weights, labels, train_mask, val_mask
 
-def train_model(model, features, edge_index, labels, train_mask, val_mask, marker, num_epochs=100):
+def train_model(model, features, edge_index, edge_weights, labels, train_mask, val_mask, marker, num_epochs=100):
     """
     Train the model with early stopping and validation
     
@@ -131,6 +123,7 @@ def train_model(model, features, edge_index, labels, train_mask, val_mask, marke
         model: The SpaFGAN model
         features: Input features
         edge_index: Graph connectivity
+        edge_weights: Edge weights
         labels: Target labels
         train_mask: Training mask
         val_mask: Validation mask
@@ -141,11 +134,12 @@ def train_model(model, features, edge_index, labels, train_mask, val_mask, marke
     model = model.to(device)
     features = features.to(device)
     edge_index = edge_index.to(device)
-    labels = labels.to(device).unsqueeze(1)  # Add channel dimension
+    edge_weights = edge_weights.to(device)
+    labels = labels.to(device).unsqueeze(1)
     train_mask = train_mask.to(device)
     val_mask = val_mask.to(device)
     
-    optimizer = Adam(model.parameters(), lr=0.001)
+    optimizer = Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
     best_val_loss = float('inf')
     patience = 30
     patience_counter = 0
@@ -162,8 +156,8 @@ def train_model(model, features, edge_index, labels, train_mask, val_mask, marke
         model.train()
         optimizer.zero_grad()
         
-        # Forward pass
-        out = model(features, edge_index)
+        # Forward pass with edge weights
+        out = model(features, edge_index, edge_weights)
         
         # Calculate loss
         train_loss = F.binary_cross_entropy_with_logits(
@@ -178,7 +172,7 @@ def train_model(model, features, edge_index, labels, train_mask, val_mask, marke
         # Validation
         model.eval()
         with torch.no_grad():
-            val_out = model(features, edge_index)
+            val_out = model(features, edge_index, edge_weights)
             val_loss = F.binary_cross_entropy_with_logits(
                 val_out[val_mask],
                 labels[val_mask]
@@ -231,18 +225,18 @@ def main():
                 continue
             
             # Prepare data
-            features, edge_index, labels, train_mask, val_mask = prepare_data(feature_path, marker)
+            features, edge_index, edge_weights, labels, train_mask, val_mask = prepare_data(feature_path, marker)
             
             # Create model
             model = SpaFGAN(
-                in_channels=len(MARKERS),
+                in_channels=features.size(1),  # Updated input channels
                 hidden_channels=32,
                 out_channels=1,
                 heads=2
             )
             
             # Train model
-            train_model(model, features, edge_index, labels, train_mask, val_mask, marker)
+            train_model(model, features, edge_index, edge_weights, labels, train_mask, val_mask, marker)
             
     except Exception as e:
         logger.error(f"Error during training: {str(e)}")
