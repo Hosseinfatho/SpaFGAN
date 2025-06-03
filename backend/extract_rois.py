@@ -6,6 +6,7 @@ import logging
 import networkx as nx
 import pickle
 from models.gat import SpaFGAN
+import os
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,8 +24,8 @@ INTERACTIONS = {
 def normalize(value, marker, df):
     """Normalize based on data distribution"""
     marker_values = df[marker].values
-    min_val = np.percentile(marker_values, 10)  # Use 10th percentile as min
-    max_val = np.percentile(marker_values, 90)  # Use 90th percentile as max
+    min_val = np.percentile(marker_values, 5)  # Use 10th percentile as min
+    max_val = np.percentile(marker_values, 95)  # Use 90th percentile as max
     return max(0.0, min(1.0, (value - min_val) / (max_val - min_val)))
 
 def detect_interactions(row, df, marker_name):
@@ -33,7 +34,8 @@ def detect_interactions(row, df, marker_name):
     interaction_values = {
         "T-cell entry site": 0.0,
         "B-cell infiltration": 0.0,
-        "Oxidative stress niche": 0.0
+        "Oxidative stress niche": 0.0,
+        "Inflammatory zone": 0.0
     }
     
     # T-cell entry site: CD31 + CD4
@@ -71,9 +73,22 @@ def detect_interactions(row, df, marker_name):
         catalase_norm = normalize(catalase_val, 'Catalase', df)
         oxidative_score = (cd11b_norm + catalase_norm) / 2
         interaction_values["Oxidative stress niche"] = oxidative_score
-        if oxidative_score > 0.3:  # Lower threshold for oxidative stress
+        if oxidative_score > 0.2:  # Lower threshold for oxidative stress
             interactions.append("Oxidative stress niche")
             interaction_scores.append(oxidative_score)
+    
+    # Inflammatory zone: CD11b + CD20
+    if 'CD11b' in df.columns and 'CD20' in df.columns:
+        cd11b_val = row.get('CD11b', 0)
+        cd20_val = row.get('CD20', 0)
+        # MinMax normalization
+        cd11b_norm = normalize(cd11b_val, 'CD11b', df)
+        cd20_norm = normalize(cd20_val, 'CD20', df)
+        inflammatory_score = (cd11b_norm + cd20_norm) / 2
+        interaction_values["Inflammatory zone"] = inflammatory_score
+        if inflammatory_score > 0.2:  # Threshold for inflammatory zone
+            interactions.append("Inflammatory zone")
+            interaction_scores.append(inflammatory_score)
     
     # Sort interactions by their scores in descending order
     if interactions:
@@ -89,9 +104,10 @@ def detect_interactions(row, df, marker_name):
             "B-cell infiltration": interaction_values["B-cell infiltration"]
         }
     elif marker_name == "CD11b":
-        # For CD11b, only show oxidative stress niche
+        # For CD11b, show both oxidative stress niche and inflammatory zone
         interaction_values = {
-            "Oxidative stress niche": interaction_values["Oxidative stress niche"]
+            "Oxidative stress niche": interaction_values["Oxidative stress niche"],
+            "Inflammatory zone": interaction_values["Inflammatory zone"]
         }
     
     return interactions, interaction_scores, interaction_values

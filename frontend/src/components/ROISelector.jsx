@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
+import Heatmaps from './Heatmaps';
+import InteractionHeatmaps from './InteractionHeatmaps';
 
 // Define scale factors (Zarr level 3 to full-res)
 const factorX = 1; //10908 / 1363;
@@ -56,6 +58,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   };
 
   useEffect(() => {
+    console.log('Fetching ROI shapes...');
     fetch("http://localhost:5000/api/roi_shapes")
       .then((res) => res.json())
       .then((data) => {
@@ -66,7 +69,10 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
 
         const extracted = data.features.map((feature, index) => {
           const geometry = feature.geometry;
-          if (!geometry || !geometry.coordinates) return null;
+          if (!geometry || !geometry.coordinates) {
+            console.warn(`Invalid geometry for feature ${index}:`, feature);
+            return null;
+          }
 
           let allCoords = [];
           if (geometry.type === "Polygon") {
@@ -134,109 +140,6 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
     setCurrentIndex(i => (i - 1 + filteredRois.length) % filteredRois.length);
   };
 
-  // Add new functions for heatmap analysis
-  const analyzeHeatmaps = async () => {
-    setIsAnalyzingHeatmaps(true);
-    try {
-      // Scale factor for coordinates
-      const factor = 8;
-      const roiSize = 200; // Keep original ROI size
-
-      // Get current ROI coordinates
-      const x = Number(currentROI.x) || 0;
-      const y = Number(currentROI.y) || 0;
-
-      // Calculate ROI with original size, then scale for API
-      const roi = {
-        xMin: Math.max(0, Math.floor((x - roiSize) / factor)),
-        xMax: Math.min(1363, Math.floor((x + roiSize) / factor)),
-        yMin: Math.max(0, Math.floor((y - roiSize) / factor)),
-        yMax: Math.min(688, Math.floor((y + roiSize) / factor)),
-        zMin: 0,
-        zMax: 193
-      };
-
-      console.log('Sending ROI data for heatmaps:', {
-        original: { x, y, size: roiSize },
-        scaled: roi
-      });
-
-      const response = await fetch('http://localhost:5000/api/analyze_heatmaps', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ roi })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to analyze heatmaps');
-      }
-
-      const data = await response.json();
-      console.log('Received heatmap data:', data);
-      setHeatmapResults(data);
-      onHeatmapResults(data);
-    } catch (error) {
-      console.error('Error analyzing heatmaps:', error);
-      alert('Error analyzing heatmaps: ' + error.message);
-    } finally {
-      setIsAnalyzingHeatmaps(false);
-    }
-  };
-
-  const analyzeInteractionHeatmap = async () => {
-    setIsAnalyzingInteractionHeatmap(true);
-    try {
-      // Scale factor for coordinates
-      const factor = 8;
-      const roiSize = 200; // Keep original ROI size
-
-      // Get current ROI coordinates
-      const x = Number(currentROI.x) || 0;
-      const y = Number(currentROI.y) || 0;
-
-      // Calculate ROI with original size, then scale for API
-      const roi = {
-        xMin: Math.max(0, Math.floor((x - roiSize) / factor)),
-        xMax: Math.min(1363, Math.floor((x + roiSize) / factor)),
-        yMin: Math.max(0, Math.floor((y - roiSize) / factor)),
-        yMax: Math.min(688, Math.floor((y + roiSize) / factor)),
-        zMin: 0,
-        zMax: 193
-      };
-
-      console.log('Sending ROI data:', {
-        original: { x, y, size: roiSize },
-        scaled: roi
-      });
-
-      const response = await fetch('http://localhost:5000/api/analyze_interaction_heatmap', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ roi })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to analyze interaction heatmap');
-      }
-
-      const data = await response.json();
-      console.log('Received interaction heatmap data:', data);
-      setInteractionHeatmapResult(data);
-      onInteractionResults(data);
-    } catch (error) {
-      console.error('Error analyzing interaction heatmap:', error);
-      alert('Error analyzing interaction heatmap: ' + error.message);
-    } finally {
-      setIsAnalyzingInteractionHeatmap(false);
-    }
-  };
-
   if (interactionGroups.length === 0) {
     return <p>Loading ROIs or no interactions found...</p>;
   }
@@ -246,11 +149,11 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   }
 
   return (
-    <div style={{ padding: "10px", border: "1px solid #ccc", marginBottom: "10px" }}>
+    <div style={{ padding: "1px", border: "1px solid #ccc", marginBottom: "1px" ,transform: "scale(0.8)"}}>
       <h4>ROI Navigator</h4>
       <p>Select Interaction Types:</p>
       {interactionGroups.map(group => (
-        <label key={group} style={{ display: "block", marginLeft: "10px" }}>
+        <label key={group} style={{ display: "block", marginLeft: "1px" }}>
           <input
             type="checkbox"
             checked={selectedGroups.includes(group)}
@@ -263,9 +166,9 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
       <hr />
       <p><strong>{currentROI.id}</strong></p>
       <p>
-        X: <input type="number" value={displayX} onChange={e => setManualX(e.target.value)} style={{ width: 80 }} />
+        X: <input type="number" value={displayX} onChange={e => setManualX(e.target.value)} style={{ width: 60 }} />
         &nbsp;|&nbsp;
-        Y: <input type="number" value={displayY} onChange={e => setManualY(e.target.value)} style={{ width: 80 }} />
+        Y: <input type="number" value={displayY} onChange={e => setManualY(e.target.value)} style={{ width: 60 }} />
         &nbsp;|&nbsp; Score: {currentROI.score}
       </p>
       <p>
@@ -287,36 +190,14 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
 
       {/* Analysis Buttons */}
       <div style={{ marginTop: "10px" }}>
-        <button 
-          onClick={analyzeHeatmaps}
-          disabled={isAnalyzingHeatmaps}
-          style={{
-            backgroundColor: '#ffc107',
-            color: 'black',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '5px 10px',
-            marginRight: '10px',
-            cursor: isAnalyzingHeatmaps ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {isAnalyzingHeatmaps ? 'Analyzing...' : 'Analyze Heatmaps'}
-        </button>
-
-        <button 
-          onClick={analyzeInteractionHeatmap}
-          disabled={isAnalyzingInteractionHeatmap}
-          style={{
-            backgroundColor: '#6f42c1',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '5px 10px',
-            cursor: isAnalyzingInteractionHeatmap ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {isAnalyzingInteractionHeatmap ? 'Analyzing...' : 'Analyze Interactions'}
-        </button>
+        <Heatmaps 
+          currentROI={currentROI}
+          onHeatmapResults={onHeatmapResults}
+        />
+        <InteractionHeatmaps 
+          currentROI={currentROI}
+          onInteractionResults={onInteractionResults}
+        />
       </div>
     </div>
   );

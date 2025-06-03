@@ -28,6 +28,10 @@ def extract_cell_features(image, labels, marker_name):
     features = []
     for cid in cell_ids:
         mask = labels == cid
+        # Log mask size
+        mask_size = np.sum(mask)
+        logger.info(f"Cell {cid} mask size: {mask_size} voxels")
+        
         # Calculate centroid and round to nearest integer
         zc, yc, xc = [int(round(coord)) for coord in center_of_mass(mask)]
         # Calculate mean intensities and round to 2 decimal places

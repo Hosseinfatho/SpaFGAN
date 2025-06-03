@@ -147,9 +147,9 @@ const MainView = () => {
         body: JSON.stringify({
           roi: {
             xMin: 0,
-            xMax: 200,
+            xMax: 400,
             yMin: 0,
-            yMax: 200,
+            yMax: 400,
             zMin: 0,
             zMax: 193
           }
@@ -176,9 +176,9 @@ const MainView = () => {
         body: JSON.stringify({
           roi: {
             xMin: 0,
-            xMax: 200,
+            xMax: 400,
             yMin: 0,
-            yMax: 200,
+            yMax: 400,
             zMin: 0,
             zMax: 193
           }
@@ -298,36 +298,36 @@ const MainView = () => {
   }
 
   return (
-    <div className="view-area">
+    <div className="left-panel">
       {/* Regular Heatmaps */}
       {Object.keys(heatmapResults).length > 0 && (
         <div style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: 'white',
-          padding: '20px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          zIndex: 10,
+          bottom: 1,
+          left: 300,
+          right: 'auto',
+          width: 'fit-content',
+          backgroundColor: 'rgba(244, 239, 239, 0.1)',
+          padding: '10px',
+          boxShadow: '0 2px 4px rgba(241, 228, 228, 0.1)',
+          zIndex: 5,
           maxHeight: '50vh',
           overflowY: 'auto'
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             <div>
-              <h3>Channel Heatmaps</h3>
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                gap: '20px',
-                padding: '10px'
+                gridTemplateColumns: 'repeat(6, 200px)',
+                gap: '1px',
+                padding: '1px'
               }}>
                 {Object.entries(heatmapResults).map(([channel, data]) => (
                   <div key={channel} style={{ 
                     border: '1px solid #ccc',
-                    borderRadius: '8px',
-                    padding: '10px',
-                    backgroundColor: 'white'
+                    borderRadius: '5px',
+                    padding: '1px',
+                    backgroundColor: 'rgb(0, 0, 0,0.85)'
                   }}>
                     <Plot
                       data={[{
@@ -337,10 +337,19 @@ const MainView = () => {
                         showscale: true
                       }]}
                       layout={{
-                        title: `Channel ${channel}`,
+                        title: {
+                          text: ` ${channel}`,
+                          font: {
+                            size: 16,
+                            color: '#ffffff'
+                          },
+                          y: 0.95
+                        },
                         width: 200,
                         height: 200,
-                        margin: { t: 30, b: 20, l: 20, r: 20 }
+                        margin: { t: 30, b: 20, l: 20, r: 1},
+                        paper_bgcolor: 'rgba(0,0,0,0.0)',
+                        plot_bgcolor: 'rgba(0,0,0,0.0)'
                       }}
                       config={{ displayModeBar: false }}
                     />

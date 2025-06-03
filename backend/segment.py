@@ -24,8 +24,8 @@ INTERACTIONS = {
 def normalize(value, marker, df):
     """Normalize based on data distribution"""
     marker_values = df[marker].values
-    min_val = np.percentile(marker_values, 10)  # Use 10th percentile as min
-    max_val = np.percentile(marker_values, 90)  # Use 90th percentile as max
+    min_val = np.percentile(marker_values, 5)  # Use 10th percentile as min
+    max_val = np.percentile(marker_values, 95)  # Use 90th percentile as max
     return max(0.0, min(1.0, (value - min_val) / (max_val - min_val)))
 
 def compute_interaction_score(row, df):
@@ -38,67 +38,75 @@ def detect_interactions(row, df, marker_name):
     interaction_scores = []
     interaction_values = {
         "T-cell entry site": 0.0,
+        "Inflammatory zone": 0.0,
+        "Oxidative stress niche": 0.0,
         "B-cell infiltration": 0.0,
-        "Oxidative stress niche": 0.0
+        "Dendritic signal": 0.0
     }
     
     # T-cell entry site: CD31 + CD4
     if 'CD31' in df.columns and 'CD4' in df.columns:
         cd31_val = row.get('CD31', 0)
         cd4_val = row.get('CD4', 0)
-        # MinMax normalization
         cd31_norm = normalize(cd31_val, 'CD31', df)
         cd4_norm = normalize(cd4_val, 'CD4', df)
         t_cell_score = (cd31_norm + cd4_norm) / 2
         interaction_values["T-cell entry site"] = t_cell_score
-        if t_cell_score > 0.5:  # Threshold for T-cell entry site
+        if t_cell_score > 0.3:
             interactions.append("T-cell entry site")
             interaction_scores.append(t_cell_score)
     
-    # B-cell infiltration: CD20 + CD31
-    if 'CD20' in df.columns and 'CD31' in df.columns:
+    # Inflammatory zone: CD11b + CD20
+    if 'CD11b' in df.columns and 'CD20' in df.columns:
+        cd11b_val = row.get('CD11b', 0)
         cd20_val = row.get('CD20', 0)
-        cd31_val = row.get('CD31', 0)
-        # MinMax normalization
+        cd11b_norm = normalize(cd11b_val, 'CD11b', df)
         cd20_norm = normalize(cd20_val, 'CD20', df)
-        cd31_norm = normalize(cd31_val, 'CD31', df)
-        b_cell_score = (cd20_norm + cd31_norm) / 2
-        interaction_values["B-cell infiltration"] = b_cell_score
-        if b_cell_score > 0.5:  # Threshold for B-cell infiltration
-            interactions.append("B-cell infiltration")
-            interaction_scores.append(b_cell_score)
+        inflammatory_score = (cd11b_norm + cd20_norm) / 2
+        interaction_values["Inflammatory zone"] = inflammatory_score
+        if inflammatory_score > 0.3:
+            interactions.append("Inflammatory zone")
+            interaction_scores.append(inflammatory_score)
     
     # Oxidative stress niche: CD11b + Catalase
     if 'CD11b' in df.columns and 'Catalase' in df.columns:
         cd11b_val = row.get('CD11b', 0)
         catalase_val = row.get('Catalase', 0)
-        # MinMax normalization
         cd11b_norm = normalize(cd11b_val, 'CD11b', df)
         catalase_norm = normalize(catalase_val, 'Catalase', df)
         oxidative_score = (cd11b_norm + catalase_norm) / 2
         interaction_values["Oxidative stress niche"] = oxidative_score
-        if oxidative_score > 0.3:  # Lower threshold for oxidative stress
+        if oxidative_score > 0.3:
             interactions.append("Oxidative stress niche")
             interaction_scores.append(oxidative_score)
+    
+    # B-cell infiltration: CD20 + CD31
+    if 'CD20' in df.columns and 'CD31' in df.columns:
+        cd20_val = row.get('CD20', 0)
+        cd31_val = row.get('CD31', 0)
+        cd20_norm = normalize(cd20_val, 'CD20', df)
+        cd31_norm = normalize(cd31_val, 'CD31', df)
+        b_cell_score = (cd20_norm + cd31_norm) / 2
+        interaction_values["B-cell infiltration"] = b_cell_score
+        if b_cell_score > 0.3:
+            interactions.append("B-cell infiltration")
+            interaction_scores.append(b_cell_score)
+    
+    # Dendritic signal: CD11c
+    if 'CD11c' in df.columns:
+        cd11c_val = row.get('CD11c', 0)
+        cd11c_norm = normalize(cd11c_val, 'CD11c', df)
+        dendritic_score = cd11c_norm
+        interaction_values["Dendritic signal"] = dendritic_score
+        if dendritic_score > 0.3:
+            interactions.append("Dendritic signal")
+            interaction_scores.append(dendritic_score)
     
     # Sort interactions by their scores in descending order
     if interactions:
         sorted_pairs = sorted(zip(interactions, interaction_scores), key=lambda x: x[1], reverse=True)
         interactions = [pair[0] for pair in sorted_pairs]
         interaction_scores = [pair[1] for pair in sorted_pairs]
-    
-    # Filter interactions based on marker
-    if marker_name == "CD31":
-        # For CD31, only show T-cell entry site and B-cell infiltration
-        interaction_values = {
-            "T-cell entry site": interaction_values["T-cell entry site"],
-            "B-cell infiltration": interaction_values["B-cell infiltration"]
-        }
-    elif marker_name == "CD11b":
-        # For CD11b, only show oxidative stress niche
-        interaction_values = {
-            "Oxidative stress niche": interaction_values["Oxidative stress niche"]
-        }
     
     return interactions, interaction_scores, interaction_values
 
@@ -144,7 +152,7 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     logger.info(f"Available columns: {list(df.columns)}")
     
     # Normalize input features
-    feature_columns = ["CD31", "CD20", "CD11b", "CD4", "Catalase"]
+    feature_columns = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]  # Added CD11c
     scaler = MinMaxScaler()
     normalized_features = scaler.fit_transform(df[feature_columns])
     
@@ -167,23 +175,53 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     # Load model
     logger.info(f"Loading model from: {model_path}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"Using device: {device}")
+    
+    # Set input channels based on marker
+    if marker_name == "CD11b":
+        in_channels = 14
+        logger.info("Using 14 input channels for CD11b model")
+    else:
+        in_channels = 29
+        logger.info("Using 29 input channels for other markers")
+    
     model = SpaFGAN(
-        in_channels=12,  # Updated to match saved model
-        hidden_channels=32,
+        in_channels=in_channels,  # Dynamic based on marker
+        hidden_channels=64,  # Match saved weights
         out_channels=1,
-        heads=2
+        heads=2,
+        dropout=0.6
     ).to(device)
+    
+    # Log model architecture details
+    logger.info("\nModel Architecture Details:")
+    logger.info("=" * 50)
+    logger.info(f"Input Features:")
+    logger.info(f"- Original features: {feature_columns}")
+    logger.info(f"- Input dimension: {in_channels} ({len(feature_columns)} original + {in_channels - len(feature_columns)} padded)")
+    logger.info(f"- Hidden dimension: 64")
+    logger.info(f"- Number of attention heads: 2")
+    logger.info(f"- Dropout rate: 0.6")
+    logger.info("=" * 50)
+    
+    # Load model weights
+    logger.info("\nLoading model weights...")
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     logger.info("Model loaded successfully.")
     
     # Move data to device
-    # Pad features to match model input dimension
-    padded_features = torch.zeros((features.shape[0], 12), dtype=torch.float32, device=device)
-    padded_features[:, :5] = features  # Copy original features
+    logger.info("\nPreparing input features...")
+    logger.info(f"Original features shape: {features.shape}")
+    padded_features = torch.zeros((features.shape[0], in_channels), dtype=torch.float32, device=device)
+    padded_features[:, :6] = features  # Keep original features
     features = padded_features
+    logger.info(f"Padded features shape: {features.shape}")
+    logger.info(f"Feature padding: {len(feature_columns)} original features + {in_channels - len(feature_columns)} zero-padded dimensions")
+    
     edge_index = edge_index.to(device)
     edge_weights = edge_weights.to(device)
+    logger.info(f"Graph structure: {edge_index.shape[1]} edges")
     
     logger.info("Starting model prediction...")
     t1 = time.time()
@@ -208,7 +246,7 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     if len(roi_indices) == 0:
         logger.warning(f"No ROI cells found for {marker_name}.")
         logger.info(f"Total processing time: {time.time() - start_time:.2f} seconds")
-        return
+        return 0
     
     # Create ROI dataframe with interaction values
     roi_rows = []
@@ -242,16 +280,43 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     output_df = pd.DataFrame(roi_rows)
     out_path = Path(output_dir) / f"roi_cells_{marker_name}.csv"
     output_df.to_csv(out_path, index=False)
-    logger.info(f"{len(output_df)} ROI cells for {marker_name} saved to {out_path}.")
-    logger.info(f"Total processing time: {time.time() - start_time:.2f} seconds")
-    logger.info(f"========== End processing marker: {marker_name} ==========")
+    
+    # Print summary statistics
+    logger.info("\n" + "="*50)
+    logger.info(f" Results Summary for {marker_name}:")
+    logger.info("="*50)
+    logger.info(f"Total cells processed: {len(df)}")
+    logger.info(f"ROI cells detected: {len(output_df)}")
+    logger.info(f"Detection rate: {(len(output_df)/len(df)*100):.1f}%")
+    
+    # Count cells with each interaction type
+    interaction_counts = {}
+    for interaction in INTERACTIONS.keys():
+        count = len(output_df[output_df[interaction] > 0.3])
+        interaction_counts[interaction] = count
+        logger.info(f"{interaction}: {count} cells")
+    
+    logger.info("\nTop interactions by cell count:")
+    sorted_interactions = sorted(interaction_counts.items(), key=lambda x: x[1], reverse=True)
+    for interaction, count in sorted_interactions:
+        if count > 0:
+            logger.info(f"- {interaction}: {count} cells")
+    
+    logger.info(f"\nTotal processing time: {time.time() - start_time:.2f} seconds")
+    logger.info(f"========== End processing marker: {marker_name} ==========\n")
+    
+    return len(output_df)  # Return ROI count for final summary
 
 def main():
     backend_dir = Path(__file__).parent.resolve()
     output_dir = backend_dir / "output"
+    models_dir = backend_dir / "models"
+    
+    # Dictionary to store results
+    results = {}
     
     for marker in ["CD31", "CD11b", "CD11c"]:
-        model_path = output_dir / f"best_spafgan_model_{marker}.pt"
+        model_path = models_dir / f"spafgan_{marker}.pth"
         feature_path = output_dir / f"cell_features_{marker}.csv"
         
         if not model_path.exists():
@@ -263,7 +328,16 @@ def main():
             continue
         
         logger.info(f"\U0001f9ec Processing ROI extraction for {marker}")
-        process_marker(marker, model_path, feature_path, output_dir)
+        roi_count = process_marker(marker, model_path, feature_path, output_dir)
+        results[marker] = roi_count
+    
+    # Print final summary
+    logger.info("\n" + "="*50)
+    logger.info("FINAL RESULTS SUMMARY")
+    logger.info("="*50)
+    for marker, count in results.items():
+        logger.info(f"{marker} ===> {count} ROI cells")
+    logger.info("="*50)
 
 if __name__ == "__main__":
     main()

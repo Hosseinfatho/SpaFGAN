@@ -1,172 +1,271 @@
-import pandas as pd
+import torch
 import numpy as np
-import networkx as nx
-from sklearn.neighbors import NearestNeighbors
-import logging
-import os
+import pandas as pd
 from pathlib import Path
+import logging
+from torch_geometric.utils import dense_to_sparse
+import networkx as nx
+import matplotlib.pyplot as plt
 import pickle
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# Logging setup
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Define marker groups
-PRIMARY_MARKERS = ["CD31", "CD11b", "CD11c"]  # ROI centers
-SECONDARY_MARKERS = ["CD4", "CD20", "Catalase"]  # Cells to connect
-ALL_MARKERS = PRIMARY_MARKERS + SECONDARY_MARKERS
+def create_spatial_graph(positions, radius=30):
+    """
+    Create a spatial graph based on radius-based neighborhood
+    
+    Args:
+        positions (torch.Tensor): Node positions (x, y, z)
+        radius (float): Maximum distance for connecting nodes
+        
+    Returns:
+        tuple: (edge_index, edge_weights)
+    """
+    # Calculate pairwise distances
+    dist = torch.cdist(positions, positions)
+    
+    # Create adjacency matrix based on radius
+    adj = (dist <= radius).float()
+    
+    # Remove self-loops
+    adj.fill_diagonal_(0)
+    
+    # Calculate edge weights based on distance
+    edge_weights = torch.exp(-dist / radius) * adj
+    
+    # Convert to edge index and weights
+    edge_index = dense_to_sparse(adj)[0]
+    edge_weights = edge_weights[edge_index[0], edge_index[1]]
+    
+    return edge_index, edge_weights
 
-def calculate_edge_weight(cell1_type, cell2_type, distance):
-    """Calculate edge weight based on cell types and distance"""
+def calculate_node_weight(row, marker):
+    """
+    Calculate node weight based on marker expression and SpaFGAN score
+    
+    Args:
+        row: DataFrame row containing marker values
+        marker: Current marker being processed
+    
+    Returns:
+        float: Node weight between 0 and 1
+    """
+    # Base weight from SpaFGAN score
+    base_weight = float(row['spafgan_score'])
+    
+    # Additional weight from marker expression
+    marker_weight = float(row[marker])
+    
+    # Combine weights (70% SpaFGAN, 30% marker expression)
+    node_weight = 0.7 * base_weight + 0.3 * marker_weight
+    
+    return min(1.0, max(0.0, node_weight))
+
+def calculate_link_weight(pos1, pos2, marker1, marker2, radius=30):
+    """
+    Calculate link weight based on spatial distance and marker compatibility
+    
+    Args:
+        pos1, pos2: Node positions (x,y,z)
+        marker1, marker2: Marker types
+        radius: Maximum connection radius
+    
+    Returns:
+        float: Link weight between 0 and 1
+    """
+    # Convert tensors to numpy arrays
+    pos1 = pos1.cpu().numpy()
+    pos2 = pos2.cpu().numpy()
+    
+    # Calculate spatial distance
+    dist = np.sqrt(np.sum((pos1 - pos2) ** 2))
+    
+    if dist > radius:
+        return 0.0
+    
     # Base weight from distance (closer = higher weight)
-    distance_weight = 1.0 / (1.0 + distance)
+    spatial_weight = np.exp(-dist / radius)
     
-    # Type weights (higher for connections between different types)
-    type_weights = {
-    ("CD31", "CD11b"): 1.6,   # Strong: myeloid cells interacting with vasculature (monocyte entry)
-    ("CD31", "CD11c"): 1.5,   # Strong: dendritic cells near endothelial layers
-    ("CD31", "CD4"): 1.3,     # Moderate: T cell migration through vessels
-    ("CD31", "CD20"): 1.2,    # Moderate: B cell circulation near vasculature
-    ("CD31", "Catalase"): 1.0, # Weak: general oxidative stress near vessels
+    # Marker compatibility weights
+    compatibility_weights = {
+        ("CD31", "CD11b"): 1.6,   # Strong: myeloid cells interacting with vasculature
+        ("CD31", "CD11c"): 1.5,   # Strong: dendritic cells near endothelial layers
+        ("CD31", "CD4"): 1.3,     # Moderate: T cell migration through vessels
+        ("CD31", "CD20"): 1.2,    # Moderate: B cell circulation near vasculature
+        ("CD31", "Catalase"): 1.0, # Weak: general oxidative stress near vessels
+        
+        ("CD11b", "CD11c"): 1.6,  # Strong: myeloid lineage coordination
+        ("CD11b", "CD4"): 1.3,    # Moderate: T cell activation by myeloid cells
+        ("CD11b", "CD20"): 1.2,   # Moderate: general immune co-localization
+        ("CD11b", "Catalase"): 1.3, # Moderate: inflammation with oxidative stress
+        
+        ("CD11c", "CD4"): 1.5,    # Strong: dendritic priming T cells
+        ("CD11c", "CD20"): 1.3,   # Moderate: APC–B cell neighborhood
+        ("CD11c", "Catalase"): 1.3, # Moderate: oxidative microenvironments with APCs
+        
+        ("CD4", "CD20"): 1.2,     # Moderate: lymphoid zone interaction
+    }
+    
+    # Get compatibility weight (default to 1.0 if not specified)
+    marker_key = tuple(sorted([marker1, marker2]))
+    compatibility_weight = compatibility_weights.get(marker_key, 1.0)
+    
+    # Combine weights (70% spatial, 30% compatibility)
+    link_weight = 0.7 * spatial_weight + 0.3 * (compatibility_weight / 1.6)
+    
+    return min(1.0, max(0.0, link_weight))
 
-    ("CD11b", "CD11c"): 1.6,  # Strong: myeloid lineage coordination (macrophage–dendritic)
-    ("CD11b", "CD4"): 1.3,    # Moderate: T cell activation by myeloid cells
-    ("CD11b", "CD20"): 1.2,   # Moderate: general immune co-localization
-    ("CD11b", "Catalase"): 1.3, # Moderate: inflammation with oxidative stress
-
-    ("CD11c", "CD4"): 1.5,    # Strong: dendritic priming T cells (immune niche)
-    ("CD11c", "CD20"): 1.3,   # Moderate: APC–B cell neighborhood
-    ("CD11c", "Catalase"): 1.3, # Moderate: oxidative microenvironments with APCs
-
-    ("CD4", "CD20"): 1.2,     # Moderate: lymphoid zone interaction (T–B cells)
-     }
-
+def build_interaction_graph(roi_cells_path, output_dir, radius=30):
+    """
+    Build interaction graph from ROI cells
     
-    # Get type weight (default to 1.0 if not specified)
-    type_key = tuple(sorted([cell1_type, cell2_type]))
-    type_weight = type_weights.get(type_key, 1.0)
+    Args:
+        roi_cells_path (Path): Path to ROI cells CSV file
+        output_dir (Path): Directory to save output files
+        radius (float): Maximum distance for connecting nodes
+    """
+    logger.info(f"Building interaction graph from: {roi_cells_path}")
     
-    return distance_weight * type_weight
-
-def build_spatial_graph(marker, radius=50.0):
-    """Build a spatial graph using ROIs as centers and connecting nearby cells"""
-    logger.info(f"Processing marker: {marker} (radius={radius})")
+    # Load ROI cells
+    df = pd.read_csv(roi_cells_path)
+    logger.info(f"Loaded {len(df)} ROI cells")
     
-    # Load ROI and cell data
-    backend_dir = Path(__file__).parent.resolve()
-    output_dir = backend_dir / "output"
-    roi_file = output_dir / f"roi_cells_{marker}.csv"
-    cell_file = output_dir / f"cell_features_{marker}.csv"
+    # Extract positions and features
+    positions = torch.tensor(df[["x", "y", "z"]].values, dtype=torch.float32)
     
-    if not roi_file.exists() or not cell_file.exists():
-        logger.error(f"Required files not found for {marker}")
-        return None
-    
-    # Load and clean data
-    roi_data = pd.read_csv(roi_file)
-    cell_data = pd.read_csv(cell_file)
-    
-    # Convert cell_id to clean string format (no decimal, no prefix)
-    roi_data['cell_id'] = roi_data['cell_id'].apply(lambda x: str(int(float(x))))
-    cell_data['cell_id'] = cell_data['cell_id'].apply(lambda x: str(int(float(x))))
-    
-    logger.info(f"Loaded {len(roi_data)} ROIs and {len(cell_data)} cells")
-
-    # Create graph
+    # Create NetworkX graph
     G = nx.Graph()
-
-    # Add ROI nodes with all marker values
-    for _, row in roi_data.iterrows():
-        roi_id = str(int(float(row['cell_id'])))
-        if roi_id in cell_data['cell_id'].values and roi_id not in G.nodes():
-            cell_row = cell_data[cell_data['cell_id'] == roi_id].iloc[0]
-            pos = [float(cell_row['x']), float(cell_row['y']), float(cell_row['z'])]
-            G.add_node(roi_id, 
-                      type="roi",
-                      pos=pos,
-                      marker=marker,
-                      spafgan_score=float(row.get('spafgan_score', 1.0)))  # Use actual score if available
-            for marker_name in ALL_MARKERS:
-                if marker_name in cell_row:
-                    G.nodes[roi_id][marker_name] = float(cell_row[marker_name])
-                else:
-                    G.nodes[roi_id][marker_name] = 0.0
-
-    # Add cell nodes with all marker values
-    for _, row in cell_data.iterrows():
-        cell_id = str(int(float(row['cell_id'])))
-        if cell_id not in G.nodes():
-            pos = [float(row['x']), float(row['y']), float(row['z'])]
-            G.add_node(cell_id,
-                      type="cell",
-                      pos=pos,
-                      marker=marker)
-            for marker_name in ALL_MARKERS:
-                if marker_name in row:
-                    G.nodes[cell_id][marker_name] = float(row[marker_name])
-                else:
-                    G.nodes[cell_id][marker_name] = 0.0
-
-    # Connect nodes within radius
-    roi_coords = np.array([G.nodes[n]['pos'] 
-                          for n in G.nodes() if G.nodes[n]['type'] == 'roi'])
-    cell_coords = np.array([G.nodes[n]['pos'] 
-                           for n in G.nodes() if G.nodes[n]['type'] == 'cell'])
     
-    if len(roi_coords) > 0 and len(cell_coords) > 0:
-        nn = NearestNeighbors(n_neighbors=1, radius=radius)
-        nn.fit(roi_coords)
-        distances, indices = nn.kneighbors(cell_coords)
-        
-        for i, (dist, idx) in enumerate(zip(distances, indices)):
-            if dist[0] <= radius:
-                cell_node = list(G.nodes())[i + len(roi_data)]
-                roi_node = list(G.nodes())[idx[0]]
-                weight = calculate_edge_weight(marker, marker, dist[0])
-                G.add_edge(cell_node, roi_node, weight=weight)
+    # Add nodes with calculated weights
+    marker = roi_cells_path.stem.split('_')[-1]  # Extract marker from filename
+    for idx, row in df.iterrows():
+        node_weight = calculate_node_weight(row, marker)
+        G.add_node(idx, 
+                  pos=(row['x'], row['y']),
+                  marker=marker,
+                  spafgan_score=row['spafgan_score'],
+                  weight=node_weight)
     
-    # Connect nearby cells
-    if len(cell_coords) > 1:
-        # Adjust number of neighbors based on available cells
-        n_neighbors = min(5, len(cell_coords) - 1)
-        nn = NearestNeighbors(n_neighbors=n_neighbors, radius=radius)
-        nn.fit(cell_coords)
-        distances, indices = nn.kneighbors(cell_coords)
-        
-        for i, (dists, idxs) in enumerate(zip(distances, indices)):
-            for j, (dist, idx) in enumerate(zip(dists, idxs)):
-                if i != idx and dist <= radius:
-                    cell1 = list(G.nodes())[i]
-                    cell2 = list(G.nodes())[idx]
-                    weight = calculate_edge_weight(marker, marker, dist)
-                    G.add_edge(cell1, cell2, weight=weight)
+    # Add edges with calculated weights
+    for i in range(len(df)):
+        for j in range(i+1, len(df)):
+            pos1 = positions[i]
+            pos2 = positions[j]
+            link_weight = calculate_link_weight(pos1, pos2, marker, marker, radius)
+            if link_weight > 0:
+                G.add_edge(i, j, weight=link_weight)
     
-    # Remove isolated nodes
-    isolated_nodes = list(nx.isolates(G))
-    G.remove_nodes_from(isolated_nodes)
+    # Save graph as pickle
+    output_path = output_dir / f"interaction_graph_{roi_cells_path.stem}.pkl"
+    with open(output_path, 'wb') as f:
+        pickle.dump(G, f)
+    logger.info(f"Saved graph to: {output_path}")
     
-    if len(G.nodes()) > 0:
-        logger.info(f"Created graph with {len(G.nodes())} nodes and {len(G.edges())} edges")
-        logger.info(f"Average degree: {2*len(G.edges())/len(G.nodes()):.2f}")
-        
-        # Save graph
-        output_file = output_dir / f"spatial_graph_{marker}.pkl"
-        with open(str(output_file), 'wb') as f:
-            pickle.dump(G, f)
-        logger.info(f"Graph saved to {output_file}")
-        return G
-    else:
-        logger.error(f"Failed to create graph for {marker}")
-        return None
+    # Visualize graph
+    plt.figure(figsize=(12, 8))
+    pos = nx.get_node_attributes(G, 'pos')
+    node_weights = [G.nodes[n]['weight'] for n in G.nodes()]
+    edge_weights = [G[u][v]['weight'] for u, v in G.edges()]
+    
+    # Create scatter plot for nodes
+    scatter = plt.scatter([pos[n][0] for n in G.nodes()],
+                         [pos[n][1] for n in G.nodes()],
+                         c=node_weights,
+                         s=100,
+                         cmap=plt.cm.viridis)
+    
+    # Add edges
+    for (u, v) in G.edges():
+        plt.plot([pos[u][0], pos[v][0]],
+                [pos[u][1], pos[v][1]],
+                'k-',
+                alpha=G[u][v]['weight'],
+                linewidth=2)
+    
+    plt.colorbar(scatter, label='Node Weight')
+    plt.title(f"Interaction Graph - {roi_cells_path.stem}")
+    plt.axis('equal')
+    
+    # Save visualization
+    vis_path = output_dir / f"interaction_graph_{roi_cells_path.stem}.png"
+    plt.savefig(vis_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    logger.info(f"Saved visualization to: {vis_path}")
+    
+    return G
 
 def main():
-    """Main function to build spatial graphs"""
-    logger.info("Starting ROI-based spatial graph construction...")
+    backend_dir = Path(__file__).parent.resolve()
+    output_dir = backend_dir / "output"
     
-    # Build graph for each primary marker
-    for marker in PRIMARY_MARKERS:
-        radius = 50.0 if marker in ["CD11b", "CD11c"] else 50.0  # Larger radius for immune markers
-        build_spatial_graph(marker, radius)
+    # Process each marker's ROI cells
+    for marker in ["CD31", "CD11b", "CD11c"]:
+        roi_path = output_dir / f"roi_cells_{marker}.csv"
+        if roi_path.exists():
+            logger.info(f"\nProcessing {marker}...")
+            G = build_interaction_graph(roi_path, output_dir)
+            
+            # Print detailed graph statistics
+            logger.info(f"\n📊 Detailed Graph Statistics for {marker}:")
+            logger.info("=" * 50)
+            
+            # Basic metrics
+            logger.info("\nBasic Metrics:")
+            logger.info(f"Number of nodes: {G.number_of_nodes()}")
+            logger.info(f"Number of edges: {G.number_of_edges()}")
+            logger.info(f"Average degree: {sum(dict(G.degree()).values()) / G.number_of_nodes():.2f}")
+            logger.info(f"Graph density: {nx.density(G):.4f}")
+            
+            # Centrality metrics
+            logger.info("\nCentrality Metrics:")
+            degree_centrality = nx.degree_centrality(G)
+            betweenness_centrality = nx.betweenness_centrality(G)
+            closeness_centrality = nx.closeness_centrality(G)
+            
+            logger.info(f"Average degree centrality: {sum(degree_centrality.values()) / len(G):.4f}")
+            logger.info(f"Average betweenness centrality: {sum(betweenness_centrality.values()) / len(G):.4f}")
+            logger.info(f"Average closeness centrality: {sum(closeness_centrality.values()) / len(G):.4f}")
+            
+            # Component analysis
+            logger.info("\nComponent Analysis:")
+            components = list(nx.connected_components(G))
+            logger.info(f"Number of connected components: {len(components)}")
+            logger.info(f"Largest component size: {len(max(components, key=len))}")
+            logger.info(f"Average component size: {sum(len(c) for c in components) / len(components):.2f}")
+            
+            # Clustering metrics
+            logger.info("\nClustering Metrics:")
+            logger.info(f"Average clustering coefficient: {nx.average_clustering(G):.4f}")
+            logger.info(f"Transitivity: {nx.transitivity(G):.4f}")
+            
+            # Path metrics
+            logger.info("\nPath Metrics:")
+            largest_cc = max(components, key=len)
+            largest_cc_graph = G.subgraph(largest_cc)
+            logger.info(f"Average shortest path length: {nx.average_shortest_path_length(largest_cc_graph):.2f}")
+            logger.info(f"Diameter: {nx.diameter(largest_cc_graph)}")
+            
+            # SpaFGAN score statistics
+            logger.info("\nSpaFGAN Score Statistics:")
+            scores = [G.nodes[n]['spafgan_score'] for n in G.nodes()]
+            logger.info(f"Average SpaFGAN score: {np.mean(scores):.4f}")
+            logger.info(f"Min SpaFGAN score: {np.min(scores):.4f}")
+            logger.info(f"Max SpaFGAN score: {np.max(scores):.4f}")
+            logger.info(f"Score standard deviation: {np.std(scores):.4f}")
+            
+            # Edge weight statistics
+            logger.info("\nEdge Weight Statistics:")
+            weights = [G[u][v]['weight'] for u, v in G.edges()]
+            logger.info(f"Average edge weight: {np.mean(weights):.4f}")
+            logger.info(f"Min edge weight: {np.min(weights):.4f}")
+            logger.info(f"Max edge weight: {np.max(weights):.4f}")
+            logger.info(f"Weight standard deviation: {np.std(weights):.4f}")
+            
+            logger.info("=" * 50)
+        else:
+            logger.warning(f"ROI cells file not found for {marker}, skipping...")
 
 if __name__ == "__main__":
     main()

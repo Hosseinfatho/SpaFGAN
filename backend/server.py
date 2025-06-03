@@ -24,6 +24,7 @@ from PIL import Image # Pillow import
 import os
 import pickle
 from pathlib import Path
+from evaluation import ROIEvaluator
 
 # --- Analysis Functions (Copied from test_zarr_exploration.py) ---
 # Configure basic logging
@@ -100,7 +101,7 @@ def get_channel_names():
             for i, channel_info in enumerate(omero_meta['channels']): 
                 # Ensure key is string for JSON compatibility
                 channel_map[str(i)] = channel_info.get('label', f'Channel {i}') 
-            logger.info(f"✅ Successfully extracted channel names: {channel_map}")
+            logger.info(f" Successfully extracted channel names: {channel_map}")
             return jsonify(channel_map)
         else:
             logger.warning("Could not find valid 'omero' metadata with 'channels'. Returning 404.")
@@ -795,10 +796,10 @@ def get_z_projection_data():
                 }), 200
 
     except MemoryError:
-        logger.error(f"❌ MemoryError while processing Z-projection. Data might be too large.", exc_info=True)
+        logger.error(f" MemoryError while processing Z-projection. Data might be too large.", exc_info=True)
         return jsonify({"error": "Server ran out of memory processing the data."}), 500
     except Exception as e:
-        logger.error(f"❌ Unexpected error in /api/z_projection route: {e}", exc_info=True)
+        logger.error(f" Unexpected error in /api/z_projection route: {e}", exc_info=True)
         return jsonify({"error": f"Internal server error: {e}"}), 500
 
 
@@ -989,7 +990,7 @@ def get_rgb_interaction_heatmap_data():
 
 @app.route('/api/analyze_heatmaps', methods=['POST'])
 def analyze_heatmaps():
-    """API endpoint to analyze heatmaps for all channels in a given ROI."""
+    """API endpoint to analyze heatmaps for specific channels in a given ROI."""
     try:
         data = request.get_json()
         if not data:
@@ -1000,6 +1001,11 @@ def analyze_heatmaps():
         if not roi or not all(k in roi for k in ['xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax']):
             logger.error(f"Invalid ROI format: {roi}")
             return jsonify({'error': 'Invalid ROI format'}), 400
+
+        channels = data.get('channels', ['CD31', 'CD11b', 'Catalase', 'CD4', 'CD20', 'CD11c'])
+        if not channels:
+            logger.error("No channels specified")
+            return jsonify({'error': 'No channels specified'}), 400
         
         # Get the Zarr array
         zarr_array = open_target_zarr_array()
@@ -1008,6 +1014,7 @@ def analyze_heatmaps():
             return jsonify({'error': 'Failed to open Zarr array'}), 500
         
         logger.info(f"Processing ROI: {roi}")
+        logger.info(f"Processing channels: {channels}")
         logger.info(f"Zarr array shape: {zarr_array.shape}")
         
         # Validate ROI values
@@ -1024,10 +1031,26 @@ def analyze_heatmaps():
             logger.error(f"Invalid ROI values: {ve}")
             return jsonify({'error': 'Invalid ROI values - all values must be integers'}), 400
         
-        # Process each channel
+        # Define channel mapping
+        channel_mapping = {
+            'CD31': 19,
+            'CD11b': 37,
+            'Catalase': 59,
+            'CD4': 25,
+            'CD20': 27,
+            'CD11c': 41
+        }
+        
+        # Process only specified channels
         results = {}
-        for channel_index in range(zarr_array.shape[1]):  # Iterate through all channels
-            logger.info(f"Processing channel {channel_index}")
+        for channel_name in channels:
+            if channel_name not in channel_mapping:
+                logger.warning(f"Skipping unknown channel: {channel_name}")
+                continue
+                
+            channel_index = channel_mapping[channel_name]
+            logger.info(f"Processing channel {channel_name} (index: {channel_index})")
+            
             try:
                 heatmap_result = calculate_z_projection_heatmap(
                     zarr_array=zarr_array,
@@ -1039,12 +1062,12 @@ def analyze_heatmaps():
                 )
                 
                 if 'error' not in heatmap_result:
-                    results[f'channel_{channel_index}'] = heatmap_result.get('heatmap', [])
-                    logger.info(f"Successfully processed channel {channel_index}")
+                    results[channel_name] = heatmap_result.get('heatmap', [])
+                    logger.info(f"Successfully processed channel {channel_name}")
                 else:
-                    logger.error(f"Error processing channel {channel_index}: {heatmap_result['error']}")
+                    logger.error(f"Error processing channel {channel_name}: {heatmap_result['error']}")
             except Exception as channel_error:
-                logger.error(f"Error processing channel {channel_index}: {str(channel_error)}", exc_info=True)
+                logger.error(f"Error processing channel {channel_name}: {str(channel_error)}", exc_info=True)
                 continue
         
         if not results:
@@ -1105,6 +1128,71 @@ def analyze_interaction_heatmap():
         
     except Exception as e:
         logger.error(f"Error in analyze_interaction_heatmap: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/evaluate_rois', methods=['POST'])
+def evaluate_rois():
+    """
+    API endpoint for evaluating ROI detection performance using a multi-step self-supervised approach.
+    
+    The evaluation process includes:
+    1. Identifying surrogate positive/negative regions based on interaction scores
+    2. Training and evaluating a classifier on ROI features
+    3. Visualizing ROI embeddings using t-SNE
+    4. Checking biological plausibility through biomarker co-expression
+    5. Evaluating visual interpretability of ROI overlays
+    
+    Expected JSON payload:
+    {
+        'interaction_scores': Array of interaction scores for each region,
+        'biomarker_data': Dictionary of biomarker expression data,
+        'roi_features': Feature matrix for each ROI,
+        'roi_overlays': Optional ROI overlay data,
+        'microscopy_images': Optional original microscopy images
+    }
+    
+    Returns:
+        JSON object containing evaluation metrics and visualization data
+    """
+    try:
+        data = request.json
+        interaction_scores = np.array(data['interaction_scores'])
+        biomarker_data = data['biomarker_data']
+        roi_features = np.array(data['roi_features'])
+        
+        # Initialize evaluator with interaction scores and biomarker data
+        evaluator = ROIEvaluator(interaction_scores, biomarker_data)
+        
+        # Step 1: Identify surrogate positive and negative regions
+        surrogate_positives, surrogate_negatives = evaluator.identify_surrogate_labels()
+        
+        # Step 2: Train classifier and evaluate its performance
+        clf = evaluator.train_classifier(roi_features)
+        classifier_metrics = evaluator.evaluate_classifier(clf, roi_features)
+        
+        # Step 3: Generate t-SNE visualization of ROI embeddings
+        embeddings_2d = evaluator.visualize_embeddings(roi_features)
+        
+        # Step 4: Analyze biological plausibility through biomarker co-expression
+        biological_metrics = evaluator.check_biological_plausibility()
+        
+        # Step 5: Evaluate visual interpretability if overlay data is provided
+        visual_metrics = evaluator.evaluate_visual_interpretability(
+            data.get('roi_overlays'),
+            data.get('microscopy_images')
+        )
+        
+        # Compile all evaluation results
+        results = {
+            'classifier_metrics': classifier_metrics,
+            'biological_metrics': biological_metrics,
+            'visual_metrics': visual_metrics,
+            'embeddings_2d': embeddings_2d.tolist()
+        }
+        
+        return jsonify(results)
+        
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 ################################################################################3

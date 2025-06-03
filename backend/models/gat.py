@@ -7,9 +7,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SpaFGAN(nn.Module):
-    def __init__(self, in_channels, hidden_channels=32, out_channels=1, heads=2, dropout=0.2):
+    def __init__(self, in_channels, hidden_channels=32, out_channels=1, heads=2, dropout=0.6):
         """
-        Graph Attention Network for spatial feature analysis
+        Graph Attention Network with strong regularization
         
         Args:
             in_channels (int): Number of input features
@@ -20,38 +20,48 @@ class SpaFGAN(nn.Module):
         """
         super(SpaFGAN, self).__init__()
         
-        # First GAT layer with multiple heads
-        self.gat1 = GATConv(
-            in_channels=in_channels,
+        # Feature preprocessing with strong regularization
+        self.preprocess = nn.Sequential(
+            nn.Linear(in_channels, hidden_channels),
+            nn.BatchNorm1d(hidden_channels),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_channels, hidden_channels),
+            nn.BatchNorm1d(hidden_channels),
+            nn.ReLU(),
+            nn.Dropout(dropout)
+        )
+        
+        # GAT layer with multiple heads
+        self.gat = GATConv(
+            in_channels=hidden_channels,
             out_channels=hidden_channels,
             heads=heads,
             dropout=dropout,
             concat=True
         )
         
-        # Second GAT layer with single head
-        self.gat2 = GATConv(
-            in_channels=hidden_channels * heads,
-            out_channels=hidden_channels,
-            heads=1,
-            dropout=dropout,
-            concat=False
+        # Layer normalization
+        self.norm = nn.LayerNorm(hidden_channels * heads)
+        
+        # Output layer with strong regularization
+        self.out = nn.Sequential(
+            nn.Linear(hidden_channels * heads, hidden_channels),
+            nn.BatchNorm1d(hidden_channels),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_channels, hidden_channels // 2),
+            nn.BatchNorm1d(hidden_channels // 2),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_channels // 2, out_channels)
         )
         
-        # Layer normalization
-        self.norm1 = nn.LayerNorm(hidden_channels * heads)
-        self.norm2 = nn.LayerNorm(hidden_channels)
-        
-        # Output layer
-        self.out = nn.Linear(hidden_channels, out_channels)
-        
-        # Dropout layer
-        self.dropout = nn.Dropout(dropout)
-        
-        logger.info(f"Initialized SpaFGAN model:")
+        logger.info(f"Initialized Regularized SpaFGAN model:")
         logger.info(f"Input dimension: {in_channels}")
         logger.info(f"Hidden dimension: {hidden_channels}")
         logger.info(f"Number of attention heads: {heads}")
+        logger.info(f"Dropout rate: {dropout}")
     
     def forward(self, x, edge_index, edge_weights=None):
         """
@@ -65,17 +75,13 @@ class SpaFGAN(nn.Module):
         Returns:
             torch.Tensor: Node predictions [N, out_channels]
         """
-        # First GAT layer with multi-head attention
-        x = self.gat1(x, edge_index, edge_weights)
-        x = self.norm1(x)
-        x = F.elu(x)
-        x = self.dropout(x)
+        # Feature preprocessing
+        x = self.preprocess(x)
         
-        # Second GAT layer
-        x = self.gat2(x, edge_index, edge_weights)
-        x = self.norm2(x)
+        # GAT layer with multi-head attention
+        x = self.gat(x, edge_index, edge_weights)
+        x = self.norm(x)
         x = F.elu(x)
-        x = self.dropout(x)
         
         # Output layer
         x = self.out(x)

@@ -51,7 +51,7 @@ This project displays OME-Zarr data using Vitessce, with a Flask backend and a R
 3.  **View:**
     *   Open your web browser and navigate to the frontend URL (e.g., `http://localhost:5173`). 
 
-
+0. downlaod.py and data.py for download dataset and show structure and create_segmentation for find biomarker in differnet places which are more than threshold in image CD31 
 1.  extract_features.py       → CSV with cell x, y, z and markers
 2.  train_spafgan.py          → Trained SpaFGAN model
 3.  segment.py                → Labeled cell volume
@@ -285,3 +285,8 @@ Marker Definitions:
 
 
 
+////
+## Evaluation and result 
+# Define Surrogate Labels / Pseudo-Labeling for Evaluation step by step, specifically tailored to your case (self-supervised ROI detection in 3D microscopy images without ground truth annotations)
+
+//1-surrogate_labeling.py

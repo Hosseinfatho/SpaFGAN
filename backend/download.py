@@ -9,6 +9,7 @@ from ome_zarr.writer import write_multiscale
 from ome_zarr.scale import Scaler
 import dask.array as da
 from dask.diagnostics import ProgressBar
+from scipy.ndimage import label
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -82,7 +83,7 @@ def save_as_zarr(data, output_path, channel_names, chunks):
             'x': data.shape[4]
         }
 
-        # Create dataset with chunks
+        # Create dataset
         dataset = root.create_dataset(
             'data',
             shape=data.shape,
@@ -115,7 +116,7 @@ def download_channels():
         input_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created input directory at: {input_dir}")
 
-        # Save as Zarr
+        # Save channels as Zarr
         zarr_path = input_dir / "selected_channels.zarr"
         channel_names = [name for name in CHANNEL_INDICES.keys()]
         save_as_zarr(selected_channels, zarr_path, channel_names, chunks)
@@ -143,6 +144,6 @@ if __name__ == "__main__":
     logger.info("Starting channel download...")
     success = download_channels()
     if success:
-        logger.info("✅ Channel download completed successfully")
+        logger.info(" Channel download completed successfully")
     else:
-        logger.error("❌ Channel download failed") 
+        logger.error(" Channel download failed") 
