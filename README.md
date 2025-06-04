@@ -61,7 +61,8 @@ This project displays OME-Zarr data using Vitessce, with a Flask backend and a R
 7.  convert_to_anndata.py     → (optional for omics/scanpy)
 8. generate_vitessce_config_sdk → dynamic Visualization setup
 
-
+9-prepare_roi_cells.py
+10-surrogate_labeling.py
 
 
 
