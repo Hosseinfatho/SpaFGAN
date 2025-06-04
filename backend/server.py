@@ -1,7 +1,7 @@
 # Backend server code will go here 
 import json
 import logging
-from flask import Flask, jsonify, request, Response, stream_with_context
+from flask import Flask, jsonify, request, Response, stream_with_context, send_file
 from flask_cors import CORS
 import requests
 from vitessce import (
@@ -24,7 +24,6 @@ from PIL import Image # Pillow import
 import os
 import pickle
 from pathlib import Path
-from evaluation import ROIEvaluator
 
 # --- Analysis Functions (Copied from test_zarr_exploration.py) ---
 # Configure basic logging
@@ -1194,6 +1193,16 @@ def evaluate_rois():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/config')
+def get_config():
+    config_path = Path(__file__).parent / "output" / "vitnesse_config.json"
+    if not config_path.exists():
+        return jsonify({"error": "Configuration file not found"}), 404
+    
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    return jsonify(config)
 
 ################################################################################3
 

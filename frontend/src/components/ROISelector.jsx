@@ -60,8 +60,14 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   useEffect(() => {
     console.log('Fetching ROI shapes...');
     fetch("http://localhost:5000/api/roi_shapes")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
+        console.log("Received ROI data:", data);
         if (!data.features || !Array.isArray(data.features)) {
           console.error("Invalid ROI data structure:", data);
           return;
@@ -95,13 +101,20 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
           };
         }).filter(Boolean);
 
+        console.log("Extracted ROIs:", extracted);
         setRois(extracted);
 
         const uniqueGroups = [...new Set(extracted.flatMap(r => r.interactions))];
+        console.log("Unique interaction groups:", uniqueGroups);
         setInteractionGroups(uniqueGroups);
         setSelectedGroups(uniqueGroups.slice(0, 1));
       })
-      .catch((err) => console.error("Failed to load ROI shapes:", err));
+      .catch((err) => {
+        console.error("Failed to load ROI shapes:", err);
+        // Add a more user-friendly error message
+        setRois([]);
+        setInteractionGroups([]);
+      });
   }, []);
 
   const filteredRois = selectedGroups.length > 0

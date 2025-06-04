@@ -65,3 +65,56 @@
         ==================================================
 
 5- build_graph.py creating graph with celss and interaction aweight with distance
+        build graph based on 0.7* node weight and 0.3* distance weight
+
+
+6-extract_rois.
+        | CD31 | 99 | 83 (83.8%) | T-cell entry (68 cells, 0.497) |
+        | | | | B-cell infil. (58 cells, 0.471) |
+        | CD11b | 84 | 72 (85.7%) | Inflam. zone (52 cells, 0.468) |
+        | | | | Oxid. stress (52 cells, 0.489) |
+        | CD11c | 29 | 25 (86.2%) | Dendritic (19 cells, 0.552) |
+        | | | | T-cell entry (14 cells, 0.539) |
+
+        | CD31 | 83 | 83 |
+        | CD11b | 72 | 72 |
+        | CD11c | 25 | 25 |
+        | Total | 180 | 180 |
+
+8-generate_roi_shape
+        marker,interaction,x,y,score
+        CD31,T-cell entry site,123.45,67.89,0.85
+        CD31,Inflammatory zone,234.56,78.90,0.75
+
+9- generate vitnesse config
+        ==================================================
+        VITNESSE CONFIGURATION SUMMARY
+        ==================================================
+        CD31:
+        ------------------------------
+        B-cell infiltration: 1 ROIs
+        Score range: 0.5436 - 0.5436
+        Inflammatory zone: 4 ROIs
+        Score range: 0.8999 - 0.5495
+        Oxidative stress niche: 1 ROIs
+        Score range: 0.5166 - 0.5166
+        T-cell entry site: 5 ROIs
+        Score range: 0.7604 - 0.6301
+
+        CD11b:
+        ------------------------------
+        Dendritic signal: 1 ROIs
+        Score range: 1.0000 - 1.0000
+        Inflammatory zone: 5 ROIs
+        Score range: 0.6311 - 0.4890
+        Oxidative stress niche: 2 ROIs
+        Score range: 0.7913 - 0.6013
+        T-cell entry site: 2 ROIs
+        Score range: 0.6711 - 0.6467
+        max_interaction_score: 1 ROIs
+        Score range: 0.9990 - 0.9990
+
+        CD11c:
+        ------------------------------
+        Dendritic signal: 1 ROIs
+        Score range: 0.7573 - 0.7573
