@@ -7,10 +7,59 @@ import seaborn as sns
 from sklearn.metrics import roc_auc_score, accuracy_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from sklearn.manifold import TSNE
+from umap import UMAP
+import torch
+from sklearn.preprocessing import StandardScaler
+from sklearn.manifold import TSNE
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+def analyze_embeddings(df, marker, output_dir):
+    """
+    Analyze ROI embeddings using t-SNE and UMAP visualization.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing ROI data
+        marker (str): Current marker being analyzed
+        output_dir (Path): Directory to save output files
+    """
+    # Create embeddings directory
+    embeddings_dir = output_dir / "embeddings" / marker
+    embeddings_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Prepare features for embedding
+    marker_columns = ['CD31', 'CD20', 'CD11b', 'CD4', 'CD11c', 'Catalase']
+    X = df[marker_columns].values
+    X_scaled = StandardScaler().fit_transform(X)
+    # Apply t-SNE
+    tsne = TSNE(n_components=2, perplexity=5, random_state=42)
+    tsne_embeddings = tsne.fit_transform(X_scaled)
+    
+    # Apply UMAP
+    umap = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, random_state=42)
+    umap_embeddings = umap.fit_transform(X_scaled)
+    
+    # Create visualizations
+    for method, embeddings in [("t-SNE", tsne_embeddings), ("UMAP", umap_embeddings)]:
+        plt.figure(figsize=(10, 10))
+        df_vis = pd.DataFrame(embeddings, columns=["Dim1", "Dim2"])
+        df_vis["Label"] = df['surrogate_label']
+        
+        sns.scatterplot(data=df_vis, x="Dim1", y="Dim2", hue="Label", 
+                       palette={0: 'blue', 1: 'red'}, alpha=0.6)
+        plt.title(f"{method} of ROI Embeddings by Surrogate Label - {marker}")
+        plt.xlabel("Dimension 1")
+        plt.ylabel("Dimension 2")
+        plt.legend(title="Surrogate Label")
+        plt.tight_layout()
+        plt.savefig(embeddings_dir / f'embedding_{method.lower()}.png')
+        plt.close()
+        
+        # Save embeddings to file
+        np.save(embeddings_dir / f'embedding_{method.lower()}.npy', embeddings)
 
 def surrogate_labeling():
     """
@@ -36,17 +85,20 @@ def surrogate_labeling():
         def assign_labels(scores):
             # Sort scores
             sorted_scores = scores.sort_values(ascending=False)
-            # Get the number of rows
             n = len(sorted_scores)
-            # Create labels array
-            labels = np.zeros(n, dtype=int)
-            # Assign 1 to top 60%
-            labels[:int(0.6 * n)] = 1
-            # Return labels in original order
+            labels = np.full(n, -1, dtype=int)  #
+            top_n = int(0.1 * n)
+            bottom_n = int(0.1 * n)
+            if top_n == 0: top_n = 1
+            if bottom_n == 0: bottom_n = 1
+            labels[:top_n] = 1
+            labels[-bottom_n:] = 0
             return pd.Series(labels, index=sorted_scores.index)
         
         df['surrogate_label'] = df.groupby('interaction_type')['interaction_score'].transform(assign_labels)
-        
+
+        df = df[df['surrogate_label'] != -1].reset_index(drop=True)
+
         # Step 2: Create visualizations
         # Create output directory for plots
         plots_dir = output_dir / "surrogate_plots" / marker
@@ -111,6 +163,9 @@ def surrogate_labeling():
             f.write("\nFeature Importance:\n")
             for feature, importance in results['feature_importance'].items():
                 f.write(f"{feature}: {importance:.3f}\n")
+        
+        # Step 4: Analyze embeddings using t-SNE and UMAP
+        analyze_embeddings(df, marker, output_dir)
         
         logger.info(f"Completed analysis for {marker}")
         logger.info(f"Results saved to {plots_dir}")
