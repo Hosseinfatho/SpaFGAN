@@ -52,14 +52,16 @@ This project displays OME-Zarr data using Vitessce, with a Flask backend and a R
     *   Open your web browser and navigate to the frontend URL (e.g., `http://localhost:5173`). 
 
 0. downlaod.py and data.py for download dataset and show structure and create_segmentation for find biomarker in differnet places which are more than threshold in image CD31 
-1.  extract_features.py       → CSV with cell x, y, z and markers
-2.  train_spafgan.py          → Trained SpaFGAN model
-3.  segment.py                → Labeled cell volume
-4.  build_graph.py            → Graph of cells and features
-5.  extract_rois.py           → ROIs + interactions
-6.  generate_roi_shapes.py    → (optional override for shapes)
-7.  convert_to_anndata.py     → (optional for omics/scanpy)
-8. generate_vitessce_config_sdk → dynamic Visualization setup
+1. create_segmentation       ->find biomarker in differnet places which are more than threshold
+2.  extract_features.py      → CSV with cell x, y, z and markers
+3.  train_spafgan.py          → Trained SpaFGAN model
+4.  segment.py                → Labeled cell volume
+
+.  build_graph.py            → Graph of cells and features
+.  extract_rois.py           → ROIs + interactions
+.  generate_roi_shapes.py    → (optional override for shapes)
+.  convert_to_anndata.py     → (optional for omics/scanpy)
+. generate_vitessce_config_sdk → dynamic Visualization setup
 
 9-prepare_roi_cells.py
 10-surrogate_labeling.py
@@ -99,36 +101,48 @@ If all files are available, performs ROI extraction
         Finally, use both files in build_graph.py to create the spatial graphs
 
 2-What is SpaFGAN model
-    SpaFGAN (Spatial Feature Graph Attention Network) is a model designed to:
-    Analyze Spatial Relationships: Understand how cells are organized in 3D space
-    Detect Important Regions: Identify biologically significant areas in the tissue
-    Learn Cell Interactions: Understand how different cell types interact with each other
+        Before Model:
+    - We have raw cell data
+    - We know where cells are
+    - We know their marker intensities
+    - But we don't know which cells are important
 
-    How it Helps Us:
-    ROI Detection:
-    Identifies Regions of Interest (ROIs) in the tissue
-    Finds areas where specific markers are highly expressed
-    Example: Finding areas with high CD31 expression (vascular regions)
-    Cell Interaction Analysis:
-    Discovers how different cell types interact
-              INTERACTIONS = {
-         "T-cell entry site": {"CD31": "high", "CD4": "high"},
-         "Inflammatory zone": {"CD11b": "high", "CD20": "high"},
-         "Oxidative stress niche": {"CD11b": "high", "Catalase": "high"}
-     }
-        we have two separate models for CD31 and CD11b. The training results show:
-                CD31 Model:
-                Final accuracy: 67.33%
-                Final loss: 0.6142
-                Training cells: 188 cells
-                CD11b Model:
-                Final accuracy: 98.71%
-                Final loss: 0.0817
-                Training cells: 6 cells
-                Key differences:
-                Training Data:
-                CD31: Uses its own data
-                CD11b: Uses both CD11b and CD31 data for learning
+        After Model:
+        - We can identify important regions
+        - We can predict cell interactions
+        - We can find biologically significant patterns
+
+    
+        SpaFGAN (Spatial Feature Graph Attention Network) is a model designed to:
+        Analyze Spatial Relationships: Understand how cells are organized in 3D space
+        Detect Important Regions: Identify biologically significant areas in the tissue
+        Learn Cell Interactions: Understand how different cell types interact with each other
+
+        How it Helps Us:
+        ROI Detection:
+        Identifies Regions of Interest (ROIs) in the tissue
+        Finds areas where specific markers are highly expressed
+        Example: Finding areas with high CD31 expression (vascular regions)
+        Cell Interaction Analysis:
+        Discovers how different cell types interact
+                INTERACTIONS = {
+            "T-cell entry site": {"CD31": "high", "CD4": "high"},
+            "Inflammatory zone": {"CD11b": "high", "CD20": "high"},
+            "Oxidative stress niche": {"CD11b": "high", "Catalase": "high"}
+        }
+            we have two separate models for CD31 and CD11b. The training results show:
+                    CD31 Model:
+                    Final accuracy: 67.33%
+                    Final loss: 0.6142
+                    Training cells: 188 cells
+                    CD11b Model:
+                    Final accuracy: 98.71%
+                    Final loss: 0.0817
+                    Training cells: 6 cells
+                    Key differences:
+                    Training Data:
+                    CD31: Uses its own data
+                    CD11b: Uses both CD11b and CD31 data for learning
 
   3- The segment.py script is responsible for segmenting and identifying Regions of Interest (ROIs) using the trained SpaFGAN models. Here's what it does step by step:
     

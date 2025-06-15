@@ -239,7 +239,7 @@ def process_marker(marker_name, model_path, feature_path, output_dir):
     logger.info(f"Min: {scores.min():.3f} | Max: {scores.max():.3f} | Mean: {scores.mean():.3f} | Std: {scores.std():.3f}")
     
     # Apply threshold based on data distribution
-    threshold = np.percentile(scores, 75)  # Use 75th percentile as threshold
+    threshold = np.percentile(scores, 90)  # Use 90th percentile as threshold
     logger.info(f"Applying threshold: {threshold:.3f}")
     roi_indices = np.where(scores > threshold)[0]
     logger.info(f"Number of extracted ROI cells: {len(roi_indices)}")

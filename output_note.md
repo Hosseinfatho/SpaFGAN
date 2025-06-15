@@ -59,15 +59,49 @@
         ==================================================
         FINAL RESULTS SUMMARY
         ==================================================
-        CD31 ===> 24 ROI cells
-        CD11b ===> 18 ROI cells
-        CD11c ===> 15 ROI cells
+        CD31 ===> 10 ROI cells
+        CD11b ===> 9 ROI cells
+        CD11c ===> 2 ROI cells
         ==================================================
 
 5- build_graph.py creating graph with celss and interaction aweight with distance
         build graph based on 0.7* node weight and 0.3* distance weight
 
+        CD31 (10 nodes):
+        Number of edges: 5 edges
+        Average degree: 1.00
+        Graph density: 0.1111
+        Number of connected components: 6 components
+        Largest component: 3 nodes
+        Average clustering coefficient: 0.3000
+        Average SpaFGAN score: 0.8032 (max: 1.0000, min: 0.6771)
 
+        CD11b (9 nodes):
+        Number of edges: 2 edges
+        Average degree: 0.44
+        Graph density: 0.0556
+        Number of connected components: 7 components
+        Largest component: 3 nodes
+        Average clustering coefficient: 0.0000
+        Average SpaFGAN score: 0.9156 (max: 1.0000, min: 0.8766)
+
+        CD11c (2 nodes):
+        No edges were created due to large distances between cells
+        Even with increased radius, no edges were formed
+        Graph construction for CD11c failed
+        
+        Key observations:
+        CD31 has the highest number of edges (5 edges)
+        CD11b has the lowest graph density (0.0556)
+        CD11c has no edges due to small number of cells (2 cells) and large distances
+        SpaFGAN scores are higher for CD11b compared to CD31
+        All graphs have small connected components, indicating limited cell interactions
+        This suggests that:
+        CD31 cells have more interactions with each other
+        CD11b cells are more sparsely connected
+        CD11c cells are too far apart to form meaningful connections
+        The biological significance might be higher for CD11b cells (based on SpaFGAN scores)
+        The overall network is fragmented, with cells forming small, isolated groups
 6-extract_rois.
         | CD31 | 99 | 83 (83.8%) | T-cell entry (68 cells, 0.497) |
         | | | | B-cell infil. (58 cells, 0.471) |

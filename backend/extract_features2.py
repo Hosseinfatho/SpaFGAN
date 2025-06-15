@@ -16,7 +16,10 @@ channel_names = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]
 MARKERS = {
     "CD31": "segmentation_CD31.zarr",
     "CD11b": "segmentation_CD11b.zarr",
-    "CD11c": "segmentation_CD11c.zarr"
+    "CD11c": "segmentation_CD11c.zarr",
+    "CD4": "segmentation_CD4.zarr",
+    "CD20": "segmentation_CD20.zarr",
+    "Catalase": "segmentation_Catalase.zarr"
 }
 
 def extract_cell_features(image, labels, marker_name):
