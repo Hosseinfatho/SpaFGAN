@@ -3,10 +3,40 @@ import json
 from pathlib import Path
 import logging
 import numpy as np
+import glob
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+def load_roi_data(output_dir):
+    """
+    Load ROI data from JSON files
+    
+    Args:
+        output_dir (Path): Directory containing ROI JSON files
+    
+    Returns:
+        pd.DataFrame: Combined ROI data
+    """
+    roi_files = glob.glob(str(output_dir / "extraction_roi_*.json"))
+    all_rois = []
+    
+    for file_path in roi_files:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+            interaction_name = data['interaction_name']
+            for roi in data['rois']:
+                roi_data = {
+                    'x': roi['x'],
+                    'y': roi['y'],
+                    'z': roi.get('z', 0),  # Optional z coordinate
+                    'score': roi['score'],
+                    'interaction': interaction_name
+                }
+                all_rois.append(roi_data)
+    
+    return pd.DataFrame(all_rois)
 
 def create_vitnesse_config(roi_df, output_dir):
     """
@@ -21,11 +51,6 @@ def create_vitnesse_config(roi_df, output_dir):
         "version": "1.0",
         "name": "SpaFGAN ROIs",
         "description": "ROIs generated from SpaFGAN analysis",
-        "markers": {
-            "CD31": {"color": "#FF0000", "shape": "circle"},
-            "CD11b": {"color": "#0000FF", "shape": "square"},
-            "CD11c": {"color": "#00FF00", "shape": "triangle"}
-        },
         "interactions": {
             "T-cell entry site": {"color": "#FF0000"},
             "Inflammatory zone": {"color": "#0000FF"},
@@ -39,8 +64,7 @@ def create_vitnesse_config(roi_df, output_dir):
     # Process each ROI
     for _, row in roi_df.iterrows():
         roi_config = {
-            "id": f"{row['marker']}_{row['interaction']}_{len(config['rois'])}",
-            "marker": row['marker'],
+            "id": f"{row['interaction']}_{len(config['rois'])}",
             "interaction": row['interaction'],
             "position": {
                 "x": float(row['x']),
@@ -48,11 +72,16 @@ def create_vitnesse_config(roi_df, output_dir):
             },
             "score": float(row['score']),
             "properties": {
-                "marker": row['marker'],
                 "interaction": row['interaction'],
                 "score": float(row['score'])
             }
         }
+        
+        # Add z coordinate if available
+        if 'z' in row and not pd.isna(row['z']):
+            roi_config['position']['z'] = float(row['z'])
+            roi_config['properties']['z'] = float(row['z'])
+            
         config['rois'].append(roi_config)
     
     # Save configuration
@@ -67,25 +96,28 @@ def create_vitnesse_config(roi_df, output_dir):
     print("VITNESSE CONFIGURATION SUMMARY")
     print("="*50)
     
-    for marker in ["CD31", "CD11b", "CD11c"]:
-        marker_data = roi_df[roi_df['marker'] == marker]
-        if len(marker_data) > 0:
-            print(f"\n{marker}:")
-            print("-"*30)
-            for interaction in marker_data['interaction'].unique():
-                interaction_data = marker_data[marker_data['interaction'] == interaction]
-                print(f"{interaction}: {len(interaction_data)} ROIs")
-                print(f"Score range: {interaction_data['score'].max():.4f} - {interaction_data['score'].min():.4f}")
+    for interaction in roi_df['interaction'].unique():
+        interaction_data = roi_df[roi_df['interaction'] == interaction]
+        print(f"\n{interaction}:")
+        print("-"*30)
+        print(f"Number of ROIs: {len(interaction_data)}")
+        print(f"Score range: {interaction_data['score'].max():.4f} - {interaction_data['score'].min():.4f}")
     
     print("\n" + "="*50)
 
 def generate_vitnesse_config():
-    # Read ROI data
-    roi_path = Path(__file__).parent / "output" / "roi_data_for_vitnesse.csv"
-    df = pd.read_csv(roi_path)
+    # Setup paths
+    backend_dir = Path(__file__).parent.resolve()
+    output_dir = backend_dir / "output"
     
-    # Get image dimensions for Y flip
-    y_max = 5508  # Full height of the image
+    # Load ROI data from JSON files
+    roi_df = load_roi_data(output_dir)
+    if roi_df.empty:
+        logger.error("No ROI data found in JSON files")
+        return
+    
+    # Create Vitnesse configuration
+    create_vitnesse_config(roi_df, output_dir)
     
     # Create GeoJSON structure
     geojson = {
@@ -93,8 +125,11 @@ def generate_vitnesse_config():
         "features": []
     }
     
+    # Get image dimensions for Y flip
+    y_max = 5508  # Full height of the image
+    
     # Convert each row to a GeoJSON feature
-    for _, row in df.iterrows():
+    for _, row in roi_df.iterrows():
         # Create a polygon around the point (50x50 pixels)
         x = float(row['x'])
         y = y_max - float(row['y'])  # Flip Y coordinate
@@ -115,37 +150,21 @@ def generate_vitnesse_config():
             "properties": {
                 "name": f"ROI_{row.name}",
                 "score": float(row['score']),
-                "interactions": [row['interaction']],  # Make it a list as expected by ROISelector
+                "interactions": [row['interaction']],
                 "marker_values": {
-                    row['marker']: float(row['score'])
+                    row['interaction']: float(row['score'])
                 }
             }
         }
         geojson["features"].append(feature)
     
     # Save as GeoJSON
-    output_path = Path(__file__).parent / "output" / "roi_shapes.geojson"
+    output_path = output_dir / "roi_shapes.geojson"
     with open(output_path, 'w') as f:
         json.dump(geojson, f, indent=2)
     
     print(f"Generated {len(geojson['features'])} ROIs in GeoJSON format")
     print(f"Saved to: {output_path}")
-    
-    # Also save the Vitnesse config
-    create_vitnesse_config(df, Path(__file__).parent / "output")
-
-def main():
-    backend_dir = Path(__file__).parent.resolve()
-    output_dir = backend_dir / "output"
-    
-    # Load ROI data
-    roi_path = output_dir / "roi_data_for_vitnesse.csv"
-    if not roi_path.exists():
-        logger.error(f"ROI data file not found: {roi_path}")
-        return
-    
-    roi_df = pd.read_csv(roi_path)
-    create_vitnesse_config(roi_df, output_dir)
 
 if __name__ == "__main__":
     generate_vitnesse_config() 

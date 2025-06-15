@@ -252,3 +252,22 @@ SpaFGAN/
   - Load `vitessce_config.json` in Vitessce Viewer
   - View spatial data, cell features, and ROI overlays
   - Interactive exploration of immune ROIs 
+
+
+  #### learning model 
+      Learning multiple features:
+    Each attentional head can focus on a different aspect of the interactions between markers
+    For example:
+    Head 1: direct interactions between cells
+    Head 2: indirect interactions through mediators
+    Head 3: spatial patterns of interactions
+    Head 4: intensity of interactions
+    Improved learning power:
+    Each attentional head learns a different feature space
+    Combining these different spaces allows the model to recognize more complex patterns
+    Noise resistance:
+    If one attentional head becomes sensitive to noisy data, the other heads can compensate for this problem
+    This makes the model more stable
+    Adapt to the complexity of biological data:
+    In biological data, interactions between markers can be very complex
+    4 attentional heads allow the model to better model this complexity
