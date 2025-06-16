@@ -131,9 +131,9 @@ def generate_vitnesse_config():
     # Convert each row to a GeoJSON feature
     for _, row in roi_df.iterrows():
         # Create a polygon around the point (50x50 pixels)
-        x = float(row['x'])
-        y = y_max - float(row['y'])  # Flip Y coordinate
-        size = 25  # half of the desired size
+        x = float(row['x']) * 8  # Multiply x by 8
+        y = y_max - (float(row['y']) * 8)  # Multiply y by 8 then flip
+        size = 30  # half of the desired size
         
         feature = {
             "type": "Feature",

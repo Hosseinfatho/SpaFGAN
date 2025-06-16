@@ -139,9 +139,24 @@ def save_interaction_results(interaction_name, graphs, scores, output_dir):
     # Sort ROIs by score in descending order
     roi_summary.sort(key=lambda x: x["score"], reverse=True)
     
-    # Select top ROIs with minimum distance of 50 pixels
+    # Save all ROIs to JSON file
+    output_file = os.path.join(output_dir, f"all_extraction_roi_{interaction_name}.json")
+    with open(output_file, 'w') as f:
+        json.dump({
+            "interaction_name": interaction_name,
+            "rois": roi_summary,
+            "total_rois": len(roi_summary),
+            "score_range": {
+                "max": float(roi_summary[0]['score']) if roi_summary else 0,
+                "min": float(roi_summary[-1]['score']) if roi_summary else 0
+            }
+        }, f, indent=2)
+    
+    logger.info(f"\nSaved {len(roi_summary)} ROIs for {interaction_name} to {output_file}")
+    
+    # Also save top 10 ROIs for backward compatibility
     selected_rois = []
-    min_distance = 50  # minimum distance between ROIs in pixels
+    min_distance = 50
     
     for roi in roi_summary:
         # Check if this ROI is far enough from all previously selected ROIs
@@ -150,12 +165,12 @@ def save_interaction_results(interaction_name, graphs, scores, output_dir):
             if len(selected_rois) >= 10:  # Stop after selecting 10 ROIs
                 break
     
-    logger.info(f"\nSelected ROIs for {interaction_name} (minimum distance: {min_distance} pixels):")
+    logger.info(f"\nSelected top 10 ROIs for {interaction_name} (minimum distance: {min_distance} pixels):")
     logger.info("-" * 50)
     for i, roi in enumerate(selected_rois, 1):
         logger.info(f"ROI {i}: Score = {roi['score']:.4f}, Position = ({roi['x']:.1f}, {roi['y']:.1f})")
     
-    # Save to JSON file
+    # Save top 10 ROIs to JSON file
     output_file = os.path.join(output_dir, f"extraction_roi_{interaction_name}.json")
     with open(output_file, 'w') as f:
         json.dump({
@@ -170,7 +185,7 @@ def save_interaction_results(interaction_name, graphs, scores, output_dir):
             }
         }, f, indent=2)
     
-    logger.info(f"\nSaved {len(selected_rois)} ROIs for {interaction_name} to {output_file}")
+    logger.info(f"\nSaved {len(selected_rois)} top ROIs for {interaction_name} to {output_file}")
 
 def main():
     # Setup device

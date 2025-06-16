@@ -4,7 +4,7 @@ import Heatmaps from './Heatmaps';
 import InteractionHeatmaps from './InteractionHeatmaps';
 
 // Define scale factors (Zarr level 3 to full-res)
-const factorX = 1; //10908 / 1363;
+const factorX = 1; //10908 / 1363  multiple in vittnesse config;
 const factorY = 1; //5508 / 688;
 const fullHeight = 5508; // needed for Y flip
 const getDefaultColor = (index) => {
@@ -94,7 +94,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
           return {
             id: feature.properties.name || `ROI_${index}`,
             x: cx * factorX,
-            y: -(cy * factorY) + fullHeight,
+            y: cy * factorY,
             score: feature.properties.score || 0,
             interactions: feature.properties.interactions || [],
             raw: feature.properties // Store all original metadata
@@ -182,7 +182,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
         X: <input type="number" value={displayX} onChange={e => setManualX(e.target.value)} style={{ width: 60 }} />
         &nbsp;|&nbsp;
         Y: <input type="number" value={displayY} onChange={e => setManualY(e.target.value)} style={{ width: 60 }} />
-        &nbsp;|&nbsp; Score: {currentROI.score}
+        &nbsp;|&nbsp; Score: {currentROI.score?.toFixed(3) || "0.000"}
       </p>
       <p>
         Interactions: {currentROI.interactions?.join(", ") || "None"}
