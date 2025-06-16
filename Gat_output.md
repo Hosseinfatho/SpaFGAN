@@ -136,7 +136,7 @@
 
   # 4. train_gat4
    # Graph Attention Network (GAT) Architecture for Spatial Feature Learning
-# Enhanced Graph Attention Network for Spatial Biology
+   # Enhanced Graph Attention Network for Spatial Biology
 
             ## Model Architecture
             Our model combines graph attention mechanisms with biological interaction knowledge:
