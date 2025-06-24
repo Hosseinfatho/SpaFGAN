@@ -19,20 +19,25 @@ def load_roi_data(output_dir):
     Returns:
         pd.DataFrame: Combined ROI data
     """
-    roi_files = glob.glob(str(output_dir / "extraction_roi_*.json"))
+    roi_files = glob.glob(str(output_dir / "top_roi_scores_*.json"))
     all_rois = []
     
     for file_path in roi_files:
         with open(file_path, 'r') as f:
             data = json.load(f)
             interaction_name = data['interaction_name']
-            for roi in data['rois']:
+            for roi in data['top_rois']:
                 roi_data = {
-                    'x': roi['x'],
-                    'y': roi['y'],
-                    'z': roi.get('z', 0),  # Optional z coordinate
-                    'score': roi['score'],
-                    'interaction': interaction_name
+                    'x': roi['position']['x'],
+                    'y': roi['position']['y'],
+                    'z': roi['position'].get('z', 0),  # Optional z coordinate
+                    'score': roi['scores']['combined_score'],
+                    'interaction': interaction_name,
+                    'roi_id': roi['roi_id'],
+                    'intensity_score': roi['scores']['intensity_score'],
+                    'attention_score': roi['scores']['attention_score'],
+                    'num_nodes': roi['num_nodes'],
+                    'num_edges': roi['num_edges']
                 }
                 all_rois.append(roi_data)
     

@@ -6,9 +6,6 @@ import dask.array as da
 from dask.diagnostics import ProgressBar
 from scipy.ndimage import label, gaussian_filter
 from skimage.filters import threshold_otsu
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
-import matplotlib.pyplot as plt
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,10 +14,10 @@ logger = logging.getLogger(__name__)
 # Define markers for segmentation with their thresholds
 MARKERS = {
     "CD31": {"index": 0, "threshold": 0.1},    # Blood vessel cells
-    "CD11b": {"index": 2, "threshold": 0.1},   # Immune cells
-    "CD11c": {"index": 4, "threshold": 0.1},   # Dendritic cells
-    "CD4": {"index": 1, "threshold": 0.1},    # T cells
-    "CD20": {"index": 3, "threshold": 0.1},   # B cells
+    "CD11b": {"index": 2, "threshold": 0.08},   # Immune cells
+    "CD11c": {"index": 4, "threshold": 0.08},   # Dendritic cells
+    "CD4": {"index": 1, "threshold": 0.08},     # T cells
+    "CD20": {"index": 3, "threshold": 0.1},    # B cells
     "Catalase": {"index": 5, "threshold": 0.1} # Oxidative stress marker
 }
 
@@ -45,85 +42,86 @@ def load_channels():
         logger.error(f"Error loading channels: {e}", exc_info=True)
         return None
 
-def normalize_data(data):
-    """Normalize data to range [0, 1]"""
-    min_val = np.min(data)
-    max_val = np.max(data)
-    normalized = (data - min_val) / (max_val - min_val)
-    return normalized, min_val, max_val
-
-def analyze_threshold(data, marker_name, marker_index, threshold):
-    """Analyze and visualize threshold for a marker"""
+def create_segmentation_optimized(data, marker_name, marker_info):
+    """Create segmentation for a specific marker - optimized version"""
     try:
-        # Get marker data
-        marker_data = data[0, marker_index].compute()
-        
-        # Normalize data
-        normalized_data, min_val, max_val = normalize_data(marker_data)
-        logger.info(f"{marker_name} - Min: {min_val:.3f}, Max: {max_val:.3f}")
-        
-        # Calculate Otsu's threshold on normalized data
-        otsu_threshold = threshold_otsu(normalized_data)
-        
-        # Create histogram
-        plt.figure(figsize=(12, 8))
-        
-        # Plot original data histogram
-        plt.subplot(2, 1, 1)
-        plt.hist(marker_data.flatten(), bins=100)
-        plt.title(f'{marker_name} Original Intensity Distribution')
-        plt.xlabel('Original Intensity')
-        plt.ylabel('Frequency')
-        
-        # Plot normalized data histogram
-        plt.subplot(2, 1, 2)
-        plt.hist(normalized_data.flatten(), bins=100)
-        plt.axvline(x=threshold, color='r', linestyle='--', 
-                   label=f'Manual threshold: {threshold:.2f}')
-        plt.axvline(x=otsu_threshold, color='g', linestyle='--', 
-                   label=f'Otsu threshold: {otsu_threshold:.2f}')
-        plt.title(f'{marker_name} Normalized Intensity Distribution')
-        plt.xlabel('Normalized Intensity [0,1]')
-        plt.ylabel('Frequency')
-        plt.legend()
-        
-        # Save plot
-        backend_dir = Path(__file__).parent.resolve()
-        input_dir = backend_dir / "input"
-        plt.savefig(input_dir / f"{marker_name}_threshold_analysis.png")
-        plt.close()
-        
-        return otsu_threshold, normalized_data
-        
-    except Exception as e:
-        logger.error(f"Error analyzing threshold: {e}", exc_info=True)
-        return None, None
-
-def create_segmentation(data, marker_name, marker_info):
-    """Create segmentation for a specific marker"""
-    try:
-        # Get marker data
+        # Get marker data - process in chunks
         marker_data = data[0, marker_info["index"]].compute()
         
-        # Analyze threshold and get normalized data
-        otsu_threshold, normalized_data = analyze_threshold(
-            data, marker_name, marker_info["index"], marker_info["threshold"]
-        )
+        logger.info(f"Processing {marker_name} - data shape: {marker_data.shape}")
         
-        logger.info(f"{marker_name} - Otsu threshold: {otsu_threshold:.3f}, "
-                   f"Manual threshold: {marker_info['threshold']:.3f}")
+        # Normalize data efficiently
+        min_val = np.min(marker_data)
+        max_val = np.max(marker_data)
+        normalized_data = (marker_data - min_val) / (max_val - min_val)
+        
+        logger.info(f"{marker_name} - Min: {min_val:.3f}, Max: {max_val:.3f}")
+        
+        # Calculate Otsu's threshold
+        otsu_threshold = threshold_otsu(normalized_data)
+        logger.info(f"{marker_name} - Otsu threshold: {otsu_threshold:.3f}, Manual threshold: {marker_info['threshold']:.3f}")
         
         # Apply Gaussian blur to reduce noise
-        smoothed = gaussian_filter(normalized_data, sigma=1)
+        smoothed = gaussian_filter(normalized_data, sigma=1.0)
+        
+        # Use manual threshold only (no adaptive thresholding)
+        manual_threshold = marker_info["threshold"]
+        adaptive_threshold = manual_threshold  # Use only manual threshold
+        
+        logger.info(f"{marker_name} - Manual threshold: {adaptive_threshold:.3f}")
         
         # Apply thresholding
-        binary = smoothed > marker_info["threshold"]
+        binary = smoothed > adaptive_threshold
+        
+        # Apply morphological operations efficiently - lighter operations
+        from scipy.ndimage import binary_opening, binary_closing
+        
+        # Remove small noise with opening - use smaller 3D structure
+        binary = binary_opening(binary, structure=np.ones((2, 2, 2)))
+        
+        # Fill small holes with closing - use smaller 3D structure
+        binary = binary_closing(binary, structure=np.ones((2, 2, 2)))
         
         # Label connected components
-        labeled_array, num_features = label(binary)
+        labeled_array, num_areas = label(binary)
         
-        logger.info(f"Created {marker_name} segmentation with {num_features} cells")
-        return labeled_array
+        # Filter out areas with less than 5 voxels
+        min_area_size = 5
+        filtered_labels = np.zeros_like(labeled_array)
+        valid_areas = 0
+        
+        logger.info(f"Found {num_areas} initial areas for {marker_name}")
+        
+        for i in range(1, num_areas + 1):
+            area_mask = (labeled_array == i)
+            area_size = np.sum(area_mask)
+            
+            if area_size >= min_area_size:
+                filtered_labels[area_mask] = valid_areas + 1
+                valid_areas += 1
+                logger.info(f"Area {i}: {area_size} voxels - KEPT")
+            else:
+                logger.info(f"Area {i}: {area_size} voxels - REMOVED (too small)")
+        
+        logger.info(f"Created {marker_name} segmentation with {valid_areas} valid areas (filtered from {num_areas} total areas)")
+        
+        # Calculate area statistics
+        if valid_areas > 0:
+            area_sizes = []
+            for i in range(1, valid_areas + 1):
+                area_size = np.sum(filtered_labels == i)
+                area_sizes.append(area_size)
+            
+            avg_area_size = np.mean(area_sizes)
+            max_area_size = np.max(area_sizes)
+            min_area_size_found = np.min(area_sizes)
+            
+            logger.info(f"{marker_name} area statistics:")
+            logger.info(f"  - Average area size: {avg_area_size:.1f} voxels")
+            logger.info(f"  - Largest area: {max_area_size} voxels")
+            logger.info(f"  - Smallest area: {min_area_size_found} voxels")
+        
+        return filtered_labels
         
     except Exception as e:
         logger.error(f"Error creating {marker_name} segmentation: {e}", exc_info=True)
@@ -172,7 +170,7 @@ def save_segmentation(data, output_path, chunks):
         return False
 
 def create_all_segmentations():
-    """Create segmentation files for all markers"""
+    """Create segmentation files for all markers - optimized version"""
     try:
         # Load channel data
         data = load_channels()
@@ -189,7 +187,7 @@ def create_all_segmentations():
             logger.info(f"\nProcessing {marker_name}...")
             
             # Create segmentation
-            segmentation = create_segmentation(data, marker_name, marker_info)
+            segmentation = create_segmentation_optimized(data, marker_name, marker_info)
             if segmentation is not None:
                 # Save segmentation
                 seg_path = input_dir / f"segmentation_{marker_name}.zarr"
@@ -198,13 +196,8 @@ def create_all_segmentations():
         return True
 
     except Exception as e:
-        logger.error(f"Error creating segmentations: {e}", exc_info=True)
+        logger.error(f"Error in create_all_segmentations: {e}", exc_info=True)
         return False
 
 if __name__ == "__main__":
-    logger.info("Starting segmentation creation...")
-    success = create_all_segmentations()
-    if success:
-        logger.info("Segmentation creation completed successfully")
-    else:
-        logger.error("Segmentation creation failed") 
+    create_all_segmentations() 

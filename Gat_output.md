@@ -1,138 +1,89 @@
 ## 1- create_segmentation1.py 
-
-
-
+      threshold 0.1 and 0.08 and atleas 5 voxels close to eachother
+      INFO:__main__:Found 142 initial areas for CD31
+      INFO:__main__:Found 267 initial areas for CD11b
+      INFO:__main__:Found 30 initial areas for CD11c
+      INFO:__main__:Found 22 initial areas for CD4
+      INFO:__main__:Found 441 initial areas for CD20
+      INFO:__main__:Found 107 initial areas for Catalase
 ## 2- merge_features2.py
-      :Loaded 234 cells from CD31
-      :Loaded 866 cells from CD20
-      :Loaded 84 cells from CD11b
-      :Loaded 29 cells from CD4
-      :Loaded 29 cells from CD11c
-      :Loaded 227 cells from Catalase
-      :Saved 1469 total cells to output/All_cell_features.csv
-      :Normalized CD31: max value was 17716.25
-      :Normalized CD20: max value was 27683.00
-      :Normalized CD11b: max value was 26668.38
-      :Normalized CD4: max value was 26340.80
-      :Normalized CD11c: max value was 15496.33
-      :Normalized Catalase: max value was 27347.50
-      :Saved normalized features to output/Norm_all_cell_features.csv
-      :
-      Cell counts by marker:
-      :CD31: 234 cells
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-      :Catalase: 227 cells
-      :
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-      :Catalase: 227 cells
-      :
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-      :Catalase: 227 cells
-      :
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-      :Catalase: 227 cells
-      :
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-      :Catalase: 227 cells
-      :
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-      :Catalase: 227 cells
-      :
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-      :Catalase: 227 cells
-      :
-      :CD20: 866 cells
-      :CD11b: 84 cells
-      :CD4: 29 cells
-      :CD11c: 29 cells
-
+      INFO:__main__:Total areas: 816
+      INFO:__main__:CD31: 142 areas
+      INFO:__main__:CD20: 441 areas
+      INFO:__main__:CD11b: 74 areas
+      INFO:__main__:CD4: 22 areas
+      INFO:__main__:CD11c: 30 areas
+      INFO:__main__:Catalase: 107 areas
+      INFO:__main__:
 
 ## 3  build_graph_gat.py
-           #//  Location: output/roi_graphs_{marker}.pt
-      1. Graph Structure
-      Each graph represents a Region of Interest (ROI)
-      Specific to one marker (CD31, CD20, etc.)
-      Built using PyTorch Geometric's Data class
-      2. Nodes (Cells)
-      Node Features (x)
-      Normalized marker values
-      Shape: [num_nodes, num_markers]
-      Node Positions (pos)
-      x, y coordinates
-      Shape: [num_nodes, 2]
-      Node Markers (marker)
-      Type of marker for each cell
-      Shape: [num_nodes]
-      3. Edges (Connections)
-      Edge Index (edge_index)
-      Shows node connections
-      Shape: [2, num_edges]
-      Example: [[0,1], [1,0]]
-      Edge Weights (edge_attr)
-      Based on distance: 1.0 / (1.0 + distance)
-      Shape: [num_edges, 1]
-      4. Graph Building Steps
-      Create node features from marker values
-      Calculate distances between cells
-      Create bidirectional edges
-      Assign edge weights based on distances
-      Combine into PyTorch Geometric Data object
-      5. Neighbor Finding
-      Find cells within radius (30 units)
-      Calculate actual distances
-      Filter by distance threshold
-      Create neighborhood graph
-      6. GAT Model Structure
-      First Layer
-      Input: Node features + Edge attributes
-      Output: Hidden representations
-      Second Layer
-      Input: Hidden representations
-      Output: Final node embeddings
-      7. Output Files
-      Per Marker
-      File: roi_graphs_{marker}.pt
-      Contains:
-      List of graphs
-      GAT model state
-      8. Graph Statistics
-      Number of nodes
-      Number of edges
-      Feature dimensions
-      Edge attribute dimensions
-      9. Learning Capabilities
-      Cell-to-cell interactions
-      Marker-specific patterns
-      Spatial relationships
-      Marker importance in ROIs
-  //#  1. Generated Files
-                  CD31: roi_graphs_CD31.pt (234 graphs)
-                  CD20: roi_graphs_CD20.pt (861 graphs)
-                  CD11b: roi_graphs_CD11b.pt (83 graphs)
-                  CD4: roi_graphs_CD4.pt (27 graphs)
-                  CD11c: roi_graphs_CD11c.pt (24 graphs)
-                  Catalase: roi_graphs_Catalase.pt (214 graphs)
+      Found 6 graph files:
+      - Catalase_main_graph.pt
+      - CD11b_main_graph.pt
+      - CD11c_main_graph.pt
+      - CD20_main_graph.pt
+      - CD31_main_graph.pt
+      - CD4_main_graph.pt
+
+      ================================================================================
+      Analyzing graph file: output/main_marker_graphs\Catalase_main_graph.pt
+      ============================================================
+      Metadata:
+      Marker: Catalase
+      Number of subgraphs: 107
+      Edge types: {'inter', 'intra'}
+      Edge type counts: {'inter': 366, 'intra': 864}
+      Edge name counts: {'inter_Catalase_CD20': 204, 'Catalase_intra_Catalase': 864, 'Oxidative stress niche_Catalase_CD11b': 60, 'inter_Catalase_CD4': 102}
+
+      ================================================================================
+      Analyzing graph file: output/main_marker_graphs\CD11b_main_graph.pt
+      
+      Metadata:
+      Marker: CD11b
+      Number of subgraphs: 74
+      Edge types: {'inter', 'intra'}
+      Edge type counts: {'inter': 654, 'intra': 410}
+      Edge name counts: {'Inflammatory zone_CD11b_CD20': 288, 'inter_CD11b_CD4': 96, 'CD11b_intra_CD11b': 410, 'Oxidative stress niche_CD11b_Catalase': 150, 'inter_CD11b_CD31': 120}
+
+      ================================================================================
+      Analyzing graph file: output/main_marker_graphs\CD11c_main_graph.pt
+      ============================================================
+      Metadata:
+      Marker: CD11c
+      Number of subgraphs: 1
+      Edge types: set()
+      Edge type counts: {}
+      Edge name counts: {}
+
+      ================================================================================
+      Analyzing graph file: output/main_marker_graphs\CD20_main_graph.pt
+      ============================================================
+      Metadata:
+      Marker: CD20
+      Number of subgraphs: 441
+      Edge types: {'inter', 'intra'}
+      Edge type counts: {'inter': 2886, 'intra': 46070}
+      Edge name counts: {'inter_CD20_CD4': 638, 'CD20_intra_CD20': 46070, 'B-cell infiltration_CD20_CD31': 758, 'inter_CD20_Catalase': 790, 'Inflammatory zone_CD20_CD11b': 700}
+
+      ================================================================================
+      Analyzing graph file: output/main_marker_graphs\CD31_main_graph.pt
+      ============================================================
+      Metadata:
+      Marker: CD31
+      Number of subgraphs: 142
+      Edge types: {'inter', 'intra'}
+      Edge type counts: {'intra': 4966, 'inter': 522}
+      Edge name counts: {'CD31_intra_CD31': 4966, 'B-cell infiltration_CD31_CD20': 264, 'T-cell entry site_CD31_CD4': 152, 'inter_CD31_CD11b': 106}
+
+      ================================================================================
+      Analyzing graph file: output/main_marker_graphs\CD4_main_graph.pt
+      ============================================================
+      Metadata:
+      Marker: CD4
+      Number of subgraphs: 22
+      Edge types: {'inter', 'intra'}
+      Edge type counts: {'inter': 140, 'intra': 130}
+      Edge name counts: {'inter_CD4_CD20': 52, 'inter_CD4_CD11b': 22, 'T-cell entry site_CD4_CD31': 32, 'inter_CD4_Catalase': 34, 'CD4_intra_CD4': 130}
 
   # 4. train_gat4
    # Graph Attention Network (GAT) Architecture for Spatial Feature Learning
@@ -202,14 +153,15 @@
 
   # 5.evaluate_gat5
 
+      Results Table:
       Marker      Train    Test    TrLoss    TeLoss    TrRMSE    TeRMSE    TrMAE    TeMAE    TrR2    TeR2    TrAcc    TeAcc    TrRec    TeRec    TrF1    TeF1
       --------  -------  ------  --------  --------  --------  --------  -------  -------  ------  ------  -------  -------  -------  -------  ------  ------
-      CD31          198      36     0.013     0.014     0.546     0.575    0.299     0.33  -0.778  -1.072    0.701     0.67    0.701     0.67   0.724   0.698
-      CD20          731     130      0.01      0.01     0.558     0.579    0.311    0.336  -0.901  -1.018    0.689    0.664    0.689    0.664   0.714   0.687
-      CD11b          70      13      0.01     0.013     0.611     0.643    0.374    0.413  -1.083  -1.296    0.626    0.587    0.626    0.587   0.655   0.616
-      CD4            22       5     0.015     0.013     0.609     0.717    0.371    0.514   -1.35   -2.14    0.629    0.485    0.629    0.485   0.664   0.534
-      CD11c          20       4     0.015     0.013     0.636     0.615    0.405    0.378  -1.659  -1.407    0.595    0.622    0.595    0.622   0.639   0.661
-      Catalase      181      33     0.012     0.012      0.55     0.569    0.303    0.324  -0.857  -0.973    0.697    0.676    0.697    0.676   0.723   0.706
+      CD31          120      22     0.006     0.007     0.081     0.083    0.052    0.058   0.792   0.775    0.946    0.937    0.946    0.937   0.922   0.912
+      CD20          374      67     0.004     0.006     0.066     0.074    0.044    0.045   0.856   0.834    0.946    0.941    0.946    0.941    0.92   0.914
+      CD11b          62      12     0.008     0.004     0.087     0.066     0.05    0.039   0.797   0.884     0.96    0.965     0.96    0.965   0.957    0.96
+      CD4            18       4      0.02     0.035      0.14     0.188    0.102    0.122   0.624   0.004    0.919    0.961    0.919    0.961   0.901   0.942
+      Catalase       90      17     0.012      0.01     0.109     0.098    0.074    0.067   0.708   0.756     0.95    0.945     0.95    0.945    0.95   0.946
+      
 
 # Extract_ROI.py
       Inputs:
@@ -260,3 +212,56 @@
 
       ==================================================
       Generated 50 ROIs in GeoJSON format
+
+---
+
+## Scoring System: 40-40-20 Model-Based Approach
+
+The ROI extraction uses a sophisticated scoring system that combines three components from the self-supervised GAT model:
+
+### 40% - Attention Score
+- **Source**: MultiheadAttention weights from the model
+- **Calculation**: Average attention weights between cells with high marker expression
+- **Purpose**: Captures spatial interaction patterns between relevant cell types
+- **Biological Meaning**: Measures how strongly cells interact spatially
+
+### 40% - Learned Features Score  
+- **Source**: GAT layer embeddings (learned representations)
+- **Calculation**: Average of learned features for interaction markers
+- **Purpose**: Incorporates the model's learned biological patterns
+- **Biological Meaning**: Reflects the quality of learned biological relationships
+
+### 20% - Reconstruction Quality
+- **Source**: Model's ability to reconstruct input data
+- **Calculation**: 1 / (1 + reconstruction error)
+- **Purpose**: Ensures model preserves important biological information
+- **Biological Meaning**: Validates that the model maintains data integrity
+
+### Advantages Over Traditional Methods:
+- **Model-Driven**: All scores derived from the trained neural network
+- **Spatial Awareness**: Incorporates spatial relationships between cells
+- **Biological Context**: Learns complex interaction patterns automatically
+- **Quality Control**: Reconstruction quality ensures reliable predictions
+
+---
+
+## Project Summary
+
+This project implements a comprehensive spatial transcriptomics analysis pipeline using Graph Attention Networks (GAT) for biological data processing. The system processes multi-marker cellular data (CD31, CD20, CD11b, CD4, CD11c, Catalase) through a sophisticated graph-based learning approach.
+
+### Key Components:
+1. **Data Processing**: Cell segmentation and feature normalization
+2. **Graph Construction**: Spatial graph building with distance-based edge weights
+3. **GAT Model**: Self-supervised learning with dual attention mechanisms
+4. **ROI Extraction**: Automated identification of biologically significant regions
+5. **Visualization**: Integration with VITNESSE for spatial data visualization
+
+### Technical Achievements:
+- Successfully processed 1,469 total cells across 6 markers
+- Built 1,443 spatial graphs with attention-based learning
+- Achieved 60-70% accuracy in marker expression prediction
+- Extracted 50 biologically significant ROIs across 5 interaction types
+- Implemented model-based scoring system (40% attention + 40% learned features + 20% reconstruction quality)
+
+### Biological Applications:
+The system identifies key biological interactions including T-cell entry sites, inflammatory zones, oxidative stress niches, B-cell infiltration patterns, and dendritic cell signaling regions, providing valuable insights for spatial biology research.

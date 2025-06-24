@@ -13,181 +13,506 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def load_graphs(marker):
-    """Load graphs for a specific marker and ensure all markers are included"""
+    """Load ROI graphs for a specific marker from main graphs"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(script_dir, "output", f"roi_graphs_{marker}.pt")
-    if not Path(file_path).exists():
-        logger.error(f"Graph file not found: {file_path}")
-        return None
     
-    data = torch.load(file_path)
-    graphs = []
-    
-    # Convert dictionary graphs to PyTorch Geometric Data objects
-    for graph_dict in data['graphs']:
-        graph = graph_dict['graph']
-        if isinstance(graph, dict):
-            # Create full feature tensor with all markers
-            x = torch.zeros((graph['x'].size(0), len(MARKERS)), device=graph['x'].device)
-            
-            # Get the marker index
-            marker_idx = MARKERS.index(marker)
-            
-            # Copy the original features to the correct position
-            x[:, marker_idx] = graph['x'].squeeze()
-            
-            # Convert dictionary to Data object with full features
-            graph = Data(
-                x=x,
-                edge_index=graph['edge_index'],
-                edge_attr=graph['edge_attr'],
-                pos=graph['pos'],
-                marker=marker
-            )
-        graphs.append(graph)
-    
-    return graphs
-
-def compute_interaction_score(graph, interaction_name):
-    """Compute interaction score for a specific interaction"""
-    markers = INTERACTIONS[interaction_name]
-    score = 0.0
-    
-    for marker, level in markers.items():
-        if marker in MARKERS:
-            marker_idx = MARKERS.index(marker)
-            if marker_idx < graph.x.size(1):
-                marker_expr = graph.x[:, marker_idx].mean().item()
-                if level == "high":
-                    score += marker_expr
-    
-    return score / len(markers)
-
-def extract_embeddings(model, graphs, device, interaction_name):
-    """Extract embeddings for all ROIs"""
-    model.eval()
-    embeddings = []
-    scores = []
-    
-    with torch.no_grad():
-        for graph in graphs:
-            if isinstance(graph, dict):
-                graph = Data(
-                    x=graph['graph']['x'],
-                    edge_index=graph['graph']['edge_index'],
-                    edge_attr=graph['graph']['edge_attr'],
-                    pos=graph['graph']['pos']
-                )
-            
-            graph = graph.to(device)
-            emb = model(graph.x, graph.edge_index, graph.edge_attr)
-            score = compute_interaction_score(graph, interaction_name)
-            
-            embeddings.append(emb.cpu().numpy())
-            scores.append(score)
-    
-    return embeddings, np.array(scores)
-
-def calculate_distance(roi1, roi2):
-    """Calculate Euclidean distance between two ROIs"""
-    return ((roi1['x'] - roi2['x'])**2 + (roi1['y'] - roi2['y'])**2)**0.5
-
-def save_interaction_results(interaction_name, graphs, scores, output_dir):
-    """Save results for a specific interaction"""
-    # Create summary of all ROIs
-    roi_summary = []
-    for i, (graph, score) in enumerate(zip(graphs, scores)):
-        if isinstance(graph, dict):
-            pos = graph['graph']['pos']
-        else:
-            pos = graph.pos
-        
-        # Debug print for position tensor
-        logger.debug(f"Position tensor shape: {pos.shape}, type: {type(pos)}")
-        
+    # Try to load ROI graphs first
+    roi_graph_file = os.path.join(script_dir, "output", f"roi_graphs_{marker}.pt")
+    if os.path.exists(roi_graph_file):
         try:
-            # Handle different tensor shapes
-            if len(pos.shape) == 1:
-                x, y = pos[0].item(), pos[1].item()
-            else:
-                x, y = pos[0, 0].item(), pos[0, 1].item()
-            
-            roi_data = {
-                "x": float(x),
-                "y": float(y),
-                "score": float(score),
-                "interaction": interaction_name
-            }
-            
-            # Add z coordinate if available
-            if len(pos.shape) == 1 and pos.size(0) > 2:
-                roi_data["z"] = float(pos[2].item())
-            elif len(pos.shape) > 1 and pos.size(1) > 2:
-                roi_data["z"] = float(pos[0, 2].item())
-            
-            roi_summary.append(roi_data)
-            
+            graphs = torch.load(roi_graph_file)
+            logger.info(f"Loaded {len(graphs)} ROI graphs for {marker}")
+            return graphs
         except Exception as e:
-            logger.error(f"Error processing position for ROI {i}: {str(e)}")
-            logger.error(f"Position tensor: {pos}")
-            continue
+            logger.error(f"Error loading ROI graphs for {marker}: {str(e)}")
     
-    if not roi_summary:
-        logger.error(f"No valid ROIs found for {interaction_name}")
+    # Fallback: extract subgraphs from main graph
+    main_graph_file = os.path.join(script_dir, "output", "main_marker_graphs", f"{marker}_main_graph.pt")
+    if not os.path.exists(main_graph_file):
+        logger.error(f"Main graph file not found: {main_graph_file}")
+        return []
+    
+    try:
+        main_graph = torch.load(main_graph_file)
+        logger.info(f"Loaded main graph for {marker}: {main_graph.metadata['num_nodes']} nodes, {main_graph.metadata['num_edges']} edges")
+        
+        # Extract subgraphs as ROIs
+        subgraphs = []
+        if 'subgraphs' in main_graph.metadata:
+            for i, subgraph_info in enumerate(main_graph.metadata['subgraphs']):
+                start_node = subgraph_info['start_node']
+                end_node = subgraph_info['end_node']
+                
+                # Extract node features for this subgraph
+                subgraph_x = main_graph.x[start_node:end_node + 1]
+                
+                # Extract edges that are within this subgraph
+                edge_mask = ((main_graph.edge_index[0] >= start_node) & 
+                            (main_graph.edge_index[0] <= end_node) &
+                            (main_graph.edge_index[1] >= start_node) & 
+                            (main_graph.edge_index[1] <= end_node))
+                
+                subgraph_edge_index = main_graph.edge_index[:, edge_mask]
+                subgraph_edge_attr = main_graph.edge_attr[edge_mask] if hasattr(main_graph, 'edge_attr') else None
+                
+                # Adjust edge indices to be local to this subgraph
+                subgraph_edge_index = subgraph_edge_index - start_node
+                
+                # Create subgraph Data object
+                from torch_geometric.data import Data
+                subgraph = Data(
+                    x=subgraph_x,
+                    edge_index=subgraph_edge_index,
+                    edge_attr=subgraph_edge_attr,
+                    roi_id=i,
+                    center=subgraph_info.get('center', torch.tensor([0.0, 0.0])),
+                    pos=subgraph_info.get('center', torch.tensor([0.0, 0.0]))  # Use center as position
+                )
+                
+                subgraphs.append(subgraph)
+            
+            logger.info(f"Extracted {len(subgraphs)} subgraphs as ROIs for {marker}")
+            return subgraphs
+        else:
+            logger.warning(f"No subgraphs found in main graph for {marker}")
+            return []
+            
+    except Exception as e:
+        logger.error(f"Error loading main graph for {marker}: {str(e)}")
+        return []
+
+def compute_intensity_score(graph, interaction_name):
+    """Compute intensity score based on marker intensities for the interaction"""
+    try:
+        # Get marker indices for this interaction
+        interaction_markers = INTERACTIONS[interaction_name]
+        marker_indices = []
+        
+        for marker in interaction_markers:
+            if marker in MARKERS:
+                marker_idx = MARKERS.index(marker)
+                if marker_idx < graph.x.shape[1]:  # Ensure index is within bounds
+                    marker_indices.append(marker_idx)
+        
+        if not marker_indices:
+            logger.warning(f"No valid marker indices found for interaction {interaction_name}")
+            return 0.0
+        
+        # Calculate mean intensity for interaction markers
+        marker_intensities = graph.x[:, marker_indices]
+        intensity_score = marker_intensities.mean().item()
+        
+        return intensity_score
+        
+    except Exception as e:
+        logger.error(f"Error computing intensity score: {str(e)}")
+        return 0.0
+
+def compute_attention_score(model, graph, device):
+    """Compute attention score based on GAT attention weights or MLP output"""
+    try:
+        model.eval()
+        with torch.no_grad():
+            # Move graph to device
+            graph = graph.to(device)
+            
+            # Check if model is MLP (CD11c) or GAT
+            if hasattr(model, 'fc1'):  # MLP model
+                # For MLP, use the output as attention score
+                x = graph.x
+                out = model(x)
+                # Use mean of output as attention score
+                attention_score = out.mean().item()
+            else:  # GAT model
+                # Get attention weights from first GAT layer
+                x = graph.x
+                edge_index = graph.edge_index
+                edge_attr = graph.edge_attr if hasattr(graph, 'edge_attr') else None
+                
+                # Forward pass through first GAT layer with attention weights
+                if edge_attr is not None:
+                    out, (edge_index_attn, attn_weights) = model.gat1(
+                        x, edge_index, edge_attr, return_attention_weights=True
+                    )
+                else:
+                    out, (edge_index_attn, attn_weights) = model.gat1(
+                        x, edge_index, return_attention_weights=True
+                    )
+                
+                # attn_weights shape: [num_edges, num_heads]
+                # Calculate mean attention across all heads and edges
+                if attn_weights.numel() > 0:
+                    attention_score = attn_weights.mean().item()
+                else:
+                    attention_score = 0.0
+            
+            return attention_score
+            
+    except Exception as e:
+        logger.error(f"Error computing attention score: {str(e)}")
+        return 0.0
+
+def compute_roi_score(model, graph, interaction_name, device, 
+                     intensity_weight=0.5, attention_weight=0.5):
+    """Compute combined ROI score based on intensity and attention"""
+    try:
+        # Compute individual scores
+        intensity_score = compute_intensity_score(graph, interaction_name)
+        attention_score = compute_attention_score(model, graph, device)
+        
+        # Combine scores with weights
+        combined_score = (intensity_weight * intensity_score + 
+                         attention_weight * attention_score)
+        
+        return {
+            'combined_score': combined_score,
+            'intensity_score': intensity_score,
+            'attention_score': attention_score
+        }
+        
+    except Exception as e:
+        logger.error(f"Error computing ROI score: {str(e)}")
+        return {
+            'combined_score': 0.0,
+            'intensity_score': 0.0,
+            'attention_score': 0.0
+        }
+
+def extract_roi_positions(graph):
+    """Extract position information from ROI graph"""
+    try:
+        # First try to get position from graph attributes
+        if hasattr(graph, 'center'):
+            center = graph.center
+            # Convert to tensor if it's a list
+            if isinstance(center, list):
+                center = torch.tensor(center, dtype=torch.float32)
+            pos = center
+        elif hasattr(graph, 'pos'):
+            pos = graph.pos
+        elif hasattr(graph, 'metadata') and 'center' in graph.metadata:
+            center = graph.metadata['center']
+            if isinstance(center, list):
+                center = torch.tensor(center, dtype=torch.float32)
+            pos = center
+        else:
+            # Try to get position from node features if available
+            pos = torch.tensor([0.0, 0.0])  # Default position
+        
+        # Handle different tensor shapes
+        if len(pos.shape) == 1:
+            x, y = pos[0].item(), pos[1].item()
+        else:
+            x, y = pos[0, 0].item(), pos[0, 1].item()
+        
+        # Add z coordinate if available
+        z = None
+        if len(pos.shape) == 1 and pos.size(0) > 2:
+            z = pos[2].item()
+        elif len(pos.shape) > 1 and pos.size(1) > 2:
+            z = pos[0, 2].item()
+        
+        return {
+            'x': float(x),
+            'y': float(y),
+            'z': float(z) if z is not None else None
+        }
+        
+    except Exception as e:
+        logger.error(f"Error extracting ROI position: {str(e)}")
+        return {'x': 0.0, 'y': 0.0, 'z': None}
+
+def process_interaction_rois(interaction_name, device):
+    """Process all ROIs for a specific interaction and compute scores"""
+    logger.info(f"\nProcessing interaction: {interaction_name}")
+    
+    # Get required markers for this interaction
+    required_markers = INTERACTIONS[interaction_name]
+    logger.info(f"Required markers: {required_markers}")
+    
+    # Load all graphs for required markers
+    all_graphs = []
+    for marker in required_markers:
+        marker_graphs = load_graphs(marker)
+        if marker_graphs:
+            all_graphs.extend(marker_graphs)
+    
+    if not all_graphs:
+        logger.error(f"No graphs found for {interaction_name}")
+        return []
+    
+    logger.info(f"Total graphs loaded: {len(all_graphs)}")
+    
+    # Load appropriate model for the first marker
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    checkpoint_path = os.path.join(script_dir, "output", f"best_model_{required_markers[0]}.pt")
+    
+    if not os.path.exists(checkpoint_path):
+        logger.error(f"Model checkpoint not found: {checkpoint_path}")
+        return []
+    
+    # Load checkpoint to check model type
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    
+    # Determine model type based on checkpoint structure
+    if 'model_type' in checkpoint and checkpoint['model_type'] == 'MLP':
+        # CD11c uses MLP model
+        from train_gat4 import CD11cMLP
+        model = CD11cMLP(in_channels=len(MARKERS)).to(device)
+        logger.info(f"Loading MLP model for {required_markers[0]}")
+    else:
+        # Other markers use GAT model
+        model = MarkerGAT(
+            in_channels=len(MARKERS),
+            hidden_channels=64,
+            out_channels=32
+        ).to(device)
+        logger.info(f"Loading GAT model for {required_markers[0]}")
+    
+    # Load model weights
+    try:
+        model.load_state_dict(checkpoint['model_state_dict'])
+        logger.info(f"Loaded model from {checkpoint_path}")
+    except Exception as e:
+        logger.error(f"Error loading model: {str(e)}")
+        return []
+    
+    # Compute scores for all ROIs
+    roi_scores = []
+    for i, graph in enumerate(all_graphs):
+        logger.info(f"Processing ROI {i+1}/{len(all_graphs)}")
+        
+        # Compute scores
+        scores = compute_roi_score(model, graph, interaction_name, device)
+        
+        # Extract position
+        position = extract_roi_positions(graph)
+        
+        # Create ROI data
+        roi_data = {
+            'roi_id': i,
+            'interaction': interaction_name,
+            'position': position,
+            'scores': scores,
+            'num_nodes': graph.x.shape[0] if hasattr(graph, 'x') else 0,
+            'num_edges': graph.edge_index.shape[1] if hasattr(graph, 'edge_index') else 0
+        }
+        
+        roi_scores.append(roi_data)
+    
+    # Sort ROIs by combined score in descending order
+    roi_scores_sorted = sorted(roi_scores, 
+                              key=lambda x: x['scores']['combined_score'], 
+                              reverse=True)
+    
+    logger.info(f"\nTop 5 ROIs for {interaction_name}:")
+    for i, roi in enumerate(roi_scores_sorted[:5]):
+        logger.info(f"ROI {i+1}: Combined Score = {roi['scores']['combined_score']:.4f}, "
+                   f"Intensity = {roi['scores']['intensity_score']:.4f}, "
+                   f"Attention = {roi['scores']['attention_score']:.4f}")
+    
+    return roi_scores_sorted
+
+def save_interaction_results(interaction_name, roi_scores, output_dir):
+    """Save results for a specific interaction"""
+    if not roi_scores:
+        logger.error(f"No ROI scores to save for {interaction_name}")
         return
     
-    # Sort ROIs by score in descending order
-    roi_summary.sort(key=lambda x: x["score"], reverse=True)
+    # Prepare data for JSON serialization
+    serializable_rois = []
+    for roi in roi_scores:
+        serializable_roi = {
+            'roi_id': roi['roi_id'],
+            'interaction': roi['interaction'],
+            'position': roi['position'],
+            'scores': {
+                'combined_score': float(roi['scores']['combined_score']),
+                'intensity_score': float(roi['scores']['intensity_score']),
+                'attention_score': float(roi['scores']['attention_score'])
+            },
+            'num_nodes': roi['num_nodes'],
+            'num_edges': roi['num_edges']
+        }
+        serializable_rois.append(serializable_roi)
     
-    # Save all ROIs to JSON file
-    output_file = os.path.join(output_dir, f"all_extraction_roi_{interaction_name}.json")
+    # Calculate statistics
+    combined_scores = [roi['scores']['combined_score'] for roi in roi_scores]
+    intensity_scores = [roi['scores']['intensity_score'] for roi in roi_scores]
+    attention_scores = [roi['scores']['attention_score'] for roi in roi_scores]
+    
+    stats = {
+        'total_rois': len(roi_scores),
+        'score_ranges': {
+            'combined': {'min': float(min(combined_scores)), 'max': float(max(combined_scores))},
+            'intensity': {'min': float(min(intensity_scores)), 'max': float(max(intensity_scores))},
+            'attention': {'min': float(min(attention_scores)), 'max': float(max(attention_scores))}
+        },
+        'score_means': {
+            'combined': float(np.mean(combined_scores)),
+            'intensity': float(np.mean(intensity_scores)),
+            'attention': float(np.mean(attention_scores))
+        }
+    }
+    
+    # Save all ROIs
+    output_file = os.path.join(output_dir, f"all_roi_scores_{interaction_name}.json")
     with open(output_file, 'w') as f:
         json.dump({
-            "interaction_name": interaction_name,
-            "rois": roi_summary,
-            "total_rois": len(roi_summary),
-            "score_range": {
-                "max": float(roi_summary[0]['score']) if roi_summary else 0,
-                "min": float(roi_summary[-1]['score']) if roi_summary else 0
-            }
+            'interaction_name': interaction_name,
+            'rois': serializable_rois,
+            'statistics': stats,
+            'method': 'intensity_attention_combined'
         }, f, indent=2)
     
-    logger.info(f"\nSaved {len(roi_summary)} ROIs for {interaction_name} to {output_file}")
+    logger.info(f"Saved {len(serializable_rois)} ROIs for {interaction_name} to {output_file}")
     
-    # Also save top 10 ROIs for backward compatibility
-    selected_rois = []
-    min_distance = 50
+    # Save top ROIs (top 10 or top 20%)
+    top_count = min(10, max(1, len(serializable_rois) // 5))
+    top_rois = serializable_rois[:top_count]
     
-    for roi in roi_summary:
-        # Check if this ROI is far enough from all previously selected ROIs
-        if all(calculate_distance(roi, selected_roi) > min_distance for selected_roi in selected_rois):
-            selected_rois.append(roi)
-            if len(selected_rois) >= 10:  # Stop after selecting 10 ROIs
-                break
+    top_output_file = os.path.join(output_dir, f"top_roi_scores_{interaction_name}.json")
+    with open(top_output_file, 'w') as f:
+        json.dump({
+            'interaction_name': interaction_name,
+            'top_rois': top_rois,
+            'total_rois': len(serializable_rois),
+            'top_count': top_count,
+            'statistics': stats,
+            'method': 'intensity_attention_combined'
+        }, f, indent=2)
     
-    logger.info(f"\nSelected top 10 ROIs for {interaction_name} (minimum distance: {min_distance} pixels):")
-    logger.info("-" * 50)
-    for i, roi in enumerate(selected_rois, 1):
-        logger.info(f"ROI {i}: Score = {roi['score']:.4f}, Position = ({roi['x']:.1f}, {roi['y']:.1f})")
+    logger.info(f"Saved top {top_count} ROIs for {interaction_name} to {top_output_file}")
+
+def compute_intensity_score_cd11c(graph):
+    """Compute intensity score for CD11c: num_nodes * mean_intensity"""
+    try:
+        # Get CD11c marker index
+        cd11c_idx = MARKERS.index("CD11c")
+        if cd11c_idx >= graph.x.shape[1]:
+            return 0.0
+        
+        # Get CD11c intensities
+        cd11c_intensities = graph.x[:, cd11c_idx]
+        mean_intensity = cd11c_intensities.mean().item()
+        num_nodes = graph.x.shape[0]
+        
+        # Calculate score: num_nodes * mean_intensity
+        intensity_score = num_nodes * mean_intensity
+        
+        return intensity_score
+        
+    except Exception as e:
+        logger.error(f"Error computing CD11c intensity score: {str(e)}")
+        return 0.0
+
+def process_cd11c_rois(device):
+    """Process CD11c ROIs with special intensity scoring"""
+    logger.info(f"\nProcessing CD11c (Dendritic signal) with special scoring")
     
-    # Save top 10 ROIs to JSON file
-    output_file = os.path.join(output_dir, f"extraction_roi_{interaction_name}.json")
+    # Load CD11c graphs
+    cd11c_graphs = load_graphs("CD11c")
+    
+    if not cd11c_graphs:
+        logger.error(f"No CD11c graphs found")
+        return []
+    
+    logger.info(f"Total CD11c graphs loaded: {len(cd11c_graphs)}")
+    
+    # Compute scores for all ROIs
+    roi_scores = []
+    for i, graph in enumerate(cd11c_graphs):
+        logger.info(f"Processing CD11c ROI {i+1}/{len(cd11c_graphs)}")
+        
+        # Compute CD11c-specific intensity score
+        intensity_score = compute_intensity_score_cd11c(graph)
+        
+        # Extract position
+        position = extract_roi_positions(graph)
+        
+        # Create ROI data
+        roi_data = {
+            'roi_id': i,
+            'interaction': 'Dendritic signal',
+            'position': position,
+            'scores': {
+                'intensity_score': intensity_score,
+                'num_nodes': graph.x.shape[0] if hasattr(graph, 'x') else 0,
+                'mean_intensity': graph.x[:, MARKERS.index("CD11c")].mean().item() if hasattr(graph, 'x') else 0
+            },
+            'num_nodes': graph.x.shape[0] if hasattr(graph, 'x') else 0,
+            'num_edges': graph.edge_index.shape[1] if hasattr(graph, 'edge_index') else 0
+        }
+        
+        roi_scores.append(roi_data)
+    
+    # Sort ROIs by intensity score in descending order
+    roi_scores_sorted = sorted(roi_scores, 
+                              key=lambda x: x['scores']['intensity_score'], 
+                              reverse=True)
+    
+    # Take only top 5
+    top_5_rois = roi_scores_sorted[:5]
+    
+    logger.info(f"\nTop 5 CD11c ROIs (Dendritic signal):")
+    for i, roi in enumerate(top_5_rois):
+        logger.info(f"ROI {i+1}: Intensity Score = {roi['scores']['intensity_score']:.4f}, "
+                   f"Num Nodes = {roi['scores']['num_nodes']}, "
+                   f"Mean Intensity = {roi['scores']['mean_intensity']:.4f}")
+    
+    return top_5_rois
+
+def save_cd11c_results(roi_scores, output_dir):
+    """Save CD11c results"""
+    if not roi_scores:
+        logger.error(f"No CD11c ROI scores to save")
+        return
+    
+    # Prepare data for JSON serialization
+    serializable_rois = []
+    for roi in roi_scores:
+        serializable_roi = {
+            'roi_id': roi['roi_id'],
+            'interaction': roi['interaction'],
+            'position': roi['position'],
+            'scores': {
+                'intensity_score': float(roi['scores']['intensity_score']),
+                'num_nodes': roi['scores']['num_nodes'],
+                'mean_intensity': float(roi['scores']['mean_intensity'])
+            },
+            'num_nodes': roi['num_nodes'],
+            'num_edges': roi['num_edges']
+        }
+        serializable_rois.append(serializable_roi)
+    
+    # Calculate statistics
+    intensity_scores = [roi['scores']['intensity_score'] for roi in roi_scores]
+    
+    stats = {
+        'total_rois': len(roi_scores),
+        'score_ranges': {
+            'intensity': {'min': float(min(intensity_scores)), 'max': float(max(intensity_scores))}
+        },
+        'score_means': {
+            'intensity': float(np.mean(intensity_scores))
+        }
+    }
+    
+    # Save top 5 ROIs
+    output_file = os.path.join(output_dir, f"top_5_cd11c_rois.json")
     with open(output_file, 'w') as f:
         json.dump({
-            "interaction_name": interaction_name,
-            "rois": selected_rois,
-            "total_rois": len(roi_summary),
-            "selected_rois": len(selected_rois),
-            "min_distance": min_distance,
-            "score_range": {
-                "max": float(selected_rois[0]['score']) if selected_rois else 0,
-                "min": float(selected_rois[-1]['score']) if selected_rois else 0
-            }
+            'interaction_name': 'Dendritic signal',
+            'top_5_rois': serializable_rois,
+            'total_rois': len(roi_scores),
+            'statistics': stats,
+            'method': 'cd11c_intensity_nodes_multiplied'
         }, f, indent=2)
     
-    logger.info(f"\nSaved {len(selected_rois)} top ROIs for {interaction_name} to {output_file}")
+    logger.info(f"Saved top 5 CD11c ROIs to {output_file}")
 
 def main():
+    """Main function to extract and score ROIs using intensity and attention"""
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
@@ -199,41 +524,35 @@ def main():
     
     # Process each interaction
     for interaction_name in INTERACTIONS.keys():
-        logger.info(f"\nProcessing interaction: {interaction_name}")
-        
-        # Load required graphs
-        required_markers = list(INTERACTIONS[interaction_name].keys())
-        graphs = []
-        for marker in required_markers:
-            marker_graphs = load_graphs(marker)
-            if marker_graphs:
-                graphs.extend(marker_graphs)
-        
-        if not graphs:
-            logger.error(f"No graphs found for {interaction_name}")
+        try:
+            # Process ROIs for this interaction
+            roi_scores = process_interaction_rois(interaction_name, device)
+            
+            # Save results
+            if roi_scores:
+                save_interaction_results(interaction_name, roi_scores, output_dir)
+            else:
+                logger.warning(f"No ROI scores computed for {interaction_name}")
+                
+        except Exception as e:
+            logger.error(f"Error processing interaction {interaction_name}: {str(e)}")
             continue
+    
+    # Process CD11c ROIs
+    try:
+        # Process CD11c ROIs
+        cd11c_rois = process_cd11c_rois(device)
         
-        # Load model
-        model = MarkerGAT(
-            in_channels=len(MARKERS),
-            hidden_channels=64,
-            out_channels=32
-        ).to(device)
-        
-        # Load best model checkpoint
-        checkpoint_path = os.path.join(script_dir, "output", f"best_model_{required_markers[0]}.pt")
-        if os.path.exists(checkpoint_path):
-            checkpoint = torch.load(checkpoint_path)
-            model.load_state_dict(checkpoint['model_state_dict'])
+        # Save CD11c results
+        if cd11c_rois:
+            save_cd11c_results(cd11c_rois, output_dir)
         else:
-            logger.error(f"Model checkpoint not found: {checkpoint_path}")
-            continue
-        
-        # Extract embeddings and compute scores
-        embeddings, scores = extract_embeddings(model, graphs, device, interaction_name)
-        
-        # Save results
-        save_interaction_results(interaction_name, graphs, scores, output_dir)
+            logger.warning(f"No CD11c ROI scores computed")
+            
+    except Exception as e:
+        logger.error(f"Error processing CD11c ROIs: {str(e)}")
+    
+    logger.info("\nROI extraction and scoring completed!")
 
 if __name__ == "__main__":
     main() 

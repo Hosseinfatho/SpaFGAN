@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 import numpy as np
-from train_gat4 import MarkerGAT
+from train_gat4 import MarkerGAT, MARKERS
 import os
 from tabulate import tabulate
 import logging
@@ -12,43 +12,110 @@ import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def evaluate_model(model, loader, device):
+def evaluate_model(model, loader, device, model_type='GAT'):
     model.eval()
     total_loss = 0
     all_preds = []
     all_labels = []
+    all_reconstructed = []
+    all_original = []
     
     with torch.no_grad():
         for batch in loader:
             batch = batch.to(device)
-            out = model(batch.x, batch.edge_index, batch.edge_attr)
+            
+            if model_type == 'CD11cMLP':
+                # For CD11c MLP model (no edges)
+                out = model(batch.x)
+            else:
+                # For GAT models
+                out = model(batch.x, batch.edge_index, batch.edge_attr)
+            
+            # Store original and reconstructed values for regression metrics
+            all_original.extend(batch.x.cpu().numpy())
+            all_reconstructed.extend(out.cpu().numpy())
+            
             loss = F.mse_loss(out, batch.x)
             total_loss += loss.item()
             
             # Convert predictions to binary (high/low expression)
-            preds = (out > batch.x.mean(dim=0)).float()
-            labels = (batch.x > batch.x.mean(dim=0)).float()
+            # Use global mean instead of batch mean
+            preds = (out > 0.5).float()  # Use fixed threshold
+            labels = (batch.x > 0.5).float()  # Use fixed threshold
             
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
     
-    # Calculate evaluation metrics
+    # Calculate regression metrics on original values
+    all_original = np.array(all_original)
+    all_reconstructed = np.array(all_reconstructed)
+    
+    # Flatten arrays for metrics calculation
+    original_flat = all_original.flatten()
+    reconstructed_flat = all_reconstructed.flatten()
+    
+    # Remove any NaN or Inf values
+    valid_mask = ~(np.isnan(original_flat) | np.isinf(original_flat) | 
+                   np.isnan(reconstructed_flat) | np.isinf(reconstructed_flat))
+    
+    if np.sum(valid_mask) == 0:
+        logger.warning("No valid values for metrics calculation")
+        return {
+            'loss': float('inf'),
+            'mse': float('inf'),
+            'rmse': float('inf'),
+            'mae': float('inf'),
+            'r2': 0.0,
+            'accuracy': 0.0,
+            'precision': 0.0,
+            'recall': 0.0,
+            'f1': 0.0
+        }
+    
+    original_flat = original_flat[valid_mask]
+    reconstructed_flat = reconstructed_flat[valid_mask]
+    
+    # Calculate regression metrics
+    mse = mean_squared_error(original_flat, reconstructed_flat)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(original_flat, reconstructed_flat)
+    
+    # Calculate R² score
+    try:
+        r2 = r2_score(original_flat, reconstructed_flat)
+    except:
+        r2 = 0.0
+    
+    # Calculate classification metrics
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
     
-    mse = mean_squared_error(all_labels.flatten(), all_preds.flatten())
-    rmse = np.sqrt(mse)
-    mae = mean_absolute_error(all_labels.flatten(), all_preds.flatten())
-    r2 = r2_score(all_labels.flatten(), all_preds.flatten())
+    # Remove any NaN or Inf values from classification data
+    valid_class_mask = ~(np.isnan(all_preds) | np.isinf(all_preds) | 
+                        np.isnan(all_labels) | np.isinf(all_labels))
     
-    # Calculate classification metrics
-    accuracy = accuracy_score(all_labels.flatten(), all_preds.flatten())
-    precision = precision_score(all_labels.flatten(), all_preds.flatten(), average='weighted')
-    recall = recall_score(all_labels.flatten(), all_preds.flatten(), average='weighted')
-    f1 = f1_score(all_labels.flatten(), all_preds.flatten(), average='weighted')
+    if np.sum(valid_class_mask) == 0:
+        logger.warning("No valid values for classification metrics")
+        accuracy = 0.0
+        precision = 0.0
+        recall = 0.0
+        f1 = 0.0
+    else:
+        all_preds = all_preds[valid_class_mask]
+        all_labels = all_labels[valid_class_mask]
+        
+        accuracy = accuracy_score(all_labels.flatten(), all_preds.flatten())
+        precision = precision_score(all_labels.flatten(), all_preds.flatten(), average='weighted', zero_division=0)
+        recall = recall_score(all_labels.flatten(), all_preds.flatten(), average='weighted', zero_division=0)
+        f1 = f1_score(all_labels.flatten(), all_preds.flatten(), average='weighted', zero_division=0)
+    
+    # Log some debugging information
+    logger.info(f"Debug - Original range: [{original_flat.min():.3f}, {original_flat.max():.3f}]")
+    logger.info(f"Debug - Reconstructed range: [{reconstructed_flat.min():.3f}, {reconstructed_flat.max():.3f}]")
+    logger.info(f"Debug - MSE: {mse:.6f}, RMSE: {rmse:.6f}, MAE: {mae:.6f}, R²: {r2:.6f}")
     
     return {
-        'loss': total_loss / len(loader),
+        'loss': total_loss / len(loader) if len(loader) > 0 else float('inf'),
         'mse': mse,
         'rmse': rmse,
         'mae': mae,
@@ -92,58 +159,107 @@ def print_marker_results(marker, train_metrics, test_metrics):
     logger.info(f"Accuracy Difference (Train-Test): {train_metrics['accuracy'] - test_metrics['accuracy']:.6f}")
     logger.info(f"F1 Score Difference (Train-Test): {train_metrics['f1'] - test_metrics['f1']:.6f}")
 
+def extract_subgraphs_from_main(main_graph):
+    """Extract subgraphs from main graph for evaluation"""
+    from torch_geometric.data import Data
+    
+    subgraphs = []
+    metadata = main_graph.metadata
+    
+    for subgraph_info in metadata['subgraphs']:
+        start_node = subgraph_info['start_node']
+        end_node = subgraph_info['end_node']
+        
+        # Extract node features for this subgraph
+        subgraph_x = main_graph.x[start_node:end_node + 1]
+        
+        # Extract edges that are within this subgraph
+        edge_mask = ((main_graph.edge_index[0] >= start_node) & 
+                    (main_graph.edge_index[0] <= end_node) &
+                    (main_graph.edge_index[1] >= start_node) & 
+                    (main_graph.edge_index[1] <= end_node))
+        
+        subgraph_edge_index = main_graph.edge_index[:, edge_mask]
+        subgraph_edge_attr = main_graph.edge_attr[edge_mask]
+        
+        # Adjust edge indices to be local to this subgraph
+        subgraph_edge_index = subgraph_edge_index - start_node
+        
+        # Create subgraph Data object
+        subgraph = Data(
+            x=subgraph_x,
+            edge_index=subgraph_edge_index,
+            edge_attr=subgraph_edge_attr,
+            roi_id=subgraph_info['roi_id'],
+            center=subgraph_info['center']
+        )
+        
+        subgraphs.append(subgraph)
+    
+    return subgraphs
+
 def main():
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
     
-    markers = ['CD31', 'CD20', 'CD11b', 'CD4', 'CD11c', 'Catalase']
+    markers = MARKERS
     table_data = []
     results = []
     
     logger.info("\nStarting evaluation...")
     
     for marker in markers:
-        logger.info(f"\nEvaluating GAT model for {marker}")
+        logger.info(f"\nEvaluating model for {marker}")
         
-        # Load data
-        data_dir = f'output/roi_graphs_{marker}.pt'
-        if not os.path.exists(data_dir):
-            logger.error(f"Data file not found: {data_dir}")
+        # Load main graph
+        main_graph_path = f'output/main_marker_graphs/{marker}_main_graph.pt'
+        if not os.path.exists(main_graph_path):
+            logger.error(f"Main graph file not found: {main_graph_path}")
             continue
             
-        data = torch.load(data_dir)
-        graphs = []
-        for graph_dict in data['graphs']:
-            graph = graph_dict['graph']
-            if isinstance(graph, dict):
-                from torch_geometric.data import Data
-                graph = Data(
-                    x=graph['x'],
-                    edge_index=graph['edge_index'],
-                    edge_attr=graph['edge_attr'],
-                    pos=graph['pos'],
-                    marker=graph['marker']
-                )
-            graphs.append(graph)
+        main_graph = torch.load(main_graph_path)
+        
+        # Extract subgraphs
+        subgraphs = extract_subgraphs_from_main(main_graph)
+        
+        if len(subgraphs) < 2:
+            logger.warning(f"Not enough subgraphs for {marker}: {len(subgraphs)}")
+            continue
         
         # Split data into train and test sets
-        train_size = int(0.85 * len(graphs))
-        train_data = graphs[:train_size]
-        test_data = graphs[train_size:]
+        train_size = int(0.85 * len(subgraphs))
+        train_data = subgraphs[:train_size]
+        test_data = subgraphs[train_size:]
         
         train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
         test_loader = DataLoader(test_data, batch_size=32, shuffle=False)
         
         # Load model
-        model = MarkerGAT(in_channels=6, hidden_channels=64, out_channels=32)
-        checkpoint = torch.load(f'output/best_model_{marker}.pt')
+        checkpoint_path = f'output/best_model_{marker}.pt'
+        if not os.path.exists(checkpoint_path):
+            logger.error(f"Model checkpoint not found: {checkpoint_path}")
+            continue
+            
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        
+        # Determine model type
+        model_type = checkpoint.get('model_type', 'GAT')
+        
+        if model_type == 'CD11cMLP':
+            # Load CD11c MLP model
+            from train_gat4 import CD11cMLP
+            model = CD11cMLP(in_channels=len(MARKERS))
+        else:
+            # Load GAT model
+            model = MarkerGAT(in_channels=len(MARKERS), hidden_channels=64, out_channels=32)
+        
         model.load_state_dict(checkpoint['model_state_dict'])
         model = model.to(device)
         
         # Evaluate model
-        train_metrics = evaluate_model(model, train_loader, device)
-        test_metrics = evaluate_model(model, test_loader, device)
+        train_metrics = evaluate_model(model, train_loader, device, model_type)
+        test_metrics = evaluate_model(model, test_loader, device, model_type)
         
         print_marker_results(marker, train_metrics, test_metrics)
         
@@ -171,6 +287,7 @@ def main():
         # Add results to JSON data
         results.append({
             'marker': marker,
+            'model_type': model_type,
             'train_size': len(train_data),
             'test_size': len(test_data),
             'train_metrics': {
