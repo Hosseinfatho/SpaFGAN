@@ -89,8 +89,8 @@ def compute_intensity_score(graph, interaction_name):
         marker_indices = []
         
         for marker in interaction_markers:
-        if marker in MARKERS:
-            marker_idx = MARKERS.index(marker)
+            if marker in MARKERS:
+                marker_idx = MARKERS.index(marker)
                 if marker_idx < graph.x.shape[1]:  # Ensure index is within bounds
                     marker_indices.append(marker_idx)
         
@@ -111,8 +111,8 @@ def compute_intensity_score(graph, interaction_name):
 def compute_attention_score(model, graph, device):
     """Compute attention score based on GAT attention weights or MLP output"""
     try:
-    model.eval()
-    with torch.no_grad():
+        model.eval()
+        with torch.no_grad():
             # Move graph to device
             graph = graph.to(device)
             
@@ -199,17 +199,17 @@ def extract_roi_positions(graph):
             # Try to get position from node features if available
             pos = torch.tensor([0.0, 0.0])  # Default position
         
-            # Handle different tensor shapes
-            if len(pos.shape) == 1:
-                x, y = pos[0].item(), pos[1].item()
-            else:
-                x, y = pos[0, 0].item(), pos[0, 1].item()
-            
-            # Add z coordinate if available
+        # Handle different tensor shapes
+        if len(pos.shape) == 1:
+            x, y = pos[0].item(), pos[1].item()
+        else:
+            x, y = pos[0, 0].item(), pos[0, 1].item()
+        
+        # Add z coordinate if available
         z = None
-            if len(pos.shape) == 1 and pos.size(0) > 2:
+        if len(pos.shape) == 1 and pos.size(0) > 2:
             z = pos[2].item()
-            elif len(pos.shape) > 1 and pos.size(1) > 2:
+        elif len(pos.shape) > 1 and pos.size(1) > 2:
             z = pos[0, 2].item()
         
         return {
@@ -218,7 +218,7 @@ def extract_roi_positions(graph):
             'z': float(z) if z is not None else None
         }
             
-        except Exception as e:
+    except Exception as e:
         logger.error(f"Error extracting ROI position: {str(e)}")
         return {'x': 0.0, 'y': 0.0, 'z': None}
 
