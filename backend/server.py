@@ -1409,7 +1409,8 @@ def get_filtered_rois():
         
         # Convert to circle format
         circles = []
-        y_max = 5508
+        y_max = 5508  # Full height of the image
+        x_max = 10908  # Full width of the image
         
         for i, feature in enumerate(top_5_features):
             geometry = feature['geometry']
@@ -1435,30 +1436,28 @@ def get_filtered_rois():
                 sum(coord[1] for coord in flat_coords) / len(flat_coords)
             ]
             
-            # Scale coordinates to fit on screen
-            # Assuming screen width is around 1920px and height around 1080px
-            screen_width = 1920
-            screen_height = 1080
+            # Convert ROI coordinates to Vitessce image coordinates
+            # ROI coordinates are in the original image space (10908 x 5508)
+            # We need to map them to the Vitessce viewport
+            x = centroid[0]  # Keep original X coordinate
+            y = y_max - centroid[1]  # Flip Y coordinate (Vitessce uses top-left origin)
             
-            # Scale coordinates to fit within screen bounds
-            # Use modulo to wrap coordinates around screen
-            x = (centroid[0] * 8) % screen_width
-            y = (y_max - (centroid[1] * 8)) % screen_height
+            # Use original coordinates without scaling for better alignment with Vitessce
+            x_scaled = x
+            y_scaled = y
             
-            # Ensure circles are visible within viewport (with some margin)
-            x = max(50, min(screen_width - 50, x))
-            y = max(50, min(screen_height - 50, y))
-            
-            logger.info(f"ROI {i}: Original centroid: {centroid}, Scaled: x={x}, y={y}")
+            logger.info(f"ROI {i}: Original centroid: {centroid}, Vitessce coords: x={x}, y={y}")
             
             circle = {
                 "id": f"roi_{i}",
-                "x": x,
-                "y": y,
+                "x": x_scaled,
+                "y": y_scaled,
+                "original_x": x,
+                "original_y": y,
                 "score": feature.get('properties', {}).get('score', 0),
                 "interactions": feature.get('properties', {}).get('interactions', []),
                 "color": get_circle_color(i),
-                "radius": 500
+                "radius": 20  # Smaller radius for better visibility
             }
             circles.append(circle)
         
@@ -1466,7 +1465,10 @@ def get_filtered_rois():
             "success": True,
             "circles": circles,
             "total_found": len(filtered_features),
-            "showing": len(circles)
+            "showing": len(circles),
+            "image_dimensions": {"width": x_max, "height": y_max},
+            "viewport_dimensions": {"width": x_max, "height": y_max},
+            "scale_factor": 1.0
         })
         
     except Exception as e:

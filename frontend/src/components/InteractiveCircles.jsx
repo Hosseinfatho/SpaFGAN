@@ -3,10 +3,14 @@ import './InteractiveCircles.css';
 
 const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, selectedInteractions }) => {
   const [circles, setCircles] = useState([]);
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [loading, setLoading] = useState(false);
+  const [vitessceViewport, setVitessceViewport] = useState({
+    zoom: 1,
+    x: 0,
+    y: 0,
+    width: 1920,
+    height: 1080
+  });
 
   useEffect(() => {
     if (showCircles && selectedInteractions && selectedInteractions.length > 0) {
@@ -28,10 +32,30 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
       .then(data => {
         console.log('Received circles data:', data);
         if (data.success && data.circles) {
-          setCircles(data.circles.map(circle => ({
+          // Scale coordinates to fit the viewport
+          const imageWidth = data.image_dimensions?.width || 10908;
+          const imageHeight = data.image_dimensions?.height || 5508;
+          
+          // Get viewport dimensions (assuming Vitessce container size)
+          const viewportWidth = window.innerWidth * 0.8; // Approximate Vitessce width
+          const viewportHeight = window.innerHeight * 0.8; // Approximate Vitessce height
+          
+          const scaleX = viewportWidth / imageWidth;
+          const scaleY = viewportHeight / imageHeight;
+          const scale = Math.min(scaleX, scaleY);
+          
+          const scaledCircles = data.circles.map(circle => ({
             ...circle,
-            selected: selectedCircle === circle.id
-          })));
+            selected: selectedCircle === circle.id,
+            // Scale coordinates to viewport
+            x: circle.x * scale,
+            y: circle.y * scale,
+            original_x: circle.x,
+            original_y: circle.y
+          }));
+          
+          console.log('Scaled circles:', scaledCircles);
+          setCircles(scaledCircles);
         } else {
           console.error('Failed to fetch filtered ROIs:', data.error);
           setCircles([]);
@@ -49,6 +73,22 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     }
   }, [showCircles, selectedInteractions, selectedCircle]);
 
+  // Listen for Vitessce viewport changes
+  useEffect(() => {
+    const handleVitessceViewportChange = (event) => {
+      // This will be called when Vitessce viewport changes
+      // We'll need to get this from Vitessce's viewport state
+      console.log('Vitessce viewport changed:', event);
+    };
+
+    // Add event listener for Vitessce viewport changes
+    window.addEventListener('vitessce-viewport-change', handleVitessceViewportChange);
+    
+    return () => {
+      window.removeEventListener('vitessce-viewport-change', handleVitessceViewportChange);
+    };
+  }, []);
+
   const getCircleColor = (index) => {
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
     return colors[index % colors.length];
@@ -61,44 +101,13 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     }
   };
 
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom(prev => Math.max(0.1, Math.min(10, prev * delta)));
-  };
-
-  const handleMouseDown = (e) => {
-    if (e.button === 0) { // Left click
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startPos = { ...position };
-
-      const handleMouseMove = (e) => {
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-        setPosition({
-          x: startPos.x + deltaX,
-          y: startPos.y + deltaY
-        });
-      };
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-  };
-
   if (!showCircles) {
     return null;
   }
 
   if (loading) {
     return (
-      <div className="interactive-circles-container">
+      <div className="interactive-circles-overlay">
         <div className="loading-overlay">
           <div className="loading-spinner">Loading ROIs...</div>
         </div>
@@ -108,7 +117,7 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
 
   if (circles.length === 0) {
     return (
-      <div className="interactive-circles-container">
+      <div className="interactive-circles-overlay">
         <div className="circle-info-panel">
           <div className="info-title">No ROIs Found</div>
           <div className="info-content">
@@ -122,89 +131,65 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
   }
 
   return (
-    <div 
-      className="interactive-circles-container"
-      onWheel={handleWheel}
-      onMouseDown={handleMouseDown}
-    >
-      <div 
-        className="circles-viewport"
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`
-        }}
-      >
-        {circles.map((circle) => (
-          <div
-            key={circle.id}
-            className={`interactive-circle ${circle.selected ? 'selected' : ''}`}
-            style={{
-              left: `${circle.x}px`,
-              top: `${circle.y}px`,
-              backgroundColor: circle.color,
-              borderColor: circle.selected ? '#ffffff' : circle.color,
-              transform: `translate(-50%, -50%) scale(${1/zoom})`
-            }}
-            onClick={() => handleCircleClick(circle.id)}
-            title={`ROI: ${circle.interactions.join(', ')} - Score: ${circle.score.toFixed(3)}`}
-          >
-            <div className="circle-label">
-              {circle.id.split('_')[1]}
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* Controls */}
-      <div className="circle-controls">
-        <button 
-          onClick={() => setZoom(prev => Math.min(10, prev * 1.2))}
-          className="control-btn"
-          title="Zoom In"
-        >
-          +
-        </button>
-        <button 
-          onClick={() => setZoom(prev => Math.max(0.1, prev * 0.8))}
-          className="control-btn"
-          title="Zoom Out"
-        >
-          -
-        </button>
-        <button 
-          onClick={() => setRotation(prev => prev + 90)}
-          className="control-btn"
-          title="Rotate"
-        >
-          ↻
-        </button>
-        <button 
-          onClick={() => {
-            setPosition({ x: 0, y: 0 });
-            setZoom(1);
-            setRotation(0);
+    <div className="interactive-circles-overlay">
+      {/* ROI Circles - positioned absolutely over Vitessce */}
+      {circles.map((circle) => (
+        <div
+          key={circle.id}
+          className={`vitessce-circle ${circle.selected ? 'selected' : ''}`}
+          style={{
+            position: 'absolute',
+            left: `${circle.x}px`,
+            top: `${circle.y}px`,
+            width: '20px',
+            height: '20px',
+            backgroundColor: circle.color,
+            border: `2px solid ${circle.selected ? '#ffffff' : circle.color}`,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            zIndex: 1000,
+            transform: 'translate(-50%, -50%)',
+            boxShadow: circle.selected ? '0 0 10px rgba(255,255,255,0.8)' : '0 0 5px rgba(0,0,0,0.5)',
+            transition: 'all 0.2s ease'
           }}
-          className="control-btn"
-          title="Reset View"
+          onClick={() => handleCircleClick(circle.id)}
+          title={`ROI: ${circle.interactions.join(', ')} - Score: ${circle.score.toFixed(3)}`}
         >
-          Reset
-        </button>
-      </div>
+          <div 
+            className="circle-label"
+            style={{
+              position: 'absolute',
+              top: '-25px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              color: 'white',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontSize: '10px',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none'
+            }}
+          >
+            {circle.id.split('_')[1]}
+          </div>
+        </div>
+      ))}
       
       {/* Debug Panel */}
       <div className="debug-panel">
-        <div className="debug-title">Debug Info</div>
+        <div className="debug-title">ROI Overlay Debug</div>
         <div className="debug-content">
           <p>Show Circles: {showCircles ? 'Yes' : 'No'}</p>
           <p>Selected Interactions: {selectedInteractions?.join(', ') || 'None'}</p>
           <p>Circles Count: {circles.length}</p>
           <p>Loading: {loading ? 'Yes' : 'No'}</p>
-          <p>Zoom: {zoom.toFixed(2)}</p>
-          <p>Position: ({position.x.toFixed(0)}, {position.y.toFixed(0)})</p>
           {circles.length > 0 && (
             <div>
               <p>First Circle:</p>
               <p>  ID: {circles[0].id}</p>
-              <p>  Position: ({circles[0].x}, {circles[0].y})</p>
+              <p>  Position: ({circles[0].x.toFixed(0)}, {circles[0].y.toFixed(0)})</p>
+              <p>  Original: ({circles[0].original_x?.toFixed(0)}, {circles[0].original_y?.toFixed(0)})</p>
               <p>  Color: {circles[0].color}</p>
               <p>  Score: {circles[0].score.toFixed(3)}</p>
             </div>
@@ -214,12 +199,10 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
       
       {/* Info Panel */}
       <div className="circle-info-panel">
-        <div className="info-title">Interactive ROI Circles</div>
+        <div className="info-title">ROI Overlay</div>
         <div className="info-content">
-          <p>• Click circles to zoom to ROI</p>
-          <p>• Use mouse wheel to zoom</p>
-          <p>• Drag to pan view</p>
-          <p>• Use controls to adjust view</p>
+          <p>• Click circles to select ROI</p>
+          <p>• Circles overlay on image</p>
           <p>• Found {circles.length} ROIs</p>
           <p>• Type: {selectedInteractions?.join(', ')}</p>
         </div>

@@ -194,6 +194,12 @@ const MainView = () => {
   const handleSetView = (roiView) => {
     console.log('Mainview handleSetView:', roiView);
     
+    // Handle showCircles toggle
+    if (roiView.hasOwnProperty('showCircles')) {
+      setShowCircles(roiView.showCircles);
+      console.log('Mainview: showCircles set to:', roiView.showCircles);
+    }
+    
     setViewState(prev => ({
       ...prev,
       ...roiView
@@ -206,11 +212,6 @@ const MainView = () => {
       setTimeout(() => {
         fetchConfig(viewState);
       }, 500);
-    }
-
-    // Handle circle overlay toggle
-    if (roiView.showCircles !== undefined) {
-      setShowCircles(roiView.showCircles);
     }
 
     // Handle selected groups update
@@ -480,7 +481,7 @@ const MainView = () => {
           width={null}
         />
         
-        {/* Interactive Circles Overlay */}
+        {/* Interactive Circles Overlay - positioned absolutely over Vitessce */}
         <InteractiveCircles
           rois={rois}
           showCircles={showCircles}
