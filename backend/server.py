@@ -1274,7 +1274,7 @@ def update_config_with_circles():
                 
                 # Scale coordinates to fit within screen bounds
                 x = (float(roi['position']['x']) * 8) % screen_width
-                y = (y_max - (float(roi['position']['y']) * 8)) % screen_height
+                y = centroid[1]  # Keep original Y coordinate from GeoJSON
                 
                 # Ensure circles are visible within viewport
                 x = max(50, min(screen_width - 50, x))
@@ -1440,7 +1440,7 @@ def get_filtered_rois():
             # ROI coordinates are in the original image space (10908 x 5508)
             # We need to map them to the Vitessce viewport
             x = centroid[0]  # Keep original X coordinate
-            y = y_max - centroid[1]  # Flip Y coordinate (Vitessce uses top-left origin)
+            y = centroid[1]  # Keep original Y coordinate from GeoJSON
             
             # Use original coordinates without scaling for better alignment with Vitessce
             x_scaled = x
@@ -1452,8 +1452,8 @@ def get_filtered_rois():
                 "id": f"roi_{i}",
                 "x": x_scaled,
                 "y": y_scaled,
-                "original_x": x,
-                "original_y": y,
+                "original_x": centroid[0],  # Original X from GeoJSON
+                "original_y": centroid[1],  # Original Y from GeoJSON
                 "score": feature.get('properties', {}).get('score', 0),
                 "interactions": feature.get('properties', {}).get('interactions', []),
                 "color": get_circle_color(i),

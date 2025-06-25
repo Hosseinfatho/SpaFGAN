@@ -153,7 +153,7 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
             transition: 'all 0.2s ease'
           }}
           onClick={() => handleCircleClick(circle.id)}
-          title={`ROI: ${circle.interactions.join(', ')} - Score: ${circle.score.toFixed(3)}`}
+          title={`ROI: ${circle.interactions.join(', ')} - Score: ${circle.score.toFixed(3)} - Position: (${circle.original_x?.toFixed(0)}, ${circle.original_y?.toFixed(0)})`}
         >
           <div 
             className="circle-label"
