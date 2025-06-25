@@ -178,18 +178,24 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
 
   const currentROI = filteredRois[currentIndex] || {};
 
-  const handleSetView = (roiView) => {
-    setViewState(prev => ({
-      ...prev,
-      ...roiView
-    }));
-
-    // اگر نیاز به رفرش کانفیگ بود
-    if (roiView.refreshConfig) {
-      setConfig(null); // ابتدا config را خالی کن تا Vitessce مجبور به رندر مجدد شود
-      setTimeout(() => {
-        fetchConfig(viewState); // کانفیگ جدید را بگیر
-      }, 500);
+  const handleSetView = () => {
+    if (currentROI && currentROI.x !== undefined && currentROI.y !== undefined) {
+      // Convert ROI coordinates to Vitessce view coordinates
+      const roiX = currentROI.x;
+      const roiY = currentROI.y;
+      
+      // Set view to ROI location with appropriate zoom
+      const viewConfig = {
+        spatialTargetX: roiX,
+        spatialTargetY: roiY,
+        spatialZoom: -1.0, // Zoom level to show ROI clearly
+        refreshConfig: true
+      };
+      
+      console.log('Setting view to ROI:', currentROI.id, 'at position:', roiX, roiY);
+      onSetView(viewConfig);
+    } else {
+      console.warn('No valid ROI selected for Set View');
     }
   };
 
@@ -321,7 +327,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
           ←
         </button>
         <button 
-          onClick={handleSetView}
+          onClick={() => handleSetView()}
           style={{ 
             padding: "12px 24px", 
             fontSize: "16px", 
