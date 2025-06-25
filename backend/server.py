@@ -322,6 +322,40 @@ def generate_vitessce_config(view_state_data):
             file_type="image.ome-zarr"
         )
 
+        # Check if circle file exists and add it to the dataset
+        output_dir = Path(__file__).parent / "output"
+        circle_file = output_dir / "roi_circles.geojson"
+        if circle_file.exists():
+            logger.info("Adding circle layer to dataset")
+            dataset.add_file(
+                url="http://localhost:5000/api/roi_circles",
+                file_type="obsSegmentations.json",
+                options={
+                    "mapping": [
+                        {
+                            "key": "fillColor",
+                            "value": "properties.fillColor"
+                        },
+                        {
+                            "key": "fillOpacity",
+                            "value": "properties.fillOpacity"
+                        },
+                        {
+                            "key": "strokeColor",
+                            "value": "properties.strokeColor"
+                        },
+                        {
+                            "key": "strokeWidth",
+                            "value": "properties.strokeWidth"
+                        },
+                        {
+                            "key": "strokeOpacity",
+                            "value": "properties.strokeOpacity"
+                        }
+                    ]
+                }
+            )
+
         spatial = vc.add_view("spatialBeta", dataset=dataset)
         lc = vc.add_view("layerControllerBeta", dataset=dataset)
 
@@ -1203,6 +1237,246 @@ def get_config():
     with open(config_path, 'r') as f:
         config = json.load(f)
     return jsonify(config)
+
+@app.route('/api/update_config_with_circles', methods=['POST'])
+def update_config_with_circles():
+    """Update Vitessce config to include circle overlays for ROIs"""
+    try:
+        data = request.get_json()
+        show_circles = data.get('showCircles', False)
+        interaction = data.get('interaction', None)
+        
+        logger.info(f"Updating config with circles: show_circles={show_circles}, interaction={interaction}")
+        
+        if show_circles and interaction:
+            # Load ROI data for the specific interaction
+            output_dir = Path(__file__).parent / "output"
+            roi_file = output_dir / f"top_roi_scores_{interaction}.json"
+            
+            if not roi_file.exists():
+                return jsonify({"error": f"ROI file not found for interaction: {interaction}"}), 404
+            
+            with open(roi_file, 'r') as f:
+                roi_data = json.load(f)
+            
+            # Get top 5 ROIs
+            top_5_rois = roi_data['top_rois'][:5]
+            
+            # Create circle features for GeoJSON
+            circle_features = []
+            y_max = 5508  # Full height of the image
+            
+            for i, roi in enumerate(top_5_rois):
+                # Scale coordinates to fit on screen
+                # Assuming screen width is around 1920px and height around 1080px
+                screen_width = 1920
+                screen_height = 1080
+                
+                # Scale coordinates to fit within screen bounds
+                x = (float(roi['position']['x']) * 8) % screen_width
+                y = (y_max - (float(roi['position']['y']) * 8)) % screen_height
+                
+                # Ensure circles are visible within viewport
+                x = max(50, min(screen_width - 50, x))
+                y = max(50, min(screen_height - 50, y))
+                
+                logger.info(f"ROI {i}: Original centroid: {roi['position']}, Scaled: x={x}, y={y}")
+                
+                feature = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [roi['position']]
+                    },
+                    "properties": {
+                        "name": f"ROI_{interaction}_{i}",
+                        "interaction": interaction,
+                        "roi_id": roi['roi_id'],
+                        "score": roi['scores']['combined_score'],
+                        "fillColor": get_circle_color(i),
+                        "fillOpacity": 0.2,
+                        "strokeColor": get_circle_color(i),
+                        "strokeWidth": 3,
+                        "strokeOpacity": 0.8,
+                        "clickable": True,
+                        "tooltip": f"ROI {i+1}: Score {roi['scores']['combined_score']:.3f}",
+                        "radius": 500,
+                        "center": [x, y]
+                    }
+                }
+                circle_features.append(feature)
+            
+            # Save circle GeoJSON
+            circle_geojson = {
+                "type": "FeatureCollection",
+                "features": circle_features,
+                "properties": {
+                    "interaction_type": interaction,
+                    "total_rois": len(circle_features),
+                    "description": f"ROI circles for {interaction} interaction"
+                }
+            }
+            
+            circle_output_path = output_dir / "roi_circles.geojson"
+            with open(circle_output_path, 'w') as f:
+                json.dump(circle_geojson, f, indent=2)
+            
+            logger.info(f"Created circle GeoJSON with {len(circle_features)} circles")
+            return jsonify({
+                "success": True,
+                "circles_created": len(circle_features),
+                "file_path": str(circle_output_path),
+                "interaction": interaction
+            })
+            
+        else:
+            # Remove circle file if it exists
+            output_dir = Path(__file__).parent / "output"
+            circle_output_path = output_dir / "roi_circles.geojson"
+            if circle_output_path.exists():
+                circle_output_path.unlink()
+            
+            return jsonify({
+                "success": True,
+                "circles_removed": True
+            })
+            
+    except Exception as e:
+        logger.error(f"Error updating config with circles: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/roi_circles', methods=['GET'])
+def serve_roi_circles():
+    """Serve the ROI circles GeoJSON file"""
+    try:
+        output_dir = Path(__file__).parent / "output"
+        circle_file = output_dir / "roi_circles.geojson"
+        
+        if circle_file.exists():
+            with open(circle_file, 'r') as f:
+                circle_data = json.load(f)
+            return jsonify(circle_data)
+        else:
+            return jsonify({"type": "FeatureCollection", "features": []})
+            
+    except Exception as e:
+        logger.error(f"Error serving ROI circles: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/filtered_rois', methods=['POST'])
+def get_filtered_rois():
+    """Get ROIs filtered by interaction type for interactive circles"""
+    try:
+        data = request.get_json()
+        interaction_types = data.get('interactions', [])
+        
+        logger.info(f"Filtering ROIs for interactions: {interaction_types}")
+        
+        # Load ROI data
+        output_dir = Path(__file__).parent / "output"
+        roi_file = output_dir / "roi_shapes.geojson"
+        
+        if not roi_file.exists():
+            return jsonify({"error": "ROI shapes file not found"}), 404
+        
+        with open(roi_file, 'r') as f:
+            roi_data = json.load(f)
+        
+        if not roi_data.get('features'):
+            return jsonify({"error": "No ROI features found"}), 404
+        
+        # Filter ROIs by interaction type
+        filtered_features = []
+        for feature in roi_data['features']:
+            if not feature.get('properties', {}).get('interactions'):
+                continue
+                
+            roi_interactions = feature['properties']['interactions']
+            if isinstance(roi_interactions, str):
+                roi_interactions = [roi_interactions]
+            
+            # Check if any of the ROI interactions match the requested types
+            if any(interaction in interaction_types for interaction in roi_interactions):
+                filtered_features.append(feature)
+        
+        # Sort by score and take top 5
+        filtered_features.sort(
+            key=lambda x: x.get('properties', {}).get('score', 0),
+            reverse=True
+        )
+        
+        top_5_features = filtered_features[:5]
+        
+        # Convert to circle format
+        circles = []
+        y_max = 5508
+        
+        for i, feature in enumerate(top_5_features):
+            geometry = feature['geometry']
+            if not geometry or not geometry.get('coordinates'):
+                continue
+            
+            # Calculate centroid
+            all_coords = []
+            if geometry['type'] == "Polygon":
+                all_coords = geometry['coordinates']
+            elif geometry['type'] == "MultiPolygon":
+                all_coords = [coord for polygon in geometry['coordinates'] for coord in polygon]
+            
+            if not all_coords:
+                continue
+            
+            flat_coords = [coord for ring in all_coords for coord in ring]
+            if len(flat_coords) == 0:
+                continue
+            
+            centroid = [
+                sum(coord[0] for coord in flat_coords) / len(flat_coords),
+                sum(coord[1] for coord in flat_coords) / len(flat_coords)
+            ]
+            
+            # Scale coordinates to fit on screen
+            # Assuming screen width is around 1920px and height around 1080px
+            screen_width = 1920
+            screen_height = 1080
+            
+            # Scale coordinates to fit within screen bounds
+            # Use modulo to wrap coordinates around screen
+            x = (centroid[0] * 8) % screen_width
+            y = (y_max - (centroid[1] * 8)) % screen_height
+            
+            # Ensure circles are visible within viewport (with some margin)
+            x = max(50, min(screen_width - 50, x))
+            y = max(50, min(screen_height - 50, y))
+            
+            logger.info(f"ROI {i}: Original centroid: {centroid}, Scaled: x={x}, y={y}")
+            
+            circle = {
+                "id": f"roi_{i}",
+                "x": x,
+                "y": y,
+                "score": feature.get('properties', {}).get('score', 0),
+                "interactions": feature.get('properties', {}).get('interactions', []),
+                "color": get_circle_color(i),
+                "radius": 500
+            }
+            circles.append(circle)
+        
+        return jsonify({
+            "success": True,
+            "circles": circles,
+            "total_found": len(filtered_features),
+            "showing": len(circles)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error filtering ROIs: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+def get_circle_color(index):
+    """Get color for circle based on index"""
+    colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+    return colors[index % len(colors)]
 
 ################################################################################3
 

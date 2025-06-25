@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Vitessce } from 'vitessce';
 import ROISelector from './ROISelector';
+import InteractiveCircles from './InteractiveCircles';
 import Plot from 'react-plotly.js';
 
 const MainView = () => {
@@ -75,6 +76,15 @@ const MainView = () => {
     3: true,
     4: true
   });
+  const [circleOverlay, setCircleOverlay] = useState({
+    show: false,
+    circles: []
+  });
+  const [configKey, setConfigKey] = useState(0); // Add key to force re-render
+  const [rois, setRois] = useState([]);
+  const [showCircles, setShowCircles] = useState(false);
+  const [selectedCircle, setSelectedCircle] = useState(null);
+  const [selectedGroups, setSelectedGroups] = useState([]);
 
   // Group colors and names
   const groupColors = {
@@ -119,11 +129,95 @@ const MainView = () => {
     fetchConfig(viewState);
   }, [viewState]);
 
+  // Fetch ROIs for circle overlay
+  useEffect(() => {
+    fetch("http://localhost:5000/api/roi_shapes")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data.features && Array.isArray(data.features)) {
+          const extracted = data.features.map((feature, index) => {
+            const geometry = feature.geometry;
+            if (!geometry || !geometry.coordinates) {
+              return null;
+            }
+
+            let allCoords = [];
+            if (geometry.type === "Polygon") {
+              allCoords = geometry.coordinates;
+            } else if (geometry.type === "MultiPolygon") {
+              allCoords = geometry.coordinates.flat();
+            } else {
+              return null;
+            }
+
+            const [cx, cy] = allCoords.flat().reduce((acc, [x, y]) => [acc[0] + x, acc[1] + y], [0, 0]);
+            const count = allCoords.flat().length;
+            const centroid = [cx / count, cy / count];
+
+            return {
+              id: feature.properties.name || `ROI_${index}`,
+              x: centroid[0],
+              y: centroid[1],
+              score: feature.properties.score || 0,
+              interactions: feature.properties.interactions || [],
+              raw: feature.properties
+            };
+          }).filter(Boolean);
+          setRois(extracted);
+          
+          // Set initial selectedGroups if not already set
+          if (selectedGroups.length === 0 && extracted.length > 0) {
+            const allInteractions = new Set();
+            extracted.forEach(roi => {
+              if (Array.isArray(roi.interactions)) {
+                roi.interactions.forEach(interaction => allInteractions.add(interaction));
+              }
+            });
+            const uniqueInteractions = Array.from(allInteractions);
+            if (uniqueInteractions.length > 0) {
+              setSelectedGroups([uniqueInteractions[0]]);
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load ROI shapes:", err);
+        setRois([]);
+      });
+  }, [selectedGroups.length]);
+
   const handleSetView = (roiView) => {
+    console.log('Mainview handleSetView:', roiView);
+    
     setViewState(prev => ({
       ...prev,
       ...roiView
     }));
+    
+    // Handle config refresh for circles
+    if (roiView.refreshConfig) {
+      setConfigKey(prev => prev + 1); // Force re-render of Vitessce component
+      // Refetch config after a short delay to allow backend to update
+      setTimeout(() => {
+        fetchConfig(viewState);
+      }, 500);
+    }
+
+    // Handle circle overlay toggle
+    if (roiView.showCircles !== undefined) {
+      setShowCircles(roiView.showCircles);
+    }
+
+    // Handle selected groups update
+    if (roiView.selectedGroups) {
+      console.log('Updating selectedGroups:', roiView.selectedGroups);
+      setSelectedGroups(roiView.selectedGroups);
+    }
   };
 
   // Add handlers for results from ROISelector
@@ -133,6 +227,23 @@ const MainView = () => {
 
   const handleInteractionResults = (results) => {
     setInteractionHeatmapResult(results);
+  };
+
+  const handleCircleClick = (circleId) => {
+    console.log('Circle clicked:', circleId);
+    setSelectedCircle(circleId);
+    
+    // Find the corresponding ROI and set view to it
+    const roiIndex = parseInt(circleId.split('_')[1]);
+    if (rois[roiIndex]) {
+      const roi = rois[roiIndex];
+      setViewState(prev => ({
+        ...prev,
+        spatialTargetX: roi.x,
+        spatialTargetY: roi.y,
+        spatialZoom: -1.0 // Zoom in to the ROI
+      }));
+    }
   };
 
   // Analyze heatmaps
@@ -290,6 +401,14 @@ const MainView = () => {
     );
   };
 
+  useEffect(() => {
+    console.log('Mainview selectedGroups changed:', selectedGroups);
+  }, [selectedGroups]);
+
+  useEffect(() => {
+    console.log('Mainview showCircles changed:', showCircles);
+  }, [showCircles]);
+
   if (error) {
     return <p style={{ color: 'red', padding: '10px' }}>Error generating Mainview: {error}</p>;
   }
@@ -301,19 +420,7 @@ const MainView = () => {
     <div className="left-panel">
       {/* Regular Heatmaps */}
       {Object.keys(heatmapResults).length > 0 && (
-        <div style={{
-          position: 'fixed',
-          bottom: 1,
-          left: 300,
-          right: 'auto',
-          width: 'fit-content',
-          backgroundColor: 'rgba(244, 239, 239, 0.1)',
-          padding: '10px',
-          boxShadow: '0 2px 4px rgba(241, 228, 228, 0.1)',
-          zIndex: 5,
-          maxHeight: '50vh',
-          overflowY: 'auto'
-        }}>
+        <div className="heatmaps-container">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             <div>
               <div style={{ 
@@ -364,14 +471,25 @@ const MainView = () => {
       {/* Interaction Heatmap */}
       {interactionHeatmapResult && renderInteractionHeatmap()}
 
-      <div className="fullscreen-vitessce">
+      <div className="fullscreen-vitessce" style={{ position: 'relative' }}>
         <Vitessce
+          key={configKey}
           config={config}
           theme="light"
           height={null}
           width={null}
         />
-        <div className="left-panel">
+        
+        {/* Interactive Circles Overlay */}
+        <InteractiveCircles
+          rois={rois}
+          showCircles={showCircles}
+          onCircleClick={handleCircleClick}
+          selectedCircle={selectedCircle}
+          selectedInteractions={selectedGroups}
+        />
+        
+        <div className="roi-selector-container">
           <ROISelector 
             onSetView={handleSetView} 
             onHeatmapResults={handleHeatmapResults}

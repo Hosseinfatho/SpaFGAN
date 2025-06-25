@@ -81,12 +81,12 @@ function InteractionHeatmaps({ currentROI, onInteractionResults }) {
         disabled={isAnalyzingInteractionHeatmap}
         style={{
           backgroundColor: '#6f42c1',
-          color: 'black',
+          color: 'white',
           border: 'none',
-          borderRadius: '4px',
-          padding: '8px 96px',
-          marginRight: '5px',
-          marginLeft: '10px',
+          borderRadius: '5px',
+          padding: '12px 24px',
+          fontSize: '16px',
+          marginRight: '10px',
           cursor: isAnalyzingInteractionHeatmap ? 'not-allowed' : 'pointer'
         }}
       >

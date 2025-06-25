@@ -93,10 +93,10 @@ function Heatmaps({ currentROI, onHeatmapResults }) {
           backgroundColor: '#ffc107',
           color: 'black',
           border: 'none',
-          borderRadius: '4px',
-          padding: '8px 100px',
-          marginRight: '5px',
-          marginLeft: '10px',
+          borderRadius: '5px',
+          padding: '12px 24px',
+          fontSize: '16px',
+          marginRight: '10px',
           cursor: isAnalyzingHeatmaps ? 'not-allowed' : 'pointer'
         }}
       >
