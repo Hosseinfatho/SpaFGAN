@@ -128,8 +128,8 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
         
         // Select the first interaction type by default
         if (uniqueGroups.length > 0) {
-          console.log("ROISelector: Setting initial selectedGroups to:", [uniqueGroups[0]]);
-          setSelectedGroups([uniqueGroups[0]]);
+          console.log("ROISelector: Available interaction groups:", uniqueGroups);
+          // setSelectedGroups([uniqueGroups[0]]); // Commented out to prevent auto-selection
         }
       })
       .catch((err) => {
@@ -152,7 +152,9 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   // Set initial selectedGroups when interactionGroups are loaded
   useEffect(() => {
     if (interactionGroups.length > 0 && selectedGroups.length === 0) {
-      setSelectedGroups([interactionGroups[0]]);
+      // Don't automatically select the first group - let user choose
+      console.log("ROISelector: Available interaction groups:", interactionGroups);
+      // setSelectedGroups([interactionGroups[0]]); // Commented out to prevent auto-selection
     }
   }, [interactionGroups, selectedGroups.length]);
 
@@ -286,88 +288,114 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
           {group}
         </label>
       ))}
+      
+      {selectedGroups.length === 0 && (
+        <div style={{ 
+          marginTop: "10px", 
+          padding: "8px", 
+          backgroundColor: "#fff3cd", 
+          border: "1px solid #ffeaa7", 
+          borderRadius: "4px",
+          color: "#856404"
+        }}>
+          <strong>Note:</strong> Please select at least one interaction type above to view ROIs.
+        </div>
+      )}
 
       <hr />
-      <div style={{ textAlign: "center", marginBottom: "15px" }}>
-        <h3 style={{ margin: "5px 0" }}>ROI #{currentIndex + 1}</h3>
-        <p style={{ fontSize: "18px", fontWeight: "bold", margin: "5px 0" }}>
-          Score: {currentROI.score?.toFixed(3) || "0.000"}
-        </p>
-        <p style={{ fontSize: "14px", color: "#666", margin: "5px 0" }}>
-          {currentROI.interactions?.join(", ") || "None"}
-        </p>
-      </div>
+      {selectedGroups.length > 0 ? (
+        <>
+          <div style={{ textAlign: "center", marginBottom: "15px" }}>
+            <h3 style={{ margin: "5px 0" }}>ROI #{currentIndex + 1}</h3>
+            <p style={{ fontSize: "18px", fontWeight: "bold", margin: "5px 0" }}>
+              Score: {currentROI.score?.toFixed(3) || "0.000"}
+            </p>
+            <p style={{ fontSize: "14px", color: "#666", margin: "5px 0" }}>
+              {currentROI.interactions?.join(", ") || "None"}
+            </p>
+          </div>
 
-      <div style={{ textAlign: "center", marginBottom: "15px" }}>
-        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-          <input
-            type="checkbox"
-            checked={showCircles}
-            onChange={handleShowCirclesToggle}
-            style={{ transform: "scale(1.2)" }}
-          />
-          <span style={{ fontSize: "14px" }}>Show interactive ROI circles</span>
-        </label>
-      </div>
+          <div style={{ textAlign: "center", marginBottom: "15px" }}>
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+              <input
+                type="checkbox"
+                checked={showCircles}
+                onChange={handleShowCirclesToggle}
+                style={{ transform: "scale(1.2)" }}
+              />
+              <span style={{ fontSize: "14px" }}>Show interactive ROI circles</span>
+            </label>
+          </div>
 
-      <div style={{ textAlign: "center" }}>
-        <button 
-          onClick={prev}
-          style={{ 
-            padding: "8px 12px", 
-            fontSize: "14px", 
-            backgroundColor: "#007bff", 
-            color: "white", 
-            border: "none", 
-            borderRadius: "5px", 
-            cursor: "pointer",
-            marginRight: "10px"
-          }}
-        >
-          ←
-        </button>
-        <button 
-          onClick={() => handleSetView()}
-          style={{ 
-            padding: "12px 24px", 
-            fontSize: "16px", 
-            backgroundColor: "#007bff", 
-            color: "white", 
-            border: "none", 
-            borderRadius: "5px", 
-            cursor: "pointer",
-            marginRight: "10px"
-          }}
-        >
-          Set View
-        </button>
-        <button 
-          onClick={next}
-          style={{ 
-            padding: "8px 12px", 
-            fontSize: "14px", 
-            backgroundColor: "#007bff", 
-            color: "white", 
-            border: "none", 
-            borderRadius: "5px", 
-            cursor: "pointer"
-          }}
-        >
-          →
-        </button>
-      </div>
+          <div style={{ textAlign: "center" }}>
+            <button 
+              onClick={prev}
+              style={{ 
+                padding: "8px 12px", 
+                fontSize: "14px", 
+                backgroundColor: "#007bff", 
+                color: "white", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }}
+            >
+              ←
+            </button>
+            <button 
+              onClick={() => handleSetView()}
+              style={{ 
+                padding: "12px 24px", 
+                fontSize: "16px", 
+                backgroundColor: "#007bff", 
+                color: "white", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }}
+            >
+              Set View
+            </button>
+            <button 
+              onClick={next}
+              style={{ 
+                padding: "8px 12px", 
+                fontSize: "14px", 
+                backgroundColor: "#007bff", 
+                color: "white", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer"
+              }}
+            >
+              →
+            </button>
+          </div>
 
-      {/* Analysis Buttons */}
-      <div style={{ marginTop: "15px", textAlign: "center" }}>
-        <Heatmaps 
-          currentROI={currentROI}
-          onHeatmapResults={onHeatmapResults}
-        />
-        <InteractionHeatmaps 
-          currentROI={currentROI}
-          onInteractionResults={onInteractionResults}
-        />
-      </div>
+          {/* Analysis Buttons */}
+          <div style={{ marginTop: "15px", textAlign: "center" }}>
+            <Heatmaps 
+              currentROI={currentROI}
+              onHeatmapResults={onHeatmapResults}
+            />
+            <InteractionHeatmaps 
+              currentROI={currentROI}
+              onInteractionResults={onInteractionResults}
+            />
+          </div>
+        </>
+      ) : (
+        <div style={{ 
+          textAlign: "center", 
+          padding: "20px", 
+          color: "#666",
+          fontStyle: "italic"
+        }}>
+          Select interaction types above to view ROIs
+        </div>
+      )}
     </div>
   );
 }

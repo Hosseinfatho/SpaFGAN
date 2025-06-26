@@ -10,9 +10,9 @@ const MainView = () => {
   const [viewState, setViewState] = useState({
     spatialTargetZ: 0,
     spatialTargetT: 0,
-    spatialZoom: -3.0,
-    spatialTargetX: 5500,
-    spatialTargetY: 2880,
+    spatialZoom: -2.5,
+    spatialTargetX: 5454,
+    spatialTargetY: 2754,
     spatialRenderingMode: "3D",
     imageLayer: [
       {
@@ -98,7 +98,7 @@ const MainView = () => {
     1: 'Endothelial-immune interface (CD31 + CD11b)',
     2: 'ROS detox, immune stress (CD11b + Catalase)',
     3: 'T/B cell recruitment via vessels (CD31 + CD4/CD20)',
-    4: 'T–B collaboration (CD4 + CD20)'
+    4: 'T-B collaboration (CD4 + CD20)'
   };
 
   const fetchConfig = (stateData) => {
@@ -472,7 +472,7 @@ const MainView = () => {
       {/* Interaction Heatmap */}
       {interactionHeatmapResult && renderInteractionHeatmap()}
 
-      <div className="fullscreen-vitessce" style={{ position: 'relative' }}>
+      <div className="fullscreen-vitessce" style={{ position: 'relative', width: '100%', height: '100vh' }}>
         <Vitessce
           key={configKey}
           config={config}
@@ -482,13 +482,16 @@ const MainView = () => {
         />
         
         {/* Interactive Circles Overlay - positioned absolutely over Vitessce */}
-        <InteractiveCircles
-          rois={rois}
-          showCircles={showCircles}
-          onCircleClick={handleCircleClick}
-          selectedCircle={selectedCircle}
-          selectedInteractions={selectedGroups}
-        />
+        {showCircles && (
+          <InteractiveCircles
+            rois={rois}
+            showCircles={showCircles}
+            onCircleClick={handleCircleClick}
+            selectedCircle={selectedCircle}
+            selectedInteractions={selectedGroups}
+            viewState={viewState}
+          />
+        )}
         
         <div className="roi-selector-container">
           <ROISelector 
