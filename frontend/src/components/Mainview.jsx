@@ -76,17 +76,12 @@ const MainView = () => {
     3: true,
     4: true
   });
-  const [circleOverlay, setCircleOverlay] = useState({
-    show: false,
-    circles: []
-  });
-  const [configKey, setConfigKey] = useState(0); // Add key to force re-render
+  const [configKey, setConfigKey] = useState(0);
   const [rois, setRois] = useState([]);
   const [showCircles, setShowCircles] = useState(false);
   const [selectedCircle, setSelectedCircle] = useState(null);
   const [selectedGroups, setSelectedGroups] = useState([]);
 
-  // Group colors and names
   const groupColors = {
     1: '#d7191c',
     2: '#fdae61',
@@ -129,7 +124,6 @@ const MainView = () => {
     fetchConfig(viewState);
   }, [viewState]);
 
-  // Fetch ROIs for circle overlay
   useEffect(() => {
     fetch("http://localhost:5000/api/roi_shapes")
       .then((res) => {
@@ -170,7 +164,6 @@ const MainView = () => {
           }).filter(Boolean);
           setRois(extracted);
           
-          // Set initial selectedGroups if not already set
           if (selectedGroups.length === 0 && extracted.length > 0) {
             const allInteractions = new Set();
             extracted.forEach(roi => {
@@ -194,7 +187,6 @@ const MainView = () => {
   const handleSetView = (roiView) => {
     console.log('Mainview handleSetView:', roiView);
     
-    // Handle showCircles toggle
     if (roiView.hasOwnProperty('showCircles')) {
       setShowCircles(roiView.showCircles);
       console.log('Mainview: showCircles set to:', roiView.showCircles);
@@ -205,23 +197,19 @@ const MainView = () => {
       ...roiView
     }));
     
-    // Handle config refresh for circles
     if (roiView.refreshConfig) {
-      setConfigKey(prev => prev + 1); // Force re-render of Vitessce component
-      // Refetch config after a short delay to allow backend to update
+      setConfigKey(prev => prev + 1);
       setTimeout(() => {
         fetchConfig(viewState);
       }, 500);
     }
 
-    // Handle selected groups update
     if (roiView.selectedGroups) {
       console.log('Updating selectedGroups:', roiView.selectedGroups);
       setSelectedGroups(roiView.selectedGroups);
     }
   };
 
-  // Add handlers for results from ROISelector
   const handleHeatmapResults = (results) => {
     setHeatmapResults(results);
   };
@@ -234,7 +222,6 @@ const MainView = () => {
     console.log('Circle clicked:', circleId);
     setSelectedCircle(circleId);
     
-    // Find the corresponding ROI and set view to it
     const roiIndex = parseInt(circleId.split('_')[1]);
     if (rois[roiIndex]) {
       const roi = rois[roiIndex];
@@ -242,66 +229,8 @@ const MainView = () => {
         ...prev,
         spatialTargetX: roi.x,
         spatialTargetY: roi.y,
-        spatialZoom: -1.0 // Zoom in to the ROI
+        spatialZoom: -1.0
       }));
-    }
-  };
-
-  // Analyze heatmaps
-  const analyzeHeatmaps = async () => {
-    setIsAnalyzingHeatmaps(true);
-    try {
-      const response = await fetch('http://localhost:5000/api/analyze_heatmaps', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          roi: {
-            xMin: 0,
-            xMax: 400,
-            yMin: 0,
-            yMax: 400,
-            zMin: 0,
-            zMax: 193
-          }
-        })
-      });
-      const data = await response.json();
-      setHeatmapResults(data);
-    } catch (error) {
-      console.error('Error analyzing heatmaps:', error);
-    } finally {
-      setIsAnalyzingHeatmaps(false);
-    }
-  };
-
-  // Analyze interaction heatmap
-  const analyzeInteractionHeatmap = async () => {
-    setIsAnalyzingInteractionHeatmap(true);
-    try {
-      const response = await fetch('http://localhost:5000/api/analyze_interaction_heatmap', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          roi: {
-            xMin: 0,
-            xMax: 400,
-            yMin: 0,
-            yMax: 400,
-            zMin: 0,
-            zMax: 193
-          }
-        })
-      });
-      const data = await response.json();
-      setInteractionHeatmapResult(data);
-    } catch (error) {
-      console.error('Error analyzing interaction heatmap:', error);
-    } finally {
-      setIsAnalyzingInteractionHeatmap(false);
     }
   };
 
@@ -315,15 +244,12 @@ const MainView = () => {
   const renderInteractionHeatmap = () => {
     if (!interactionHeatmapResult || !interactionHeatmapResult.heatmaps) return null;
 
-    // Get active heatmaps
     const activeHeatmaps = Object.entries(interactionHeatmapResult.heatmaps)
       .filter(([group]) => activeGroups[group.split('_')[1]]);
 
     if (activeHeatmaps.length === 0) return null;
 
-    // Create a combined heatmap with different colors for each group
     const combinedHeatmap = activeHeatmaps.reduce((acc, [group, data], index) => {
-      const groupId = group.split('_')[1];
       const normalizedData = data.map(row => 
         row.map(val => val * (index + 1) / activeHeatmaps.length)
       );
@@ -402,14 +328,6 @@ const MainView = () => {
     );
   };
 
-  useEffect(() => {
-    console.log('Mainview selectedGroups changed:', selectedGroups);
-  }, [selectedGroups]);
-
-  useEffect(() => {
-    console.log('Mainview showCircles changed:', showCircles);
-  }, [showCircles]);
-
   if (error) {
     return <p style={{ color: 'red', padding: '10px' }}>Error generating Mainview: {error}</p>;
   }
@@ -419,7 +337,6 @@ const MainView = () => {
 
   return (
     <div className="left-panel">
-      {/* Regular Heatmaps */}
       {Object.keys(heatmapResults).length > 0 && (
         <div className="heatmaps-container">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -469,7 +386,6 @@ const MainView = () => {
         </div>
       )}
 
-      {/* Interaction Heatmap */}
       {interactionHeatmapResult && renderInteractionHeatmap()}
 
       <div className="fullscreen-vitessce" style={{ position: 'relative', width: '100%', height: '100vh' }}>
@@ -481,7 +397,6 @@ const MainView = () => {
           width={null}
         />
         
-        {/* Interactive Circles Overlay - positioned absolutely over Vitessce */}
         {showCircles && (
           <InteractiveCircles
             rois={rois}

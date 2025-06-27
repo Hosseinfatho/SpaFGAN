@@ -4,32 +4,15 @@ import './InteractiveCircles.css';
 const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, selectedInteractions, viewState }) => {
   const [circles, setCircles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [vitessceViewport, setVitessceViewport] = useState({
-    zoom: 1,
-    x: 0,
-    y: 0,
-    width: 1920,
-    height: 1080
-  });
   const abortControllerRef = useRef(null);
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    console.log('InteractiveCircles useEffect triggered:', {
-      showCircles,
-      selectedInteractions,
-      selectedCircle,
-      viewState: viewState ? 'present' : 'missing'
-    });
-    
-    // Clear previous debounce
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
     
-    // Debounce the fetch to prevent rapid requests
     debounceRef.current = setTimeout(() => {
-      // Abort previous request if it exists
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -37,12 +20,8 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
       if (showCircles && selectedInteractions && selectedInteractions.length > 0) {
         setLoading(true);
         
-        console.log('Fetching circles for interactions:', selectedInteractions);
-        
-        // Create new AbortController for this request
         abortControllerRef.current = new AbortController();
         
-        // Fetch filtered ROIs from backend
         fetch('http://localhost:5000/api/filtered_rois', {
           method: 'POST',
           headers: {
@@ -54,25 +33,20 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
           signal: abortControllerRef.current.signal
         })
         .then(response => {
-          console.log('Response status:', response.status);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           return response.json();
         })
         .then(data => {
-          console.log('Received circles data:', data);
           if (data.success && data.circles) {
-            // Get image dimensions
             const imageWidth = data.image_dimensions?.width || 10908;
             const imageHeight = data.image_dimensions?.height || 5508;
             
-            // Get viewport dimensions (assuming Vitessce container size)
-            const viewportWidth = window.innerWidth * 0.5; // More accurate Vitessce width
-            const viewportHeight = window.innerHeight * 0.5; // More accurate Vitessce height
+            const viewportWidth = window.innerWidth * 0.5;
+            const viewportHeight = window.innerHeight * 0.5;
             
             const scaledCircles = data.circles.map(circle => {
-              // Use fixed positioning instead of percentage to avoid flickering
               const scaleX = viewportWidth / imageWidth;
               const scaleY = viewportHeight / imageHeight;
               const scale = Math.min(scaleX, scaleY);
@@ -88,17 +62,13 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
               };
             });
             
-            console.log('Scaled circles with viewport coordinates:', scaledCircles);
             setCircles(scaledCircles);
           } else {
-            console.error('Failed to fetch filtered ROIs:', data.error);
             setCircles([]);
           }
         })
         .catch(error => {
-          if (error.name === 'AbortError') {
-            console.log('Request was aborted');
-          } else {
+          if (error.name !== 'AbortError') {
             console.error('Error fetching filtered ROIs:', error);
             setCircles([]);
           }
@@ -108,13 +78,11 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
           abortControllerRef.current = null;
         });
       } else {
-        console.log('Not fetching circles - showCircles:', showCircles, 'selectedInteractions:', selectedInteractions);
         setCircles([]);
         setLoading(false);
       }
-    }, 300); // 300ms debounce
+    }, 300);
     
-    // Cleanup function
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
@@ -123,9 +91,8 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
         abortControllerRef.current.abort();
       }
     };
-  }, [showCircles, selectedInteractions]); // Removed selectedCircle and viewState from dependencies
+  }, [showCircles, selectedInteractions]);
 
-  // Separate useEffect to handle selectedCircle updates
   useEffect(() => {
     if (circles.length > 0) {
       setCircles(prevCircles => 
@@ -137,7 +104,6 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     }
   }, [selectedCircle, circles.length]);
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
@@ -149,40 +115,16 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     };
   }, []);
 
-  // Listen for Vitessce viewport changes
-  useEffect(() => {
-    const handleVitessceViewportChange = (event) => {
-      // This will be called when Vitessce viewport changes
-      // We'll need to get this from Vitessce's viewport state
-      console.log('Vitessce viewport changed:', event);
-    };
-
-    // Add event listener for Vitessce viewport changes
-    window.addEventListener('vitessce-viewport-change', handleVitessceViewportChange);
-    
-    return () => {
-      window.removeEventListener('vitessce-viewport-change', handleVitessceViewportChange);
-    };
-  }, []);
-
   const getCircleColor = (index) => {
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
     return colors[index % colors.length];
   };
 
   const handleCircleClick = (circleId) => {
-    console.log('Circle clicked:', circleId);
     if (onCircleClick) {
       onCircleClick(circleId);
     }
   };
-
-  console.log('InteractiveCircles render:', {
-    showCircles,
-    loading,
-    circlesCount: circles.length,
-    selectedInteractions
-  });
 
   if (!showCircles) {
     return null;
@@ -223,32 +165,6 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     );
   }
 
-  if (circles.length === 0 && !loading && showCircles) {
-    return (
-      <div className="interactive-circles-overlay" style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 9999,
-        overflow: 'visible'
-      }}>
-        <div className="circle-info-panel" style={{ pointerEvents: 'auto' }}>
-          <div className="info-title">ROI Overlay</div>
-          <div className="info-content">
-            <p>No ROIs found for selected interactions.</p>
-            <p>Try selecting different interaction types.</p>
-            <p>Selected: {selectedInteractions?.join(', ') || 'None'}</p>
-            <p>Show Circles: {showCircles ? 'Yes' : 'No'}</p>
-            <p>Loading: {loading ? 'Yes' : 'No'}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="interactive-circles-overlay" style={{
       position: 'absolute',
@@ -260,7 +176,6 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
       zIndex: 9999,
       overflow: 'visible'
     }}>
-      {/* Circle Container */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -269,7 +184,6 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
         height: '100%',
         pointerEvents: 'none'
       }}>
-        {/* ROI Circles - positioned absolutely over Vitessce */}
         {circles.map((circle) => (
           <div
             key={circle.id}
@@ -316,43 +230,6 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
             </div>
           </div>
         ))}
-      </div>
-      
-      {/* Debug Panel */}
-      <div className="debug-panel" style={{ pointerEvents: 'auto' }}>
-        <div className="debug-title">ROI Overlay Debug</div>
-        <div className="debug-content">
-          <p>Show Circles: {showCircles ? 'Yes' : 'No'}</p>
-          <p>Selected Interactions: {selectedInteractions?.join(', ') || 'None'}</p>
-          <p>Circles Count: {circles.length}</p>
-          <p>Loading: {loading ? 'Yes' : 'No'}</p>
-          <p>Zoom: {viewState?.spatialZoom || 'N/A'}</p>
-          <p>Target: ({viewState?.spatialTargetX || 'N/A'}, {viewState?.spatialTargetY || 'N/A'})</p>
-          <p>Viewport: {window.innerWidth} x {window.innerHeight}</p>
-          <p>Overlay Z-Index: 9999</p>
-          <p>Circle Z-Index: 10000</p>
-          {circles.length > 0 && (
-            <div>
-              <p>First Circle:</p>
-              <p>  ID: {circles[0].id}</p>
-              <p>  Position: ({circles[0].x.toFixed(0)}px, {circles[0].y.toFixed(0)}px)</p>
-              <p>  Original: ({circles[0].original_x?.toFixed(0)}, {circles[0].original_y?.toFixed(0)})</p>
-              <p>  Color: {circles[0].color}</p>
-              <p>  Score: {circles[0].score.toFixed(3)}</p>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Info Panel */}
-      <div className="circle-info-panel" style={{ pointerEvents: 'auto' }}>
-        <div className="info-title">ROI Overlay</div>
-        <div className="info-content">
-          <p>• Click circles to select ROI</p>
-          <p>• Circles overlay on image</p>
-          <p>• Found {circles.length} ROIs</p>
-          <p>• Type: {selectedInteractions?.join(', ')}</p>
-        </div>
       </div>
     </div>
   );

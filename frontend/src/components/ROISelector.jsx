@@ -1,63 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import Plot from 'react-plotly.js';
 import Heatmaps from './Heatmaps';
 import InteractionHeatmaps from './InteractionHeatmaps';
 import './ROISelector.css';
 
-// Define scale factors (Zarr level 3 to full-res)
-const factorX = 1; //10908 / 1363  multiple in vittnesse config;
-const factorY = 1; //5508 / 688;
-const fullHeight = 5508; // needed for Y flip
-const getDefaultColor = (index) => {
-  const colors = [
-    [255, 0, 255], [0, 255, 255],[255, 255, 0], // Yellow, Cyan, Magenta
-    [255, 0, 0], [0, 255, 0], [0, 0, 255], // R, G, B
-    [255, 165, 0], [128, 0, 128] // Orange, Purple
-    // Add more colors if needed
-  ];
-  return colors[index % colors.length];
-};
-
-const groupColors = {
-  1: '#d7191c',
-  2: '#fdae61',
-  3: '#abd9e9',
-  4: '#2c7bb6'
-};
-const groupNames = {
-  1: 'Endothelial-immune interface (CD31 + CD11b)',
-  2: 'ROS detox, immune stress (CD11b + Catalase)',
-  3: 'T/B cell recruitment via vessels (CD31 + CD4/CD20)',
-  4: 'T–B collaboration (CD4 + CD20)'
-};
-
 function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
-  // Move all state declarations inside the component
   const [rois, setRois] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [interactionGroups, setInteractionGroups] = useState([]);
-  const [heatmapResults, setHeatmapResults] = useState({});
-  const [isAnalyzingHeatmaps, setIsAnalyzingHeatmaps] = useState(false);
-  const [interactionHeatmapResult, setInteractionHeatmapResult] = useState(null);
-  const [isAnalyzingInteractionHeatmap, setIsAnalyzingInteractionHeatmap] = useState(false);
-  const [hiddenChannelHeatmaps, setHiddenChannelHeatmaps] = useState([]);
-  const [activeGroups, setActiveGroups] = useState({
-    1: true,
-    2: true,
-    3: true,
-    4: true
-  });
-  const [selectedGroup, setSelectedGroup] = useState(1);
   const [showCircles, setShowCircles] = useState(false);
-  const [viewState, setViewState] = useState({});
-  const [config, setConfig] = useState(null);
-  const [configKey, setConfigKey] = useState(0);
-  const [circleOverlay, setCircleOverlay] = useState({
-    show: false,
-    circles: [],
-    selectedCircle: null
-  });
 
   const computeCentroid = (allCoords) => {
     const flatCoords = allCoords.flat();
@@ -103,11 +54,11 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
 
           return {
             id: feature.properties.name || `ROI_${index}`,
-            x: cx * factorX,
-            y: cy * factorY,
+            x: cx,
+            y: cy,
             score: feature.properties.score || 0,
             interactions: feature.properties.interactions || [],
-            raw: feature.properties // Store all original metadata
+            raw: feature.properties
           };
         }).filter(Boolean);
 
@@ -125,16 +76,9 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
         const uniqueGroups = Array.from(allInteractions);
         console.log("ROISelector: Unique interaction groups:", uniqueGroups);
         setInteractionGroups(uniqueGroups);
-        
-        // Select the first interaction type by default
-        if (uniqueGroups.length > 0) {
-          console.log("ROISelector: Available interaction groups:", uniqueGroups);
-          // setSelectedGroups([uniqueGroups[0]]); // Commented out to prevent auto-selection
-        }
       })
       .catch((err) => {
         console.error("ROISelector: Failed to load ROI shapes:", err);
-        // Add a more user-friendly error message
         setRois([]);
         setInteractionGroups([]);
       });
@@ -148,15 +92,6 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
       });
     }
   }, [selectedGroups, onSetView]);
-
-  // Set initial selectedGroups when interactionGroups are loaded
-  useEffect(() => {
-    if (interactionGroups.length > 0 && selectedGroups.length === 0) {
-      // Don't automatically select the first group - let user choose
-      console.log("ROISelector: Available interaction groups:", interactionGroups);
-      // setSelectedGroups([interactionGroups[0]]); // Commented out to prevent auto-selection
-    }
-  }, [interactionGroups, selectedGroups.length]);
 
   const filteredRois = selectedGroups.length > 0
     ? rois.filter(roi => {
@@ -182,15 +117,13 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
 
   const handleSetView = () => {
     if (currentROI && currentROI.x !== undefined && currentROI.y !== undefined) {
-      // Convert ROI coordinates to Vitessce view coordinates
       const roiX = currentROI.x;
       const roiY = currentROI.y;
       
-      // Set view to ROI location with appropriate zoom
       const viewConfig = {
         spatialTargetX: roiX,
         spatialTargetY: roiY,
-        spatialZoom: -1.0, // Zoom level to show ROI clearly
+        spatialZoom: -1.0,
         refreshConfig: true
       };
       
@@ -205,7 +138,6 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
     const newShowCircles = !showCircles;
     setShowCircles(newShowCircles);
     
-    // Send the toggle state to parent component
     onSetView({
       showCircles: newShowCircles
     });
@@ -224,14 +156,6 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
 
   const prev = () => {
     setCurrentIndex(i => (i - 1 + filteredRois.length) % filteredRois.length);
-  };
-
-  const handleCircleClick = (circleId) => {
-    console.log('Circle clicked:', circleId);
-    setCircleOverlay(prev => ({
-      ...prev,
-      selectedCircle: circleId
-    }));
   };
 
   if (interactionGroups.length === 0) {
