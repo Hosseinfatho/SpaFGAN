@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Vitessce } from 'vitessce';
 import ROISelector from './ROISelector';
 import InteractiveCircles from './InteractiveCircles';
@@ -81,6 +81,8 @@ const MainView = () => {
   const [showCircles, setShowCircles] = useState(false);
   const [selectedCircle, setSelectedCircle] = useState(null);
   const [selectedGroups, setSelectedGroups] = useState([]);
+  const vitessceRef = useRef(null);
+  const viewportUpdateTimeoutRef = useRef(null);
 
   const groupColors = {
     1: '#d7191c',
@@ -163,8 +165,8 @@ const MainView = () => {
             };
           }).filter(Boolean);
           setRois(extracted);
-          
-          if (selectedGroups.length === 0 && extracted.length > 0) {
+
+          if (extracted.length > 0 && selectedGroups.length === 0) {
             const allInteractions = new Set();
             extracted.forEach(roi => {
               if (Array.isArray(roi.interactions)) {
@@ -182,7 +184,51 @@ const MainView = () => {
         console.error("Failed to load ROI shapes:", err);
         setRois([]);
       });
-  }, [selectedGroups.length]);
+  }, []);
+
+  // Listen for Vitessce viewport changes
+  useEffect(() => {
+    const handleViewportChange = () => {
+      // Debounce viewport updates
+      if (viewportUpdateTimeoutRef.current) {
+        clearTimeout(viewportUpdateTimeoutRef.current);
+      }
+      
+      viewportUpdateTimeoutRef.current = setTimeout(() => {
+        // Trigger a re-render of InteractiveCircles
+        setViewState(prev => ({ ...prev }));
+      }, 100);
+    };
+
+    // Listen for various events that might change the viewport
+    const vitessceContainer = document.querySelector('.fullscreen-vitessce');
+    if (vitessceContainer) {
+      vitessceContainer.addEventListener('wheel', handleViewportChange, { passive: true });
+      vitessceContainer.addEventListener('mousemove', handleViewportChange, { passive: true });
+      vitessceContainer.addEventListener('mouseup', handleViewportChange, { passive: true });
+      
+      // Also listen for touch events
+      vitessceContainer.addEventListener('touchmove', handleViewportChange, { passive: true });
+      vitessceContainer.addEventListener('touchend', handleViewportChange, { passive: true });
+      
+      return () => {
+        vitessceContainer.removeEventListener('wheel', handleViewportChange);
+        vitessceContainer.removeEventListener('mousemove', handleViewportChange);
+        vitessceContainer.removeEventListener('mouseup', handleViewportChange);
+        vitessceContainer.removeEventListener('touchmove', handleViewportChange);
+        vitessceContainer.removeEventListener('touchend', handleViewportChange);
+        
+        if (viewportUpdateTimeoutRef.current) {
+          clearTimeout(viewportUpdateTimeoutRef.current);
+        }
+      };
+    }
+  }, []);
+
+  // Debug selectedGroups changes
+  useEffect(() => {
+    console.log('Mainview selectedGroups changed:', selectedGroups);
+  }, [selectedGroups]);
 
   const handleSetView = (roiView) => {
     console.log('Mainview handleSetView:', roiView);
@@ -204,7 +250,7 @@ const MainView = () => {
       }, 500);
     }
 
-    if (roiView.selectedGroups) {
+    if (roiView.selectedGroups && JSON.stringify(roiView.selectedGroups) !== JSON.stringify(selectedGroups)) {
       console.log('Updating selectedGroups:', roiView.selectedGroups);
       setSelectedGroups(roiView.selectedGroups);
     }
@@ -390,6 +436,7 @@ const MainView = () => {
 
       <div className="fullscreen-vitessce" style={{ position: 'relative', width: '100%', height: '100vh' }}>
         <Vitessce
+          ref={vitessceRef}
           key={configKey}
           config={config}
           theme="light"

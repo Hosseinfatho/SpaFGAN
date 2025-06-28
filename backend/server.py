@@ -1486,4 +1486,4 @@ if __name__ == '__main__':
     logger.info("Starting Flask backend server on http://127.0.0.1:5000")
     # Port 5000 is common for backend APIs
     # host='0.0.0.0' makes it accessible from other containers/machines if needed
-    app.run(host='127.0.0.1', port=5000, debug=True) 
+    app.run(host='127.0.0.1', port=5000, debug=False) 

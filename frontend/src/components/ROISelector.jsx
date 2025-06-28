@@ -85,13 +85,13 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   }, []);
 
   // Notify parent component when selectedGroups changes
-  useEffect(() => {
-    if (selectedGroups.length > 0) {
-      onSetView({
-        selectedGroups: selectedGroups
-      });
-    }
-  }, [selectedGroups, onSetView]);
+  // useEffect(() => {
+  //   if (selectedGroups.length > 0) {
+  //     onSetView({
+  //       selectedGroups: selectedGroups
+  //     });
+  //   }
+  // }, [selectedGroups, onSetView]);
 
   const filteredRois = selectedGroups.length > 0
     ? rois.filter(roi => {
@@ -144,10 +144,17 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   };
 
   const toggleGroup = (group) => {
-    setSelectedGroups(prev =>
-      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
-    );
+    const newSelectedGroups = selectedGroups.includes(group) 
+      ? selectedGroups.filter(g => g !== group) 
+      : [...selectedGroups, group];
+    
+    setSelectedGroups(newSelectedGroups);
     setCurrentIndex(0);
+    
+    // Notify parent component about the change
+    onSetView({
+      selectedGroups: newSelectedGroups
+    });
   };
 
   const next = () => {
