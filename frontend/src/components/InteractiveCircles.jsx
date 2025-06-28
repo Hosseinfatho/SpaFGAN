@@ -126,23 +126,22 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     });
 
     // Cancel any ongoing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
       
     if (showCircles) {
-      // For now, use test circles to avoid API issues
-      console.log('Using test circles for debugging');
-      const testCircles = createTestCircles();
-      setCircles(testCircles);
-          setLoading(false);
+      // Circles are now handled by Vitessce layer, so we don't need DOM circles
+      console.log('Circles are handled by Vitessce layer, clearing DOM circles');
+      setCircles([]);
+      setLoading(false);
       setError(null);
-      } else {
+    } else {
       console.log('showCircles is false, clearing circles');
-        setCircles([]);
-        setLoading(false);
+      setCircles([]);
+      setLoading(false);
       setError(null);
-      }
+    }
     
     return () => {
       if (abortControllerRef.current) {
@@ -199,203 +198,9 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     return null;
   }
 
-  if (loading) {
-    console.log('Loading state, showing loading overlay');
-    return (
-      <div className="interactive-circles-overlay" style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 9999,
-        overflow: 'visible'
-      }}>
-        <div className="loading-overlay" style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '8px',
-          zIndex: 10001,
-          pointerEvents: 'auto'
-        }}>
-          <div className="loading-spinner" style={{
-            textAlign: 'center',
-            fontSize: '14px'
-          }}>
-            Loading ROIs...
-            <br />
-            <small>Selected: {selectedInteractions?.join(', ') || 'All interactions'}</small>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    console.log('Error state, showing error overlay');
-    return (
-      <div className="interactive-circles-overlay" style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 9999,
-        overflow: 'visible'
-      }}>
-        <div className="error-overlay" style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: 'rgba(255, 0, 0, 0.8)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '8px',
-          zIndex: 10001,
-          pointerEvents: 'auto',
-          maxWidth: '400px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '14px', marginBottom: '10px' }}>
-            Error loading ROIs
-          </div>
-          <div style={{ fontSize: '12px', marginBottom: '10px' }}>
-            {error}
-          </div>
-          <div style={{ fontSize: '11px' }}>
-            Selected interactions: {selectedInteractions?.join(', ') || 'All interactions'}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  console.log('Rendering circles:', circles.length, 'circles');
-
-  return (
-    <div 
-      ref={containerRef}
-      className="interactive-circles-overlay" 
-      style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      pointerEvents: 'none',
-      zIndex: 9999,
-        overflow: 'visible',
-        border: '2px solid red' // Debug border
-      }}
-    >
-      {/* Test circle - always visible */}
-      <div
-        style={{
-          position: 'absolute',
-          left: '100px',
-          top: '100px',
-          width: '50px',
-          height: '50px',
-          backgroundColor: '#ff0000',
-          border: '3px solid #ffffff',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          zIndex: 10000,
-          transform: 'translate(-50%, -50%)',
-          boxShadow: '0 0 15px rgba(255,255,255,0.9)',
-          pointerEvents: 'auto'
-        }}
-        onClick={() => console.log('Test circle clicked!')}
-        title="Test Circle"
-      >
-        <div style={{
-          position: 'absolute',
-          top: '-30px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'rgba(0,0,0,0.9)',
-          color: 'white',
-          padding: '3px 8px',
-          borderRadius: '4px',
-          fontSize: '11px',
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 10001,
-          fontWeight: 'bold'
-        }}>
-          TEST
-        </div>
-      </div>
-
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        border: '2px solid blue' // Debug border
-      }}>
-        {circles.map((circle, index) => {
-          console.log(`Rendering circle ${index}:`, circle);
-          return (
-          <div
-            key={circle.id}
-            className={`vitessce-circle ${circle.selected ? 'selected' : ''}`}
-            style={{
-              position: 'absolute',
-              left: `${circle.x}px`,
-              top: `${circle.y}px`,
-              width: '30px',
-              height: '30px',
-              backgroundColor: circle.color || '#ff0000',
-              border: `3px solid ${circle.selected ? '#ffffff' : circle.color || '#ff0000'}`,
-              borderRadius: '50%',
-              cursor: 'pointer',
-              zIndex: 10000,
-              transform: 'translate(-50%, -50%)',
-              boxShadow: circle.selected ? '0 0 15px rgba(255,255,255,0.9)' : '0 0 8px rgba(0,0,0,0.7)',
-              transition: 'all 0.3s ease',
-              pointerEvents: 'auto',
-              opacity: 1
-            }}
-            onClick={() => handleCircleClick(circle.id)}
-            title={`ROI: ${circle.interactions.join(', ')} - Score: ${circle.score.toFixed(3)} - Position: (${circle.original_x?.toFixed(0)}, ${circle.original_y?.toFixed(0)})`}
-          >
-            <div 
-              className="circle-label"
-              style={{
-                position: 'absolute',
-                top: '-30px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                backgroundColor: 'rgba(0,0,0,0.9)',
-                color: 'white',
-                padding: '3px 8px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                whiteSpace: 'nowrap',
-                pointerEvents: 'none',
-                zIndex: 10001,
-                fontWeight: 'bold'
-              }}
-            >
-              {circle.id.split('_')[1]}
-            </div>
-          </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  // Circles are now handled by Vitessce layer, so we don't render DOM circles
+  console.log('Circles are handled by Vitessce layer, returning null');
+  return null;
 };
 
 export default InteractiveCircles; 

@@ -82,7 +82,6 @@ const MainView = () => {
   const [selectedCircle, setSelectedCircle] = useState(null);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const vitessceRef = useRef(null);
-  const viewportUpdateTimeoutRef = useRef(null);
 
   const groupColors = {
     1: '#d7191c',
@@ -185,50 +184,6 @@ const MainView = () => {
         setRois([]);
       });
   }, []);
-
-  // Listen for Vitessce viewport changes
-  useEffect(() => {
-    const handleViewportChange = () => {
-      // Debounce viewport updates
-      if (viewportUpdateTimeoutRef.current) {
-        clearTimeout(viewportUpdateTimeoutRef.current);
-      }
-      
-      viewportUpdateTimeoutRef.current = setTimeout(() => {
-        // Trigger a re-render of InteractiveCircles
-        setViewState(prev => ({ ...prev }));
-      }, 100);
-    };
-
-    // Listen for various events that might change the viewport
-    const vitessceContainer = document.querySelector('.fullscreen-vitessce');
-    if (vitessceContainer) {
-      vitessceContainer.addEventListener('wheel', handleViewportChange, { passive: true });
-      vitessceContainer.addEventListener('mousemove', handleViewportChange, { passive: true });
-      vitessceContainer.addEventListener('mouseup', handleViewportChange, { passive: true });
-      
-      // Also listen for touch events
-      vitessceContainer.addEventListener('touchmove', handleViewportChange, { passive: true });
-      vitessceContainer.addEventListener('touchend', handleViewportChange, { passive: true });
-      
-      return () => {
-        vitessceContainer.removeEventListener('wheel', handleViewportChange);
-        vitessceContainer.removeEventListener('mousemove', handleViewportChange);
-        vitessceContainer.removeEventListener('mouseup', handleViewportChange);
-        vitessceContainer.removeEventListener('touchmove', handleViewportChange);
-        vitessceContainer.removeEventListener('touchend', handleViewportChange);
-        
-        if (viewportUpdateTimeoutRef.current) {
-          clearTimeout(viewportUpdateTimeoutRef.current);
-        }
-      };
-    }
-  }, []);
-
-  // Debug selectedGroups changes
-  useEffect(() => {
-    console.log('Mainview selectedGroups changed:', selectedGroups);
-  }, [selectedGroups]);
 
   const handleSetView = (roiView) => {
     console.log('Mainview handleSetView:', roiView);
