@@ -163,12 +163,16 @@ def generate_vitnesse_config():
         }
         geojson["features"].append(feature)
     
-    # Save as GeoJSON
+    # Add segment_id to all features BEFORE saving roi_shapes.geojson
+    for idx, feature in enumerate(geojson["features"]):
+        feature["properties"]["segment_id"] = idx + 1
+
+    # Save as GeoJSON (with segment_id)
     output_path = output_dir / "roi_shapes.geojson"
     with open(output_path, 'w') as f:
         json.dump(geojson, f, indent=2)
-    
-    print(f"Generated {len(geojson['features'])} ROIs in GeoJSON format")
+
+    print("Added segment_id to all features.")
     print(f"Saved to: {output_path}")
 
 if __name__ == "__main__":

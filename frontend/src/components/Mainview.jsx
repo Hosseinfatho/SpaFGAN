@@ -410,7 +410,7 @@ const MainView = () => {
           />
         )}
         
-        <div className="roi-selector-container">
+        <div className="roi-selector-container" style={{ position: 'absolute', top: '60px', left: 0, zIndex: 10 }}>
           <ROISelector 
             onSetView={handleSetView} 
             onHeatmapResults={handleHeatmapResults}

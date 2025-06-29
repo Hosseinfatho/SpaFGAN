@@ -173,10 +173,10 @@ def generate_vitessce_config(view_state_data):
         logger.info(f"Circle file exists: {circle_file.exists()}")
         if circle_file.exists():
             logger.info("Adding circle layer to dataset")
-            dataset.add_file(
-                url="http://localhost:5000/api/roi_circles",
-                file_type="obsSegmentations.json"
-            )
+            # dataset.add_file(
+            #     url="http://localhost:5000/api/roi_circles",
+            #     file_type="obsSegmentations.json"
+            # )
 
         # Add ROI annotations as GeoJSON layer
         roi_file = output_dir / "roi_shapes.geojson"
@@ -184,8 +184,19 @@ def generate_vitessce_config(view_state_data):
         logger.info(f"ROI file exists: {roi_file.exists()}")
         if roi_file.exists():
             logger.info("Adding ROI annotations layer to dataset")
+            # dataset.add_file(
+            #     url="http://localhost:5000/api/roi_shapes",
+            #     file_type="obsSegmentations.json"
+            # )
+
+        # Add rectangles annotation as GeoJSON layer
+        rectangle_file = output_dir / "roi_rectangles_annotation.json"
+        logger.info(f"Checking for rectangles annotation file: {rectangle_file}")
+        logger.info(f"Rectangles annotation file exists: {rectangle_file.exists()}")
+        if rectangle_file.exists():
+            logger.info("Adding rectangles annotation layer to dataset")
             dataset.add_file(
-                url="http://localhost:5000/api/roi_shapes",
+                url="http://localhost:5000/api/roi_rectangles_annotation",
                 file_type="obsSegmentations.json"
             )
 
@@ -227,6 +238,16 @@ def generate_vitessce_config(view_state_data):
         vc.layout(spatial | lc)
 
         config_dict = vc.to_dict()
+        # Force the segmentation layer name to "ROI"
+        for dataset in config_dict.get("datasets", []):
+            for file in dataset.get("files", []):
+                if file.get("fileType") == "obsSegmentations.json":
+                    file["options"] = {"name": "ROI"}
+        # Example: Remove options from all files
+        for dataset in config_dict.get("datasets", []):
+            for file in dataset.get("files", []):
+                if "options" in file:
+                    del file["options"]
         logger.info(f" Vitessce Configuration generated successfully from POST data.")
         return config_dict
     except Exception as e:
@@ -285,10 +306,10 @@ def serve_roi_shapes():
         if not roi_path.exists():
             logger.warning("ROI shapes file not found.")
             return jsonify({"error": "ROI shapes not found"}), 404
-        
+
         with open(roi_path, 'r') as f:
-            roi_data = json.load(f)
-        
+                roi_data = json.load(f)
+            
         return jsonify(roi_data)
     except Exception as e:
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
@@ -303,12 +324,24 @@ def serve_roi_circles():
             return jsonify({"error": "ROI circles not found"}), 404
         
         with open(circle_path, 'r') as f:
-            circle_data = json.load(f)
-        
+                circle_data = json.load(f)
+            
         return jsonify(circle_data)
     except Exception as e:
         logger.error(f"Error serving ROI circles: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI circles: {e}"}), 500
+
+@app.route('/api/roi_rectangles_annotation', methods=['GET'])
+def serve_roi_rectangles_annotation():
+    try:
+        annotation_path = Path(__file__).parent / "output" / "roi_rectangles_annotation.json"
+        if not annotation_path.exists():
+            return jsonify({"error": "ROI rectangles annotation not found"}), 404
+        with open(annotation_path, 'r') as f:
+            annotation_data = json.load(f)
+        return jsonify(annotation_data)
+    except Exception as e:
+        return jsonify({"error": f"Failed to serve ROI rectangles annotation: {e}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 

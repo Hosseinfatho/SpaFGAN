@@ -127,8 +127,8 @@ body, html, #root, .app {
 /* Style for the FIRST grid item (Spatial View - Fullscreen WITHIN Area) */
 .view-area .react-grid-layout > .react-grid-item:nth-child(1) {
   position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
+  left: 100 !important;
+  top: 100 !important;
   width: 100% !important;
   height: 100% !important;
   transform: none !important;
@@ -141,8 +141,8 @@ body, html, #root, .app {
 .view-area .react-grid-layout > .react-grid-item:nth-child(2) {
   position: absolute !important;
   right: 10px !important;        /* Final position from right */
-  top: 25px !important;          /* Final position from top */
-  width: 340px !important;       /* Final width */
+  top: 200px !important;          /* Final position from top */
+  width: 640px !important;       /* Final width */
   height: auto !important;       /* Final height */
   /* Use the max-height from user's edit */
 
@@ -214,7 +214,7 @@ body, html, #root, .app {
 .roi-selector-container {
   position: absolute !important;
   left: 10px !important;
-  top: 10px !important;
+  top: 100px !important;
   z-index: 1000 !important;
   background-color: rgba(255, 255, 255, 0.95) !important;
   border-radius: 10px !important;
@@ -298,10 +298,10 @@ body, html, #root, .app {
   box-shadow: none !important;
   color: #f0f0f0; /* Light text color */
   font-family: sans-serif;
-  font-size: 0.9em;
+  font-size: 1.9em;
   position: relative !important;
-  left: 0 !important;
-  top: 0 !important;
+  left: 100 !important;
+  top: 100 !important;
   transform: none !important;
 }
 
@@ -346,5 +346,18 @@ body, html, #root, .app {
   color: #d8d5d5;
   font-family: sans-serif;
   font-size: 1rem;
+}
+
+/* Make the Vitessce Layer Controller panel 1.5x bigger */
+.MuiDrawer-paper, .MuiPaper-root, .MuiList-root, .MuiListItem-root, .MuiFormControlLabel-root {
+    font-size: 150% !important;
+    min-width: 300px !important;
+    max-width: 400px !important;
+}
+.MuiCheckbox-root, .MuiSvgIcon-root {
+    font-size: 2.2rem !important;
+}
+.MuiFormControlLabel-label {
+    font-size: 150% !important;
 }
 
