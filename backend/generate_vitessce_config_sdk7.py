@@ -10,18 +10,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def load_roi_data(output_dir):
-    """
-    Load ROI data from JSON files
-    
-    Args:
-        output_dir (Path): Directory containing ROI JSON files
-    
-    Returns:
-        pd.DataFrame: Combined ROI data
-    """
     roi_files = glob.glob(str(output_dir / "top_roi_scores_*.json"))
     all_rois = []
-    
+
     for file_path in roi_files:
         with open(file_path, 'r') as f:
             data = json.load(f)
@@ -30,7 +21,7 @@ def load_roi_data(output_dir):
                 roi_data = {
                     'x': roi['position']['x'],
                     'y': roi['position']['y'],
-                    'z': roi['position'].get('z', 0),  # Optional z coordinate
+                    'z': roi['position'].get('z', 0),
                     'score': roi['scores']['combined_score'],
                     'interaction': interaction_name,
                     'roi_id': roi['roi_id'],
@@ -40,140 +31,90 @@ def load_roi_data(output_dir):
                     'num_edges': roi['num_edges']
                 }
                 all_rois.append(roi_data)
-    
+
     return pd.DataFrame(all_rois)
 
-def create_vitnesse_config(roi_df, output_dir):
-    """
-    Create Vitnesse configuration from ROI data
-    
-    Args:
-        roi_df (pd.DataFrame): DataFrame containing ROI data
-        output_dir (Path): Directory to save configuration
-    """
-    # Create base configuration
-    config = {
-        "version": "1.0",
-        "name": "SpaFGAN ROIs",
-        "description": "ROIs generated from SpaFGAN analysis",
-        "interactions": {
-            "T-cell entry site": {"color": "#FF0000"},
-            "Inflammatory zone": {"color": "#0000FF"},
-            "Oxidative stress niche": {"color": "#00FF00"},
-            "B-cell infiltration": {"color": "#800080"},
-            "Dendritic signal": {"color": "#FFA500"}
-        },
-        "rois": []
+def generate_vitessce_config():
+    backend_dir = Path(__file__).parent.resolve()
+    output_dir = backend_dir / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    roi_df = load_roi_data(output_dir)
+    if roi_df.empty:
+        logger.error("No ROI data found in JSON files")
+        return
+
+    # === Create obsSegmentations.json ===
+    segmentations = {
+        "version": "0.1.0",
+        "name": "ROI Annotations",
+        "type": "obsSegmentations",
+        "segmentations": []
     }
-    
-    # Process each ROI
-    for _, row in roi_df.iterrows():
-        roi_config = {
-            "id": f"{row['interaction']}_{len(config['rois'])}",
-            "interaction": row['interaction'],
-            "position": {
-                "x": float(row['x']),
-                "y": float(row['y'])
-            },
+
+    y_max = 688
+    for idx, row in roi_df.iterrows():
+        x = float(row['x']) * 1
+        y =(float(row['y']) * 1)
+        size = 20
+        polygon = [
+            [x - size, y - size],
+            [x + size, y - size],
+            [x + size, y + size],
+            [x - size, y + size],
+            [x - size, y - size]
+        ]
+
+        segmentations["segmentations"].append({
+            "obs_id": f"ROI_{idx}",
+            "segments": [{
+                "coordinates": [polygon],
+                "filled": True,
+                "type": "polygon"
+            }]
+        })
+
+    obs_seg_path = output_dir / "roi_rectangles_annotation.json"
+    with open(obs_seg_path, 'w') as f:
+        json.dump(segmentations, f, indent=2)
+
+    logger.info(f"Saved obsSegmentations.json to {obs_seg_path}")
+
+    # === Create obsFeatureMatrix.json ===
+    feature_matrix = {
+        "version": "0.1.0",
+        "type": "obsFeatureMatrix",
+        "data": {}
+    }
+
+    for idx, row in roi_df.iterrows():
+        roi_id = f"ROI_{idx}"
+        feature_matrix["data"][roi_id] = {
             "score": float(row['score']),
-            "properties": {
-                "interaction": row['interaction'],
-                "score": float(row['score'])
-            }
+            "interaction": row['interaction'],
+            "intensity_score": float(row['intensity_score']),
+            "attention_score": float(row['attention_score']),
+            "num_nodes": int(row['num_nodes']),
+            "num_edges": int(row['num_edges'])
         }
-        
-        # Add z coordinate if available
-        if 'z' in row and not pd.isna(row['z']):
-            roi_config['position']['z'] = float(row['z'])
-            roi_config['properties']['z'] = float(row['z'])
-            
-        config['rois'].append(roi_config)
-    
-    # Save configuration
-    output_path = output_dir / "vitnesse_config.json"
-    with open(output_path, 'w') as f:
-        json.dump(config, f, indent=2)
-    
-    logger.info(f"Saved Vitnesse configuration to {output_path}")
-    
-    # Print summary
+
+    obs_feat_path = output_dir / "obsFeatureMatrix.json"
+    with open(obs_feat_path, 'w') as f:
+        json.dump(feature_matrix, f, indent=2)
+
+    logger.info(f"Saved obsFeatureMatrix.json to {obs_feat_path}")
+
+    # === Print summary ===
     print("\n" + "="*50)
-    print("VITNESSE CONFIGURATION SUMMARY")
+    print("VITESSCE CONFIGURATION SUMMARY")
     print("="*50)
-    
     for interaction in roi_df['interaction'].unique():
         interaction_data = roi_df[roi_df['interaction'] == interaction]
         print(f"\n{interaction}:")
         print("-"*30)
         print(f"Number of ROIs: {len(interaction_data)}")
         print(f"Score range: {interaction_data['score'].max():.4f} - {interaction_data['score'].min():.4f}")
-    
     print("\n" + "="*50)
 
-def generate_vitnesse_config():
-    # Setup paths
-    backend_dir = Path(__file__).parent.resolve()
-    output_dir = backend_dir / "output"
-    
-    # Load ROI data from JSON files
-    roi_df = load_roi_data(output_dir)
-    if roi_df.empty:
-        logger.error("No ROI data found in JSON files")
-        return
-    
-    # Create Vitnesse configuration
-    create_vitnesse_config(roi_df, output_dir)
-    
-    # Create GeoJSON structure
-    geojson = {
-        "type": "FeatureCollection",
-        "features": []
-    }
-    
-    # Get image dimensions for Y flip
-    y_max = 5508  # Full height of the image
-    
-    # Convert each row to a GeoJSON feature
-    for _, row in roi_df.iterrows():
-        # Create a polygon around the point (50x50 pixels)
-        x = float(row['x']) * 8  # Multiply x by 8
-        y = y_max - (float(row['y']) * 8)  # Multiply y by 8 then flip
-        size = 30  # half of the desired size
-        
-        feature = {
-            "type": "Feature",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[
-                    [x - size, y - size],
-                    [x + size, y - size],
-                    [x + size, y + size],
-                    [x - size, y + size],
-                    [x - size, y - size]
-                ]]
-            },
-            "properties": {
-                "name": f"ROI_{row.name}",
-                "score": float(row['score']),
-                "interactions": [row['interaction']],
-                "marker_values": {
-                    row['interaction']: float(row['score'])
-                }
-            }
-        }
-        geojson["features"].append(feature)
-    
-    # Add segment_id to all features BEFORE saving roi_shapes.geojson
-    for idx, feature in enumerate(geojson["features"]):
-        feature["properties"]["segment_id"] = idx + 1
-
-    # Save as GeoJSON (with segment_id)
-    output_path = output_dir / "roi_shapes.geojson"
-    with open(output_path, 'w') as f:
-        json.dump(geojson, f, indent=2)
-
-    print("Added segment_id to all features.")
-    print(f"Saved to: {output_path}")
-
 if __name__ == "__main__":
-    generate_vitnesse_config() 
+    generate_vitessce_config()

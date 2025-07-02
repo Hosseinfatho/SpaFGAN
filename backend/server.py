@@ -1,7 +1,7 @@
 # Backend server code
 import json
 import logging
-from flask import Flask, jsonify, request, Response, stream_with_context
+from flask import Flask, jsonify, request, Response, stream_with_context, send_file
 from flask_cors import CORS
 import requests
 from vitessce import (
@@ -17,6 +17,8 @@ import s3fs
 import time
 import os
 from pathlib import Path
+import pprint
+from vitessce.config import VitessceConfig, CoordinationLevel as CL, VitessceConfigCoordinationScope
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
@@ -47,12 +49,22 @@ RGB_INTERACTION_DEFINITIONS = [
     {'name': 'T/B cell entry via vessels', 'channels': ['CD31', 'CD4', 'CD20'], 'rgb_target': 1}
 ]
 
+# Open the S3 Zarr store
+s3_local = s3fs.S3FileSystem(anon=True)
+root_store = s3fs.S3Map(root=ZARR_BASE_URL, s3=s3_local, check=False)
+root_group = pyzarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else pyzarr.open_group(store=root_store, mode='r')
+
+# Access the image array
+image_group = root_group[ZARR_IMAGE_GROUP_PATH]
+arr = image_group[TARGET_RESOLUTION_PATH]
+print("=== OME-Zarr image shape ===")
+print(arr.shape)
+
 @app.route('/api/channel_names')
 def get_channel_names():
     """Reads OME-Zarr metadata to get channel names."""
     logger.info("Request received for /api/channel_names")
     channel_map = {}
-    s3_local = None
     root_store = None
     root_group = None
     try:
@@ -151,107 +163,88 @@ def open_target_zarr_array():
         logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}")
         return None
 
+# === MODIFIED generate_vitessce_config ===
+from vitessce.config import VitessceConfig, CoordinationLevel as CL, VitessceConfigCoordinationScope
+
 def generate_vitessce_config(view_state_data):
-    """Generates the Vitessce config using base settings and view_state_data from frontend."""
-    logger.info(f"Generating Vitessce config with custom view state...")
+    logger.info("Generating Vitessce config with custom view state...")
     if not view_state_data:
-        logger.warning("No view_state_data provided, returning minimal config.")
         vc = VitessceConfig(schema_version="1.0.16", name="Error - No View State")
         return vc.to_dict()
 
     try:
-        vc = VitessceConfig(schema_version="1.0.16", name=f"BioMedVis Challenge - Custom View")
+        vc = VitessceConfig(schema_version="1.0.16", name="BioMedVis Challenge")
+
         dataset = vc.add_dataset(name="Blood Vessel", uid="bv").add_file(
             url="https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0",
             file_type="image.ome-zarr"
         )
 
-        # Check if circle file exists and add it to the dataset
+        # === Add ROI rectangle segmentations
         output_dir = Path(__file__).parent / "output"
-        circle_file = output_dir / "interactive_roi_circles.geojson"
-        logger.info(f"Checking for circle file: {circle_file}")
-        logger.info(f"Circle file exists: {circle_file.exists()}")
-        if circle_file.exists():
-            logger.info("Adding circle layer to dataset")
-            # dataset.add_file(
-            #     url="http://localhost:5000/api/roi_circles",
-            #     file_type="obsSegmentations.json"
-            # )
+        roi_file = output_dir / "roi_rectangles_annotation.json"
+        #roi_feat_file = output_dir / "obsFeatureMatrix.json"
 
-        # Add ROI annotations as GeoJSON layer
-        roi_file = output_dir / "roi_shapes.geojson"
-        logger.info(f"Checking for ROI file: {roi_file}")
-        logger.info(f"ROI file exists: {roi_file.exists()}")
         if roi_file.exists():
-            logger.info("Adding ROI annotations layer to dataset")
-            # dataset.add_file(
-            #     url="http://localhost:5000/api/roi_shapes",
-            #     file_type="obsSegmentations.json"
-            # )
-
-        # Add rectangles annotation as GeoJSON layer
-        rectangle_file = output_dir / "roi_rectangles_annotation.json"
-        logger.info(f"Checking for rectangles annotation file: {rectangle_file}")
-        logger.info(f"Rectangles annotation file exists: {rectangle_file.exists()}")
-        if rectangle_file.exists():
-            logger.info("Adding rectangles annotation layer to dataset")
+            logger.info("✅ Adding ROI obsSegmentations file")
             dataset.add_file(
                 url="http://localhost:5000/api/roi_rectangles_annotation",
-                file_type="obsSegmentations.json"
+                file_type="obsSegmentations.json",
+                coordination_values={"obsType": "ROI"}
             )
 
+        # if roi_feat_file.exists():
+        #     logger.info("✅ Adding ROI obsFeatureMatrix file")
+        #     dataset.add_file(
+        #         url="http://localhost:5000/api/roi_metadata",
+        #         file_type="obsFeatureMatrix.json",
+        #         coordination_values={"obsType": "ROI"}
+        #     )
+
+        # === Create views
         spatial = vc.add_view("spatialBeta", dataset=dataset)
         lc = vc.add_view("layerControllerBeta", dataset=dataset)
 
-        # Reconstruct CL objects from view_state_data
+        # === Add image layer coordination values
         reconstructed_state = {}
-        # Copy top-level keys directly
         for key in ["spatialTargetZ", "spatialTargetT", "spatialZoom", "spatialTargetX", "spatialTargetY", "spatialRenderingMode"]:
             if key in view_state_data:
                 reconstructed_state[key] = view_state_data[key]
-        
-        # Process imageLayer - needs CL wrapper for the list
+
         if "imageLayer" in view_state_data and isinstance(view_state_data["imageLayer"], list):
             processed_layers = []
-            for layer_data in view_state_data["imageLayer"]:
-                processed_layer = layer_data.copy()
-                # Process imageChannel within the layer - needs CL wrapper for the list
-                if "imageChannel" in processed_layer and isinstance(processed_layer["imageChannel"], list):
-                    # Convert Python boolean to JavaScript boolean
-                    for channel in processed_layer["imageChannel"]:
-                        if "spatialChannelVisible" in channel:
-                            channel["spatialChannelVisible"] = bool(channel["spatialChannelVisible"])
-                    processed_layer["imageChannel"] = CL(processed_layer["imageChannel"])
+            for layer in view_state_data["imageLayer"]:
+                layer_copy = layer.copy()
+                if "imageChannel" in layer_copy:
+                    for channel in layer_copy["imageChannel"]:
+                        channel["spatialChannelVisible"] = bool(channel.get("spatialChannelVisible", True))
+                    layer_copy["imageChannel"] = CL(layer_copy["imageChannel"])
                 else:
-                    processed_layer["imageChannel"] = CL([])
-                processed_layers.append(processed_layer)
+                    layer_copy["imageChannel"] = CL([])
+                processed_layers.append(layer_copy)
             reconstructed_state["imageLayer"] = CL(processed_layers)
         else:
             reconstructed_state["imageLayer"] = CL([])
 
-        # Link views using the reconstructed state
-        scope = get_initial_coordination_scope_prefix("bv", "image")
-        logger.info(f"Linking views with reconstructed state: {reconstructed_state}")
-        vc.link_views_by_dict([spatial, lc], reconstructed_state, meta=True, scope_prefix=scope)
-        
-        # Define layout
+        # === Link views
+        scope_prefix = get_initial_coordination_scope_prefix("bv", "image")
+        vc.link_views_by_dict([spatial, lc], reconstructed_state, meta=True, scope_prefix=scope_prefix)
+        vc.link_views_by_dict([spatial, lc], {"obsType": "ROI"})
+
+        # === Layout
         vc.layout(spatial | lc)
 
         config_dict = vc.to_dict()
-        # Force the segmentation layer name to "ROI"
-        for dataset in config_dict.get("datasets", []):
-            for file in dataset.get("files", []):
-                if file.get("fileType") == "obsSegmentations.json":
-                    file["options"] = {"name": "ROI"}
-        # Example: Remove options from all files
-        for dataset in config_dict.get("datasets", []):
-            for file in dataset.get("files", []):
-                if "options" in file:
-                    del file["options"]
-        logger.info(f" Vitessce Configuration generated successfully from POST data.")
+
+        # Remove unused options
+        for ds in config_dict.get("datasets", []):
+            for f in ds.get("files", []):
+                f.pop("options", None)
+
         return config_dict
+
     except Exception as e:
-        logger.error(f"Error generating Vitessce config from POST data: {e}", exc_info=True)
+        logger.error("Error generating Vitessce config from POST data:", exc_info=True)
         return None
 
 @app.route('/api/generate_config', methods=['POST'])
@@ -337,11 +330,23 @@ def serve_roi_rectangles_annotation():
         annotation_path = Path(__file__).parent / "output" / "roi_rectangles_annotation.json"
         if not annotation_path.exists():
             return jsonify({"error": "ROI rectangles annotation not found"}), 404
-        with open(annotation_path, 'r') as f:
-            annotation_data = json.load(f)
-        return jsonify(annotation_data)
+        return send_file(annotation_path, mimetype='application/json')
     except Exception as e:
         return jsonify({"error": f"Failed to serve ROI rectangles annotation: {e}"}), 500
+
+@app.route('/api/roi_segmentations', methods=['GET'])
+def serve_roi_segmentations():
+    try:
+        return send_file('backend/obsSegmentations.json')
+    except Exception as e:
+        return jsonify({'error': f'Failed to serve ROI segmentations: {e}'}), 500
+
+@app.route('/api/roi_metadata', methods=['GET'])
+def serve_roi_metadata():
+    try:
+        return send_file('backend/obsFeatureMatrix.json')
+    except Exception as e:
+        return jsonify({'error': f'Failed to serve ROI metadata: {e}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 

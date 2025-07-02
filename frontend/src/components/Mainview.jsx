@@ -65,8 +65,10 @@ const MainView = () => {
           }
         ]
       }
-    ]
+    ],
+    obsType: "ROI"
   });
+
 
   const [heatmapResults, setHeatmapResults] = useState({});
   const [interactionHeatmapResult, setInteractionHeatmapResult] = useState(null);
@@ -113,6 +115,7 @@ const MainView = () => {
       })
       .then(data => {
         console.log("Mainview config generated successfully:", data);
+        console.log("Vitessce config:", data);
         setConfig(data);
       })
       .catch(err => {
@@ -124,6 +127,12 @@ const MainView = () => {
   useEffect(() => {
     fetchConfig(viewState);
   }, [viewState]);
+
+  useEffect(() => {
+    if (config) {
+      console.log("Vitessce config:", config);
+    }
+  }, [config]);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/roi_shapes")

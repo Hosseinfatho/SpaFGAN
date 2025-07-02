@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "name": "ROI Annotations",
+  "type": "obsSegmentations",
+  "segmentations": [
+    {
+      "obs_id": "ROI_TEST",
+      "segments": [
+        {
+          "coordinates": [
+            [
+              [650, 330],
+              [700, 330],
+              [700, 380],
+              [650, 380],
+              [650, 330]
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
