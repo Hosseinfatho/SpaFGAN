@@ -308,39 +308,6 @@ def serve_roi_shapes():
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI shapes: {e}"}), 500
 
-@app.route('/api/roi_circles', methods=['GET'])
-def serve_roi_circles():
-    try:
-        circle_path = Path(__file__).parent / "output" / "interactive_roi_circles.geojson"
-        if not circle_path.exists():
-            logger.warning("ROI circles file not found.")
-            return jsonify({"error": "ROI circles not found"}), 404
-        
-        with open(circle_path, 'r') as f:
-                circle_data = json.load(f)
-            
-        return jsonify(circle_data)
-    except Exception as e:
-        logger.error(f"Error serving ROI circles: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve ROI circles: {e}"}), 500
-
-@app.route('/api/roi_rectangles_annotation', methods=['GET'])
-def serve_roi_rectangles_annotation():
-    try:
-        annotation_path = Path(__file__).parent / "output" / "roi_rectangles_annotation.json"
-        if not annotation_path.exists():
-            return jsonify({"error": "ROI rectangles annotation not found"}), 404
-        return send_file(annotation_path, mimetype='application/json')
-    except Exception as e:
-        return jsonify({"error": f"Failed to serve ROI rectangles annotation: {e}"}), 500
-
-@app.route('/api/roi_segmentations', methods=['GET'])
-def serve_roi_segmentations():
-    try:
-        return send_file('backend/obsSegmentations.json')
-    except Exception as e:
-        return jsonify({'error': f'Failed to serve ROI segmentations: {e}'}), 500
-
 @app.route('/api/roi_metadata', methods=['GET'])
 def serve_roi_metadata():
     try:

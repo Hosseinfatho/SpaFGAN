@@ -228,6 +228,8 @@ const MainView = () => {
     setInteractionHeatmapResult(results);
   };
 
+
+
   const handleCircleClick = (circleId) => {
     console.log('Circle clicked:', circleId);
     setSelectedCircle(circleId);

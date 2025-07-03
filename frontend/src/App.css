@@ -141,12 +141,12 @@ body, html, #root, .app {
 .view-area .react-grid-layout > .react-grid-item:nth-child(2) {
   position: absolute !important;
   right: 10px !important;        /* Final position from right */
-  top: 200px !important;          /* Final position from top */
+  top: 100px !important;          /* Final position from top */
   width: 640px !important;       /* Final width */
   height: auto !important;       /* Final height */
   /* Use the max-height from user's edit */
 
-  max-height: calc(80% ) !important;
+  max-height: calc(75% ) !important;
   /* Add scaling */
   transform: scale(0.75) !important;
   transform-origin: top right !important; /* Scale from top right corner */
@@ -176,7 +176,7 @@ body, html, #root, .app {
   box-shadow: none !important;
   color: #f0f0f0; /* Light text color */
   font-family: sans-serif;
-  font-size: 0.9em;
+  font-size: 0.8em;
 }
 
 /* Light Theme Styles */
