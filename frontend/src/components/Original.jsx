@@ -7,67 +7,7 @@ import Plot from 'react-plotly.js';
 const MainView = () => {
   const [config, setConfig] = useState(null);
   const [error, setError] = useState(null);
-  const [viewState, setViewState] = useState({
-    spatialTargetZ: 0,
-    spatialTargetT: 0,
-    spatialZoom: -2.5,
-    spatialTargetX: 5454,
-    spatialTargetY: 2754,
-    spatialRenderingMode: "3D",
-    imageLayer: [
-      {
-        spatialTargetResolution: 3,
-        spatialLayerOpacity: 1.0,
-        spatialLayerVisible: true,
-        photometricInterpretation: "BlackIsZero",
-        imageChannel: [
-          {
-            spatialTargetC: 19,
-            spatialChannelColor: [0, 255, 0],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [300, 20000]
-          },
-          {
-            spatialTargetC: 27,
-            spatialChannelColor: [255, 255, 0],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [1000, 7000]
-          },
-          {
-            spatialTargetC: 37,
-            spatialChannelColor: [255, 0, 255],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [700, 6000]
-          },
-          {
-            spatialTargetC: 25,
-            spatialChannelColor: [0, 255, 255],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [1638, 10000]
-          },
-          {
-            spatialTargetC: 42,
-            spatialChannelColor: [65, 51, 97],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [370, 1432]
-          },
-          {
-            spatialTargetC: 59,
-            spatialChannelColor: [255, 0, 0],
-            spatialChannelVisible: true,
-            spatialChannelOpacity: 1.0,
-            spatialChannelWindow: [1638, 7000]
-          }
-        ]
-      }
-    ],
-    obsType: "ROI"
-  });
+  const [viewState, setViewState] = useState(null);
 
 
   const [heatmapResults, setHeatmapResults] = useState({});
@@ -99,34 +39,35 @@ const MainView = () => {
     4: 'T-B collaboration (CD4 + CD20)'
   };
 
-  const fetchConfig = (stateData) => {
-    fetch('http://127.0.0.1:5000/api/generate_config', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(stateData)
-    })
+  const fetchConfig = () => {
+    console.log("Fetching config from:", 'http://localhost:5000/api/config');
+    fetch('http://localhost:5000/api/config')
       .then(response => {
+        console.log("Response status:", response.status);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
       })
       .then(data => {
-        console.log("Mainview config generated successfully:", data);
-        console.log("Vitessce config:", data);
+        console.log("Vitessce config loaded successfully:", data);
+        console.log("Config structure:", {
+          version: data.version,
+          name: data.name,
+          datasetsCount: data.datasets?.length,
+          layoutCount: data.layout?.length
+        });
         setConfig(data);
       })
       .catch(err => {
-        console.error("Error generating Mainview config:", err);
+        console.error("Error loading Vitessce config:", err);
         setError(err.message);
       });
   };
 
   useEffect(() => {
-    fetchConfig(viewState);
-  }, [viewState]);
+    fetchConfig();
+  }, []);
 
   useEffect(() => {
     if (config) {
@@ -202,15 +143,10 @@ const MainView = () => {
       console.log('Mainview: showCircles set to:', roiView.showCircles);
     }
     
-    setViewState(prev => ({
-      ...prev,
-      ...roiView
-    }));
-    
     if (roiView.refreshConfig) {
       setConfigKey(prev => prev + 1);
       setTimeout(() => {
-        fetchConfig(viewState);
+        fetchConfig();
       }, 500);
     }
 
@@ -234,16 +170,8 @@ const MainView = () => {
     console.log('Circle clicked:', circleId);
     setSelectedCircle(circleId);
     
-    const roiIndex = parseInt(circleId.split('_')[1]);
-    if (rois[roiIndex]) {
-      const roi = rois[roiIndex];
-      setViewState(prev => ({
-        ...prev,
-        spatialTargetX: roi.x,
-        spatialTargetY: roi.y,
-        spatialZoom: -1.0
-      }));
-    }
+    // Note: View state changes are now handled by the backend config
+    // Circle clicks will be handled by Vitessce's internal state management
   };
 
   const handleGroupToggle = (groupId) => {
@@ -344,7 +272,12 @@ const MainView = () => {
     return <p style={{ color: 'red', padding: '10px' }}>Error generating Mainview: {error}</p>;
   }
   if (!config) {
-    return <p style={{ padding: '10px' }}>Generating Mainview config...</p>;
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <p>Loading Vitessce configuration...</p>
+        <p style={{ fontSize: '12px', color: '#666' }}>Please wait while the 3D viewer is being prepared</p>
+      </div>
+    );
   }
 
   return (
@@ -401,6 +334,28 @@ const MainView = () => {
       {interactionHeatmapResult && renderInteractionHeatmap()}
 
       <div className="fullscreen-vitessce" style={{ position: 'relative', width: '100%', height: '100vh' }}>
+        {/* Debug info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '10px', 
+            right: '10px', 
+            background: 'rgba(0,0,0,0.8)', 
+            color: 'white', 
+            padding: '10px', 
+            borderRadius: '5px',
+            fontSize: '12px',
+            zIndex: 1000,
+            maxWidth: '300px'
+          }}>
+            <div>Config loaded: {config ? '✅' : '❌'}</div>
+            <div>Version: {config?.version}</div>
+            <div>Name: {config?.name}</div>
+            <div>Datasets: {config?.datasets?.length || 0}</div>
+            <div>Layout: {config?.layout?.length || 0}</div>
+          </div>
+        )}
+        
         <Vitessce
           ref={vitessceRef}
           key={configKey}
@@ -417,7 +372,6 @@ const MainView = () => {
             onCircleClick={handleCircleClick}
             selectedCircle={selectedCircle}
             selectedInteractions={selectedGroups}
-            viewState={viewState}
           />
         )}
         

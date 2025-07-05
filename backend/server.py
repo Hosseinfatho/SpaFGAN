@@ -4,11 +4,7 @@ import logging
 from flask import Flask, jsonify, request, Response, stream_with_context, send_file
 from flask_cors import CORS
 import requests
-from vitessce import (
-    VitessceConfig,
-    CoordinationLevel as CL,
-    get_initial_coordination_scope_prefix
-)
+# Vitessce imports removed - using standard JSON config format
 import zarr as pyzarr
 import numpy as np
 from scipy import ndimage
@@ -153,7 +149,7 @@ def open_target_zarr_array():
             return None
 
         target_image_arr = image_group_0[TARGET_RESOLUTION_PATH]
-        logger.info(f"✅ Successfully opened target Zarr array /{ZARR_IMAGE_GROUP_PATH}/{TARGET_RESOLUTION_PATH}")
+        logger.info(f" Successfully opened target Zarr array /{ZARR_IMAGE_GROUP_PATH}/{TARGET_RESOLUTION_PATH}")
         logger.info(f"Array shape: {target_image_arr.shape}")
         logger.info(f"Array dtype: {target_image_arr.dtype}")
         return target_image_arr
@@ -163,85 +159,169 @@ def open_target_zarr_array():
         logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}")
         return None
 
-# === MODIFIED generate_vitessce_config ===
-from vitessce.config import VitessceConfig, CoordinationLevel as CL, VitessceConfigCoordinationScope
+# === STANDARD VITESSCE CONFIG GENERATOR ===
 
 def generate_vitessce_config(view_state_data):
     logger.info("Generating Vitessce config with custom view state...")
     if not view_state_data:
-        vc = VitessceConfig(schema_version="1.0.16", name="Error - No View State")
-        return vc.to_dict()
+        return {
+            "version": "1.0.15",
+            "name": "Error - No View State",
+            "description": "No view state data provided",
+            "datasets": [],
+            "coordinationSpace": {},
+            "layout": [],
+            "initStrategy": "auto"
+        }
 
     try:
-        vc = VitessceConfig(schema_version="1.0.16", name="BioMedVis Challenge")
+        # Create standard Vitessce config structure
+        config = {
+            "version": "1.0.15",
+            "name": "BioMedVis Challenge",
+            "description": "3D Melanoma Dataset with ROI Analysis",
+            "datasets": [
+                {
+                    "uid": "bv",
+                    "name": "Blood Vessel",
+                    "files": [
+                        {
+                            "url": "https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0",
+                            "fileType": "image.ome-zarr",
+                            "coordinationValues": {}
+                        }
+                    ]
+                }
+            ],
+            "coordinationSpace": {
+                "spatialTargetZ": {
+                    "bv": 0
+                },
+                "spatialTargetT": {
+                    "bv": 0
+                },
+                "spatialZoom": {
+                    "bv": -2.5
+                },
+                "spatialTargetX": {
+                    "bv": 5454
+                },
+                "spatialTargetY": {
+                    "bv": 2754
+                },
+                "spatialRenderingMode": {
+                    "bv": "3D"
+                },
+                "imageLayer": {
+                    "bv": [
+                        {
+                            "spatialTargetResolution": 3,
+                            "spatialLayerOpacity": 1.0,
+                            "spatialLayerVisible": True,
+                            "photometricInterpretation": "BlackIsZero",
+                            "imageChannel": [
+                                {
+                                    "spatialTargetC": 19,
+                                    "spatialChannelColor": [0, 255, 0],
+                                    "spatialChannelVisible": True,
+                                    "spatialChannelOpacity": 1.0,
+                                    "spatialChannelWindow": [300, 20000]
+                                },
+                                {
+                                    "spatialTargetC": 27,
+                                    "spatialChannelColor": [255, 255, 0],
+                                    "spatialChannelVisible": True,
+                                    "spatialChannelOpacity": 1.0,
+                                    "spatialChannelWindow": [1000, 7000]
+                                },
+                                {
+                                    "spatialTargetC": 37,
+                                    "spatialChannelColor": [255, 0, 255],
+                                    "spatialChannelVisible": True,
+                                    "spatialChannelOpacity": 1.0,
+                                    "spatialChannelWindow": [700, 6000]
+                                },
+                                {
+                                    "spatialTargetC": 25,
+                                    "spatialChannelColor": [0, 255, 255],
+                                    "spatialChannelVisible": True,
+                                    "spatialChannelOpacity": 1.0,
+                                    "spatialChannelWindow": [1638, 10000]
+                                },
+                                {
+                                    "spatialTargetC": 42,
+                                    "spatialChannelColor": [65, 51, 97],
+                                    "spatialChannelVisible": True,
+                                    "spatialChannelOpacity": 1.0,
+                                    "spatialChannelWindow": [370, 1432]
+                                },
+                                {
+                                    "spatialTargetC": 59,
+                                    "spatialChannelColor": [255, 0, 0],
+                                    "spatialChannelVisible": True,
+                                    "spatialChannelOpacity": 1.0,
+                                    "spatialChannelWindow": [1638, 7000]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "obsType": {
+                    "bv": "ROI"
+                }
+            },
+            "layout": [
+                {
+                    "component": "spatialBeta",
+                    "coordinationScopes": {
+                        "spatialTargetZ": "bv",
+                        "spatialTargetT": "bv",
+                        "spatialZoom": "bv",
+                        "spatialTargetX": "bv",
+                        "spatialTargetY": "bv",
+                        "spatialRenderingMode": "bv",
+                        "imageLayer": "bv",
+                        "obsType": "bv"
+                    },
+                    "x": 0,
+                    "y": 0,
+                    "w": 8,
+                    "h": 8
+                },
+                {
+                    "component": "layerControllerBeta",
+                    "coordinationScopes": {
+                        "spatialTargetZ": "bv",
+                        "spatialTargetT": "bv",
+                        "spatialZoom": "bv",
+                        "spatialTargetX": "bv",
+                        "spatialTargetY": "bv",
+                        "spatialRenderingMode": "bv",
+                        "imageLayer": "bv",
+                        "obsType": "bv"
+                    },
+                    "x": 8,
+                    "y": 0,
+                    "w": 4,
+                    "h": 8
+                }
+            ],
+            "initStrategy": "auto"
+        }
 
-        dataset = vc.add_dataset(name="Blood Vessel", uid="bv").add_file(
-            url="https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0",
-            file_type="image.ome-zarr"
-        )
-
-        # === Add ROI rectangle segmentations
+        # Add ROI file if exists
         output_dir = Path(__file__).parent / "output"
         roi_file = output_dir / "roi_rectangles_annotation.json"
-        #roi_feat_file = output_dir / "obsFeatureMatrix.json"
-
+        
         if roi_file.exists():
-            logger.info("✅ Adding ROI obsSegmentations file")
-            dataset.add_file(
-                url="http://localhost:5000/api/roi_rectangles_annotation",
-                file_type="obsSegmentations.json",
-                coordination_values={"obsType": "ROI"}
-            )
+            logger.info(" Adding ROI obsSegmentations file")
+            config["datasets"][0]["files"].append({
+                "url": "http://localhost:5000/api/roi_rectangles_annotation",
+                "fileType": "obsSegmentations.json",
+                "coordinationValues": {"obsType": "ROI"}
+            })
 
-        # if roi_feat_file.exists():
-        #     logger.info("✅ Adding ROI obsFeatureMatrix file")
-        #     dataset.add_file(
-        #         url="http://localhost:5000/api/roi_metadata",
-        #         file_type="obsFeatureMatrix.json",
-        #         coordination_values={"obsType": "ROI"}
-        #     )
-
-        # === Create views
-        spatial = vc.add_view("spatialBeta", dataset=dataset)
-        lc = vc.add_view("layerControllerBeta", dataset=dataset)
-
-        # === Add image layer coordination values
-        reconstructed_state = {}
-        for key in ["spatialTargetZ", "spatialTargetT", "spatialZoom", "spatialTargetX", "spatialTargetY", "spatialRenderingMode"]:
-            if key in view_state_data:
-                reconstructed_state[key] = view_state_data[key]
-
-        if "imageLayer" in view_state_data and isinstance(view_state_data["imageLayer"], list):
-            processed_layers = []
-            for layer in view_state_data["imageLayer"]:
-                layer_copy = layer.copy()
-                if "imageChannel" in layer_copy:
-                    for channel in layer_copy["imageChannel"]:
-                        channel["spatialChannelVisible"] = bool(channel.get("spatialChannelVisible", True))
-                    layer_copy["imageChannel"] = CL(layer_copy["imageChannel"])
-                else:
-                    layer_copy["imageChannel"] = CL([])
-                processed_layers.append(layer_copy)
-            reconstructed_state["imageLayer"] = CL(processed_layers)
-        else:
-            reconstructed_state["imageLayer"] = CL([])
-
-        # === Link views
-        scope_prefix = get_initial_coordination_scope_prefix("bv", "image")
-        vc.link_views_by_dict([spatial, lc], reconstructed_state, meta=True, scope_prefix=scope_prefix)
-        vc.link_views_by_dict([spatial, lc], {"obsType": "ROI"})
-
-        # === Layout
-        vc.layout(spatial | lc)
-
-        config_dict = vc.to_dict()
-
-        # Remove unused options
-        for ds in config_dict.get("datasets", []):
-            for f in ds.get("files", []):
-                f.pop("options", None)
-
-        return config_dict
+        return config
 
     except Exception as e:
         logger.error("Error generating Vitessce config from POST data:", exc_info=True)
@@ -263,6 +343,167 @@ def generate_config_from_post():
         return jsonify(config)
     else:
         return jsonify({"error": "Failed to generate Vitessce configuration from provided data"}), 500
+
+@app.route('/api/config', methods=['GET'])
+def get_default_config():
+    """Returns default Vitessce config for browser viewing."""
+    logger.info("Request received for /api/config [GET]")
+    
+    # Create complete Vitessce config based on original jupyter notebook
+    config = config = {
+    "version": "1.0.15",
+    "name": "BioMedVis Challenge",
+    "description": "3D Melanoma Dataset with ROI Analysis",
+    "datasets": [
+        {
+            "uid": "bv",
+            "name": "Blood Vessel",
+            "files": [
+                                    {
+                        "url": "https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0",
+                        "fileType": "image.ome-zarr",
+                        "coordinationValues": {
+                            "imageLayer": "bv"
+                        },
+                        "options": {
+                            "defaultChannelSelection": [19, 27, 37, 25, 59],
+                            "channelNames": {
+                                "19": "CD31",
+                                "27": "CD20", 
+                                "37": "CD11b",
+                                "25": "CD4",
+                                "59": "Catalase"
+                            },
+                            "imageLayer": [
+                                {
+                                    "spatialTargetResolution": 3,
+                                    "spatialLayerOpacity": 1.0,
+                                    "spatialLayerVisible": True,
+                                    "photometricInterpretation": "BlackIsZero",
+                                    "imageChannel": [
+                                        {
+                                            "spatialTargetC": 19,
+                                            "spatialChannelColor": [0, 255, 0],
+                                            "spatialChannelVisible": True,
+                                            "spatialChannelOpacity": 1.0,
+                                            "spatialChannelWindow": [300, 20000]
+                                        },
+                                        {
+                                            "spatialTargetC": 27,
+                                            "spatialChannelColor": [255, 255, 0],
+                                            "spatialChannelVisible": True,
+                                            "spatialChannelOpacity": 1.0,
+                                            "spatialChannelWindow": [1000, 7000]
+                                        },
+                                        {
+                                            "spatialTargetC": 37,
+                                            "spatialChannelColor": [255, 0, 255],
+                                            "spatialChannelVisible": True,
+                                            "spatialChannelOpacity": 1.0,
+                                            "spatialChannelWindow": [700, 6000]
+                                        },
+                                        {
+                                            "spatialTargetC": 25,
+                                            "spatialChannelColor": [0, 255, 255],
+                                            "spatialChannelVisible": True,
+                                            "spatialChannelOpacity": 1.0,
+                                            "spatialChannelWindow": [1638, 10000]
+                                        },
+                                        {
+                                            "spatialTargetC": 59,
+                                            "spatialChannelColor": [255, 0, 0],
+                                            "spatialChannelVisible": True,
+                                            "spatialChannelOpacity": 1.0,
+                                            "spatialChannelWindow": [1638, 7000]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+            ]
+        }
+    ],
+    "coordinationSpace": {
+        "spatialTargetZ": {
+            "bv": 0
+        },
+        "spatialTargetT": {
+            "bv": 0
+        },
+        "spatialZoom": {
+            "bv": -1.1
+        },
+        "spatialTargetX": {
+            "bv": 2914
+        },
+        "spatialTargetY": {
+            "bv": 1267
+        },
+        "spatialRenderingMode": {
+            "bv": "3D"
+        },
+                    "imageLayer": {
+                "bv": "bv"
+            }
+    },
+    "layout": [
+        {
+            "component": "spatialBeta",
+            "coordinationScopes": {
+                "spatialTargetZ": "bv",
+                "spatialTargetT": "bv",
+                "spatialZoom": "bv",
+                "spatialTargetX": "bv",
+                "spatialTargetY": "bv",
+                "spatialRenderingMode": "bv",
+                "imageLayer": "bv"
+            },
+            "x": 0,
+            "y": 0,
+            "w": 8,
+            "h": 8
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "spatialTargetZ": "bv",
+                "spatialTargetT": "bv",
+                "spatialZoom": "bv",
+                "spatialTargetX": "bv",
+                "spatialTargetY": "bv",
+                "spatialRenderingMode": "bv",
+                "imageLayer": "bv"
+            },
+            "x": 8,
+            "y": 0,
+            "w": 4,
+            "h": 8
+        }
+    ],
+    "initStrategy": "auto"
+}
+
+
+    
+    # Add ROI file if exists
+    output_dir = Path(__file__).parent / "output"
+    roi_file = output_dir / "roi_rectangles_annotation.json"
+    
+    if roi_file.exists():
+        logger.info(" Adding ROI obsSegmentations file")
+        config["datasets"][0]["files"].append({
+            "url": "http://localhost:5000/api/roi_rectangles_annotation",
+            "fileType": "obsSegmentations.json",
+            "coordinationValues": {"obsType": "ROI"}
+        })
+        # Add obsType to coordination space
+        config["coordinationSpace"]["obsType"] = {"bv": "ROI"}
+        # Add obsType to coordination scopes
+        config["layout"][0]["coordinationScopes"]["obsType"] = "bv"
+        config["layout"][1]["coordinationScopes"]["obsType"] = "bv"
+    
+    return jsonify(config)
 
 @app.route('/api/zarr-proxy')
 def zarr_proxy():

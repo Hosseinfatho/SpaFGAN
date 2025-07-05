@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './InteractiveCircles.css';
 
-const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, selectedInteractions, viewState }) => {
+const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, selectedInteractions }) => {
   const [circles, setCircles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imageDimensions, setImageDimensions] = useState({ width: 10908, height: 5508 });
@@ -33,8 +33,8 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     
     console.log('Container dimensions:', { containerWidth, containerHeight });
     
-    // Get current zoom level
-    const zoomLevel = Math.pow(2, -(viewState?.spatialZoom || -2.5));
+    // Use default zoom level since viewState is no longer available
+    const zoomLevel = Math.pow(2, -(-2.5)); // Default zoom
     
     // Calculate scale factors
     const scaleX = containerWidth / imageDimensions.width;
@@ -49,9 +49,9 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     const offsetX = (containerWidth - (imageDimensions.width * scale * zoomLevel)) / 2;
     const offsetY = (containerHeight - (imageDimensions.height * scale * zoomLevel)) / 2;
     
-    // Apply pan offset (if any)
-    const panX = viewState?.spatialTargetX || 0;
-    const panY = viewState?.spatialTargetY || 0;
+    // Use default pan values
+    const panX = 5454; // Default from backend config
+    const panY = 2754; // Default from backend config
     
     const finalX = scaledX + offsetX + (panX * scale * zoomLevel);
     const finalY = containerHeight - scaledY - offsetY - (panY * scale * zoomLevel);
@@ -150,13 +150,13 @@ const InteractiveCircles = ({ rois, showCircles, onCircleClick, selectedCircle, 
     };
   }, [showCircles]); // Only depend on showCircles
 
-  // Separate effect for updating circle positions when viewState changes
+  // Separate effect for updating circle positions when needed
   useEffect(() => {
     if (circles.length > 0) {
-      console.log('Updating circle positions due to viewState change');
+      console.log('Updating circle positions');
       setCircles(updateCirclePositions(circles));
     }
-  }, [viewState?.spatialZoom, viewState?.spatialTargetX, viewState?.spatialTargetY]);
+  }, [circles.length]);
 
   // Separate effect for updating selected state
   useEffect(() => {
