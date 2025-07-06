@@ -7,7 +7,6 @@ import Plot from 'react-plotly.js';
 const MainView = () => {
   const [config, setConfig] = useState(null);
   const [error, setError] = useState(null);
-  const [viewState, setViewState] = useState(null);
 
 
   const [heatmapResults, setHeatmapResults] = useState({});
@@ -169,9 +168,6 @@ const MainView = () => {
   const handleCircleClick = (circleId) => {
     console.log('Circle clicked:', circleId);
     setSelectedCircle(circleId);
-    
-    // Note: View state changes are now handled by the backend config
-    // Circle clicks will be handled by Vitessce's internal state management
   };
 
   const handleGroupToggle = (groupId) => {
