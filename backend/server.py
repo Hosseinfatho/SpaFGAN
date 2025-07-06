@@ -536,47 +536,18 @@ def zarr_proxy():
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
     try:
-        roi_path = Path(__file__).parent / "output" / "roi_rectangles.geojson"
+        roi_path = Path(__file__).parent / "output" / "roi_shapes.geojson"
         if not roi_path.exists():
             logger.warning("ROI shapes file not found.")
             return jsonify({"error": "ROI shapes not found"}), 404
 
         with open(roi_path, 'r') as f:
-            roi_data = json.load(f)
-        
-        # Transform the data to match frontend expectations
-        if 'features' in roi_data:
-            for feature in roi_data['features']:
-                if 'properties' in feature:
-                    # Convert 'interaction' string to 'interactions' array
-                    if 'interaction' in feature['properties']:
-                        feature['properties']['interactions'] = [feature['properties']['interaction']]
-                        # Keep the original 'interaction' field for backward compatibility
-                    
-                    # Ensure 'name' field exists
-                    if 'name' not in feature['properties'] and 'id' in feature['properties']:
-                        feature['properties']['name'] = feature['properties']['id']
+                roi_data = json.load(f)
             
         return jsonify(roi_data)
     except Exception as e:
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI shapes: {e}"}), 500
-
-@app.route('/api/roi_rectangles_annotation', methods=['GET'])
-def serve_roi_rectangles_annotation():
-    try:
-        roi_path = Path(__file__).parent / "output" / "roi_rectangles_annotation.json"
-        if not roi_path.exists():
-            logger.warning("ROI rectangles annotation file not found.")
-            return jsonify({"error": "ROI rectangles annotation not found"}), 404
-
-        with open(roi_path, 'r') as f:
-            roi_data = json.load(f)
-            
-        return jsonify(roi_data)
-    except Exception as e:
-        logger.error(f"Error serving ROI rectangles annotation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve ROI rectangles annotation: {e}"}), 500
 
 @app.route('/api/roi_metadata', methods=['GET'])
 def serve_roi_metadata():
