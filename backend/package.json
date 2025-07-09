@@ -1,6 +1,14 @@
 {
-  "dependencies": {
-    "plotly.js": "^3.0.1",
-    "react-plotly.js": "^2.6.0"
-  }
+  "name": "biomedvis-backend",
+  "version": "1.0.0",
+  "description": "Backend for BioMedVis Challenge",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": ["vitessce", "biomedvis", "visualization"],
+  "author": "",
+  "license": "MIT"
 }

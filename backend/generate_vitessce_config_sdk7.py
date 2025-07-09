@@ -5,6 +5,8 @@ import logging
 import numpy as np
 import glob
 
+import yaml
+
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -45,18 +47,12 @@ def generate_vitessce_config():
         return
 
     # === Create obsSegmentations.json ===
-    segmentations = {
-        "version": "0.1.0",
-        "name": "ROI Annotations",
-        "type": "obsSegmentations",
-        "segmentations": []
-    }
-
-    y_max = 688
+    segmentations = {}
+    y_max = 5508
     for idx, row in roi_df.iterrows():
-        x = float(row['x']) * 1
-        y =(float(row['y']) * 1)
-        size = 20
+        x = max(0, round(float(row['x']) * 8))  # Multiply by factor 8, round to int, and ensure >= 0
+        y = max(0, round(y_max - float(row['y']) * 8))  # Multiply by factor 8, round to int, and ensure >= 0
+        size = round(15 * 8)  # Multiply size by factor 8 and round to int
         polygon = [
             [x - size, y - size],
             [x + size, y - size],
@@ -65,14 +61,10 @@ def generate_vitessce_config():
             [x - size, y - size]
         ]
 
-        segmentations["segmentations"].append({
-            "obs_id": f"ROI_{idx}",
-            "segments": [{
-                "coordinates": [polygon],
-                "filled": True,
-                "type": "polygon"
-            }]
-        })
+        # Ensure all coordinates are non-negative integers
+        polygon = [[max(0, round(coord[0])), max(0, round(coord[1]))] for coord in polygon]
+
+        segmentations[f"ROI_{idx}"] = [polygon]
 
     obs_seg_path = output_dir / "roi_rectangles_annotation.json"
     with open(obs_seg_path, 'w') as f:

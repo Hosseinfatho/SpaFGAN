@@ -1,6 +1,7 @@
 # Backend server code
 import json
 import logging
+import subprocess
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
@@ -19,8 +20,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 ZARR_BASE_URL = "s3://lsp-public-data/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ"
 ZARR_IMAGE_GROUP_PATH = "0"
 TARGET_RESOLUTION_PATH = "3"
-
-
 
 @app.route('/api/channel_names')
 def get_channel_names():
@@ -73,242 +72,50 @@ def get_channel_names():
         logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}, root_store={'Exists' if root_store else 'None'}, root_group={'Exists' if root_group else 'None'}")
         return jsonify({"error": f"Failed to read channel names: {e}"}), 500
 
-
-
 # === STANDARD VITESSCE CONFIG GENERATOR ===
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
-    """Get the standard Vitessce config"""
+    """Get the standard Vitessce config using JavaScript generator"""
     logger.info("Request received for /api/config [GET]")
     
-    config = {
-        "version": "1.0.16",
-        "name": "BioMedVis Challenge",
-        "description": "",
-        "datasets": [
-            {
-                "uid": "bv",
-                "name": "Blood Vessel",
-                "files": [
-                    {
-                        "url": "https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0",
-                        "fileType": "image.ome-zarr"
-                    }
-                ]
-            }
-        ],
-        "coordinationSpace": {
-            "dataset": {
-                "A": "bv"
-            },
-            "imageChannel": {
-                "init_bv_image_0": "__dummy__",
-                "init_bv_image_1": "__dummy__",
-                "init_bv_image_2": "__dummy__",
-                "init_bv_image_3": "__dummy__",
-                "init_bv_image_4": "__dummy__",
-                "init_bv_image_5": "__dummy__"
-            },
-            "imageLayer": {
-                "init_bv_image_0": "__dummy__"
-            },
-            "metaCoordinationScopes": {
-                "A": {
-                    "obsType": "A"
-                },
-                "init_bv_image_0": {
-                    "imageLayer": ["init_bv_image_0"],
-                    "spatialRenderingMode": "init_bv_image_0",
-                    "spatialTargetT": "init_bv_image_0",
-                    "spatialTargetX": "init_bv_image_0",
-                    "spatialTargetY": "init_bv_image_0",
-                    "spatialTargetZ": "init_bv_image_0",
-                    "spatialZoom": "init_bv_image_0"
-                }
-            },
-            "metaCoordinationScopesBy": {
-                "A": {},
-                "init_bv_image_0": {
-                    "imageChannel": {
-                        "spatialChannelColor": {
-                            "init_bv_image_0": "init_bv_image_0",
-                            "init_bv_image_1": "init_bv_image_1",
-                            "init_bv_image_2": "init_bv_image_2",
-                            "init_bv_image_3": "init_bv_image_3",
-                            "init_bv_image_4": "init_bv_image_4",
-                            "init_bv_image_5": "init_bv_image_5"
-                        },
-                        "spatialChannelOpacity": {
-                            "init_bv_image_0": "init_bv_image_0",
-                            "init_bv_image_1": "init_bv_image_1",
-                            "init_bv_image_2": "init_bv_image_2",
-                            "init_bv_image_3": "init_bv_image_3",
-                            "init_bv_image_4": "init_bv_image_4",
-                            "init_bv_image_5": "init_bv_image_5"
-                        },
-                        "spatialChannelVisible": {
-                            "init_bv_image_0": "init_bv_image_0",
-                            "init_bv_image_1": "init_bv_image_1",
-                            "init_bv_image_2": "init_bv_image_2",
-                            "init_bv_image_3": "init_bv_image_3",
-                            "init_bv_image_4": "init_bv_image_4",
-                            "init_bv_image_5": "init_bv_image_5"
-                        },
-                        "spatialChannelWindow": {
-                            "init_bv_image_0": "init_bv_image_0",
-                            "init_bv_image_1": "init_bv_image_1",
-                            "init_bv_image_2": "init_bv_image_2",
-                            "init_bv_image_3": "init_bv_image_3",
-                            "init_bv_image_4": "init_bv_image_4",
-                            "init_bv_image_5": "init_bv_image_5"
-                        },
-                        "spatialTargetC": {
-                            "init_bv_image_0": "init_bv_image_0",
-                            "init_bv_image_1": "init_bv_image_1",
-                            "init_bv_image_2": "init_bv_image_2",
-                            "init_bv_image_3": "init_bv_image_3",
-                            "init_bv_image_4": "init_bv_image_4",
-                            "init_bv_image_5": "init_bv_image_5"
-                        }
-                    },
-                    "imageLayer": {
-                        "imageChannel": {
-                            "init_bv_image_0": ["init_bv_image_0", "init_bv_image_1", "init_bv_image_2", "init_bv_image_3", "init_bv_image_4", "init_bv_image_5"]
-                        },
-                        "photometricInterpretation": {
-                            "init_bv_image_0": "init_bv_image_0"
-                        },
-                        "spatialLayerOpacity": {
-                            "init_bv_image_0": "init_bv_image_0"
-                        },
-                        "spatialLayerVisible": {
-                            "init_bv_image_0": "init_bv_image_0"
-                        },
-                        "spatialTargetResolution": {
-                            "init_bv_image_0": "init_bv_image_0"
-                        }
-                    }
-                }
-            },
-            "obsType": {
-                "A": "ROI"
-            },
-            "photometricInterpretation": {
-                "init_bv_image_0": "BlackIsZero"
-            },
-            "spatialChannelColor": {
-                "init_bv_image_0": [0, 255, 0],
-                "init_bv_image_1": [255, 255, 0],
-                "init_bv_image_2": [255, 0, 255],
-                "init_bv_image_3": [0, 255, 255],
-                "init_bv_image_4": [255, 0, 0],
-                "init_bv_image_5": [128, 0, 128]
-            },
-            "spatialChannelOpacity": {
-                "init_bv_image_0": 1.0,
-                "init_bv_image_1": 1.0,
-                "init_bv_image_2": 1.0,
-                "init_bv_image_3": 1.0,
-                "init_bv_image_4": 1.0,
-                "init_bv_image_5": 1.0
-            },
-            "spatialChannelVisible": {
-                "init_bv_image_0": True,
-                "init_bv_image_1": True,
-                "init_bv_image_2": True,
-                "init_bv_image_3": True,
-                "init_bv_image_4": True,
-                "init_bv_image_5": True
-            },
-            "spatialChannelWindow": {
-                "init_bv_image_0": [300, 20000],
-                "init_bv_image_1": [1000, 7000],
-                "init_bv_image_2": [700, 6000],
-                "init_bv_image_3": [1638, 10000],
-                "init_bv_image_4": [1638, 7000],
-                "init_bv_image_5": [370, 1432]
-            },
-            "spatialLayerOpacity": {
-                "init_bv_image_0": 1.0
-            },
-            "spatialLayerVisible": {
-                "init_bv_image_0": True
-            },
-            "spatialRenderingMode": {
-                "init_bv_image_0": "3D"
-            },
-            "spatialTargetC": {
-                "init_bv_image_0": 19,
-                "init_bv_image_1": 27,
-                "init_bv_image_2": 37,
-                "init_bv_image_3": 25,
-                "init_bv_image_4": 59,
-                "init_bv_image_5": 42
-            },
-            "spatialTargetResolution": {
-                "init_bv_image_0": 3
-            },
-            "spatialTargetT": {
-                "init_bv_image_0": 0
-            },
-            "spatialTargetX": {
-                "init_bv_image_0": 5454
-            },
-            "spatialTargetY": {
-                "init_bv_image_0": 2754
-            },
-            "spatialTargetZ": {
-                "init_bv_image_0": 0
-            },
-            "spatialZoom": {
-                "init_bv_image_0": -3.0
-            }
-        },
-        "layout": [
-            {
-                "component": "spatialBeta",
-                "coordinationScopes": {
-                    "dataset": "A",
-                    "metaCoordinationScopes": ["init_bv_image_0", "A"],
-                    "metaCoordinationScopesBy": ["init_bv_image_0", "A"]
-                },
-                "x": 0,
-                "y": 0,
-                "w": 6,
-                "h": 12
-            },
-            {
-                "component": "layerControllerBeta",
-                "coordinationScopes": {
-                    "dataset": "A",
-                    "metaCoordinationScopes": ["init_bv_image_0", "A"],
-                    "metaCoordinationScopesBy": ["init_bv_image_0", "A"]
-                },
-                "x": 6,
-                "y": 0,
-                "w": 6,
-                "h": 12
-            }
-        ],
-        "initStrategy": "auto"
-    }
+    try:
+        # Run the JavaScript config generator
+        result = subprocess.run([
+            'node', 'generate_config.js'
+        ], capture_output=True, text=True, cwd=Path(__file__).parent)
+        
+        if result.returncode != 0:
+            logger.error(f"JavaScript config generation failed: {result.stderr}")
+            return jsonify({"error": "Config generation failed"}), 500
+        
+        config = json.loads(result.stdout)
+        return jsonify(config)
+        
+    except Exception as e:
+        logger.error(f"Error generating config: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to generate config: {e}"}), 500
 
-    # Add ROI file if exists
-    output_dir = Path(__file__).parent / "output"
-    roi_file = output_dir / "roi_rectangles_annotation.json"
-
-    if roi_file.exists():
-        logger.info("Adding ROI obsSegmentations file")
-        config["datasets"][0]["files"].append({
-            "url": "http://localhost:5000/api/roi_rectangles_annotation",
-            "fileType": "obsSegmentations.json",
-            "coordinationValues": {"obsType": "ROI"}
-        })
-
-    return jsonify(config)
-
-
+@app.route('/api/roi_rectangles_annotation.json', methods=['GET'])
+def get_roi_rectangles_annotation():
+    """Serve the ROI rectangles annotation JSON file"""
+    logger.info("Request received for /api/roi_rectangles_annotation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_rectangles_annotation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"ROI rectangles annotation file not found: {roi_file_path}")
+            return jsonify({"error": "ROI rectangles annotation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving ROI rectangles annotation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve ROI rectangles annotation: {e}"}), 500
 
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
@@ -349,13 +156,11 @@ def serve_roi_rectangles_annotation():
 
         with open(roi_path, 'r') as f:
             roi_data = json.load(f)
-            
+
         return jsonify(roi_data)
     except Exception as e:
-        logger.error(f"Error serving ROI rectangles annotation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve ROI rectangles annotation: {e}"}), 500
-
-
+        logger.error(f"Error serving ROI rectangles annotation: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 
