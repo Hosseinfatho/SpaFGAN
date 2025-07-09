@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 import numpy as np
 import glob
+import math
 
 import yaml
 
@@ -52,19 +53,21 @@ def generate_vitessce_config():
     for idx, row in roi_df.iterrows():
         x = max(0, round(float(row['x']) * 8))  # Multiply by factor 8, round to int, and ensure >= 0
         y = max(0, round(y_max - float(row['y']) * 8))  # Multiply by factor 8, round to int, and ensure >= 0
-        size = round(15 * 8)  # Multiply size by factor 8 and round to int
-        polygon = [
-            [x - size, y - size],
-            [x + size, y - size],
-            [x + size, y + size],
-            [x - size, y + size],
-            [x - size, y - size]
-        ]
+        radius = round(15 * 8)  # Multiply radius by factor 8 and round to int
+        
+        # Generate circle coordinates (approximated with many points)
+        num_points = 32  # Number of points to approximate the circle
+        circle = []
+        for i in range(num_points):
+            angle = 2 * math.pi * i / num_points
+            px = max(0, round(x + radius * math.cos(angle)))
+            py = max(0, round(y + radius * math.sin(angle)))
+            circle.append([px, py])
+        
+        # Close the circle by adding the first point again
+        circle.append(circle[0])
 
-        # Ensure all coordinates are non-negative integers
-        polygon = [[max(0, round(coord[0])), max(0, round(coord[1]))] for coord in polygon]
-
-        segmentations[f"ROI_{idx}"] = [polygon]
+        segmentations[f"ROI_{idx}"] = [circle]
 
     obs_seg_path = output_dir / "roi_rectangles_annotation.json"
     with open(obs_seg_path, 'w') as f:
