@@ -1,4 +1,4 @@
-function generateBioMedVisConfig() {
+function generateBioMedVisConfig(showROI = false) {
   // Configuration constants
   const CONFIG = {
     schemaVersion: '1.0.16',
@@ -7,7 +7,8 @@ function generateBioMedVisConfig() {
     datasetUid: 'bv',
     datasetName: 'Blood Vessel',
     imageUrl: 'https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0',
-    roiUrl: 'http://localhost:5000/api/roi_rectangles_annotation.json',
+    roiUrl: 'http://localhost:5000/api/roi_Segmentation.json',
+    showROI: showROI,  // Control ROI visibility - passed as parameter
     channels: [
       { id: 0, name: "CD31", color: [0, 255, 0], window: [300, 20000], targetC: 19 },      // Green
       { id: 1, name: "CD20", color: [255, 255, 0], window: [1000, 7000], targetC: 27 },    // Yellow
@@ -49,29 +50,18 @@ function generateBioMedVisConfig() {
       .addFile({
         fileType: 'image.ome-zarr',
         url: 'https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0',
-      })
-      // .addFile({
-      //   fileType: 'obsSegmentations.ome-zarr',
-      //   url: 'http://localhost:5000/api/segmentation_zarr',
-      //   options: {
-      //     obsTypesFromChannelNames: true,
-      //   },
-      // })
-      // .addFile({
-      //   fileType: 'obsSegmentations.ome-zarr',
-      //   url: 'exemplar-001.crop.segmentations.ome.zarr',
-      //   options: {
-      //     obsTypesFromChannelNames: true,
-      //   },
-      // })
-      
-      .addFile({
+      });
+    
+    // Add ROI file only if showROI is true
+    if (CONFIG.showROI) {
+      dataset.addFile({
         fileType: 'obsSegmentations.json',
-        url: 'http://localhost:5000/api/roi_rectangles_annotation.json',
+        url: 'http://localhost:5000/api/roi_Segmentation.json',
         coordinationValues: {
           obsType: 'ROI',
         },
       });
+    }
 
     // Convert to the expected format
     return [{
@@ -87,7 +77,6 @@ function generateBioMedVisConfig() {
       imageChannel: {},
       imageLayer: { "init_bv_image_0": "__dummy__" },
       metaCoordinationScopes: {
-        "A": { obsType: "A" },
         "init_bv_image_0": {
           imageLayer: ["init_bv_image_0"],
           spatialRenderingMode: "init_bv_image_0",
@@ -99,7 +88,6 @@ function generateBioMedVisConfig() {
         }
       },
       metaCoordinationScopesBy: {
-        "A": {},
         "init_bv_image_0": {
           imageChannel: {
             spatialChannelColor: {},
@@ -117,14 +105,13 @@ function generateBioMedVisConfig() {
           }
         }
       },
-      obsType: { "A": "ROI" },
       photometricInterpretation: { "init_bv_image_0": "BlackIsZero" },
       spatialChannelColor: {},
       spatialChannelOpacity: {},
       spatialChannelVisible: {},
       spatialChannelWindow: {},
-      spatialLayerOpacity: { "init_bv_image_0": 1.0 },
-      spatialLayerVisible: { "init_bv_image_0": true },
+      spatialLayerOpacity: { "init_bv_image_0": 1.0 },  // Full opacity for image
+      spatialLayerVisible: { "init_bv_image_0": true },  // Keep image layer visible
       spatialRenderingMode: { "init_bv_image_0": CONFIG.spatial.renderingMode },
       spatialTargetC: {},
       spatialTargetResolution: { "init_bv_image_0": CONFIG.spatial.targetResolution },
@@ -160,17 +147,36 @@ function generateBioMedVisConfig() {
       coordinationSpace.metaCoordinationScopesBy.init_bv_image_0.imageLayer.imageChannel.init_bv_image_0.push(scopeName);
     });
 
+    // Add ROI coordination space only if showROI is true
+    if (CONFIG.showROI) {
+      coordinationSpace.metaCoordinationScopes["A"] = { 
+        obsType: "A",
+        obsLayerVisible: true  // Show ROI layer when enabled
+      };
+      coordinationSpace.metaCoordinationScopesBy["A"] = {};
+      coordinationSpace.obsType = { "A": "ROI" };
+    }
+
     return coordinationSpace;
   }
 
   function generateLayout() {
+    const baseScopes = ["init_bv_image_0"];
+    const baseScopesBy = ["init_bv_image_0"];
+    
+    // Add ROI scopes only if showROI is true
+    if (CONFIG.showROI) {
+      baseScopes.push("A");
+      baseScopesBy.push("A");
+    }
+    
     return [
       {
         component: "spatialBeta",
         coordinationScopes: {
           dataset: "A",
-          metaCoordinationScopes: ["init_bv_image_0", "A"],
-          metaCoordinationScopesBy: ["init_bv_image_0", "A"]
+          metaCoordinationScopes: baseScopes,
+          metaCoordinationScopesBy: baseScopesBy
         },
         x: 0, y: 0, w: 6, h: 12
       },
@@ -178,8 +184,8 @@ function generateBioMedVisConfig() {
         component: "layerControllerBeta",
         coordinationScopes: {
           dataset: "A",
-          metaCoordinationScopes: ["init_bv_image_0", "A"],
-          metaCoordinationScopesBy: ["init_bv_image_0", "A"]
+          metaCoordinationScopes: baseScopes,
+          metaCoordinationScopesBy: baseScopesBy
         },
         x: 6, y: 0, w: 6, h: 12
       }

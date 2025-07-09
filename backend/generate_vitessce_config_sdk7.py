@@ -69,7 +69,7 @@ def generate_vitessce_config():
 
         segmentations[f"ROI_{idx}"] = [circle]
 
-    obs_seg_path = output_dir / "roi_rectangles_annotation.json"
+    obs_seg_path = output_dir / "roi_Segmentation.json"
     with open(obs_seg_path, 'w') as f:
         json.dump(segmentations, f, indent=2)
 

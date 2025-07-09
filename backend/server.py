@@ -79,10 +79,19 @@ def get_config():
     """Get the standard Vitessce config using JavaScript generator"""
     logger.info("Request received for /api/config [GET]")
     
+    # Get showROI parameter from query string
+    show_roi = request.args.get('showROI', 'false').lower() == 'true'
+    logger.info(f"showROI parameter: {show_roi}")
+    
     try:
-        # Run the JavaScript config generator
+        # Run the JavaScript config generator with showROI parameter
         result = subprocess.run([
-            'node', 'generate_config.js'
+            'node', '-e', 
+            f'''
+            const {{ generateBioMedVisConfig }} = require("./generate_config.js");
+            const config = generateBioMedVisConfig({str(show_roi).lower()});
+            console.log(JSON.stringify(config, null, 2));
+            '''
         ], capture_output=True, text=True, cwd=Path(__file__).parent)
         
         if result.returncode != 0:
@@ -96,13 +105,13 @@ def get_config():
         logger.error(f"Error generating config: {e}", exc_info=True)
         return jsonify({"error": f"Failed to generate config: {e}"}), 500
 
-@app.route('/api/roi_rectangles_annotation.json', methods=['GET'])
-def get_roi_rectangles_annotation():
+@app.route('/api/roi_Segmentation.json', methods=['GET'])
+def get_roi_Segmentation():
     """Serve the ROI rectangles annotation JSON file"""
-    logger.info("Request received for /api/roi_rectangles_annotation.json [GET]")
+    logger.info("Request received for /api/roi_Segmentation.json [GET]")
     
     try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_rectangles_annotation.json'
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_Segmentation.json'
         
         if not roi_file_path.exists():
             logger.error(f"ROI rectangles annotation file not found: {roi_file_path}")
@@ -146,10 +155,10 @@ def serve_roi_shapes():
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI shapes: {e}"}), 500
 
-@app.route('/api/roi_rectangles_annotation', methods=['GET'])
-def serve_roi_rectangles_annotation():
+@app.route('/api/roi_Segmentation', methods=['GET'])
+def serve_roi_Segmentation():
     try:
-        roi_path = Path(__file__).parent / "output" / "roi_rectangles_annotation.json"
+        roi_path = Path(__file__).parent / "output" / "roi_Segmentation.json"
         if not roi_path.exists():
             logger.warning("ROI rectangles annotation file not found.")
             return jsonify({"error": "ROI rectangles annotation not found"}), 404
