@@ -19,7 +19,7 @@ function generateBioMedVisConfig() {
       renderingMode: "3D",
       targetX: 5454,
       targetY: 2754,
-      targetZ: 100,
+      targetZ: 0,
       targetT: 0,
       targetResolution: 3,
       zoom: -3.0
@@ -50,13 +50,15 @@ function generateBioMedVisConfig() {
         fileType: 'image.ome-zarr',
         url: 'https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0',
       })
-      // .addFile({
-      //   fileType: 'obsSegmentations.ome-zarr',
-      //   url: 'http://localhost:5000/api/segmentation_zarr',
-      //   options: {
-      //     obsTypesFromChannelNames: true,
-      //   },
-      // })
+      .addFile({
+        fileType: 'obsFeatureMatrix.csv',
+        url: 'http://localhost:5000/api/obsFeatureMatrix.csv',
+        coordinationValues: {
+          obsType: 'ROI',
+          featureType: 'gene',
+          featureValueType: 'expression'
+        }
+      })
       // .addFile({
       //   fileType: 'obsSegmentations.ome-zarr',
       //   url: 'exemplar-001.crop.segmentations.ome.zarr',
@@ -67,11 +69,32 @@ function generateBioMedVisConfig() {
       
       .addFile({
         fileType: 'obsSegmentations.json',
-        url: 'http://localhost:5000/api/roi_rectangles_annotation.json',
+        url: 'http://localhost:5000/api/roi_segmentation_B-cell_infiltration.json',
         coordinationValues: {
           obsType: 'ROI',
         },
-      });
+      })
+      // .addFile({
+      //   fileType: 'obsSegmentations.json',
+      //   url: 'http://localhost:5000/api/roi_segmentation_T-cell_entry_site.json',
+      //   coordinationValues: {
+      //     obsType: 'ROI',
+      //   },
+      // })
+      // .addFile({
+      //   fileType: 'obsSegmentations.json',
+      //   url: 'http://localhost:5000/api/roi_segmentation_Inflammatory_zone.json',
+      //   coordinationValues: {
+      //     obsType: 'ROI',
+      //   },
+      // })
+      // .addFile({
+      //   fileType: 'obsSegmentations.json',
+      //   url: 'http://localhost:5000/api/roi_segmentation_Oxidative_stress_niche.json',
+      //   coordinationValues: {
+      //     obsType: 'ROI',
+      //   },
+      // });
 
     // Convert to the expected format
     return [{
@@ -117,7 +140,7 @@ function generateBioMedVisConfig() {
           }
         }
       },
-      obsType: { "A": "ROI" },
+      obsType: { "A": "ROI_B-cell" },
       photometricInterpretation: { "init_bv_image_0": "BlackIsZero" },
       spatialChannelColor: {},
       spatialChannelOpacity: {},

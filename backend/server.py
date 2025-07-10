@@ -96,17 +96,17 @@ def get_config():
         logger.error(f"Error generating config: {e}", exc_info=True)
         return jsonify({"error": f"Failed to generate config: {e}"}), 500
 
-@app.route('/api/roi_rectangles_annotation.json', methods=['GET'])
-def get_roi_rectangles_annotation():
-    """Serve the ROI rectangles annotation JSON file"""
-    logger.info("Request received for /api/roi_rectangles_annotation.json [GET]")
+@app.route('/api/roi_segmentation_B-cell_infiltration.json', methods=['GET'])
+def get_roi_segmentation_b_cell():
+    """Serve the B-cell infiltration ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_B-cell_infiltration.json [GET]")
     
     try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_rectangles_annotation.json'
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_B-cell_infiltration.json'
         
         if not roi_file_path.exists():
-            logger.error(f"ROI rectangles annotation file not found: {roi_file_path}")
-            return jsonify({"error": "ROI rectangles annotation file not found"}), 404
+            logger.error(f"B-cell infiltration ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "B-cell infiltration ROI segmentation file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -114,8 +114,71 @@ def get_roi_rectangles_annotation():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving ROI rectangles annotation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve ROI rectangles annotation: {e}"}), 500
+        logger.error(f"Error serving B-cell infiltration ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve B-cell infiltration ROI segmentation: {e}"}), 500
+
+@app.route('/api/roi_segmentation_T-cell_entry_site.json', methods=['GET'])
+def get_roi_segmentation_t_cell():
+    """Serve the T-cell entry site ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_T-cell_entry_site.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_entry_site.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"T-cell entry site ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "T-cell entry site ROI segmentation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving T-cell entry site ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve T-cell entry site ROI segmentation: {e}"}), 500
+
+@app.route('/api/roi_segmentation_Inflammatory_zone.json', methods=['GET'])
+def get_roi_segmentation_inflammatory():
+    """Serve the Inflammatory zone ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_Inflammatory_zone.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Inflammatory_zone.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"Inflammatory zone ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "Inflammatory zone ROI segmentation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving Inflammatory zone ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve Inflammatory zone ROI segmentation: {e}"}), 500
+
+@app.route('/api/roi_segmentation_Oxidative_stress_niche.json', methods=['GET'])
+def get_roi_segmentation_oxidative():
+    """Serve the Oxidative stress niche ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_niche.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_niche.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"Oxidative stress niche ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "Oxidative stress niche ROI segmentation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving Oxidative stress niche ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve Oxidative stress niche ROI segmentation: {e}"}), 500
 
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
