@@ -139,8 +139,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
     setShowCircles(newShowCircles);
     
     onSetView({
-      showCircles: newShowCircles,
-      showROI: newShowCircles  // Set showROI to same value as checkbox
+      showCircles: newShowCircles
     });
   };
 

@@ -38,10 +38,9 @@ const MainView = () => {
     4: 'T-B collaboration (CD4 + CD20)'
   };
 
-  const fetchConfig = (showROI = false) => {
-    const url = `http://localhost:5000/api/config?showROI=${showROI}`;
-    console.log("Fetching config from:", url);
-    fetch(url)
+  const fetchConfig = () => {
+    console.log("Fetching config from:", 'http://localhost:5000/api/config');
+    fetch('http://localhost:5000/api/config')
       .then(response => {
         console.log("Response status:", response.status);
         if (!response.ok) {
@@ -141,13 +140,6 @@ const MainView = () => {
     if (roiView.hasOwnProperty('showCircles')) {
       setShowCircles(roiView.showCircles);
       console.log('Mainview: showCircles set to:', roiView.showCircles);
-    }
-    
-    if (roiView.hasOwnProperty('showROI')) {
-      console.log('Mainview: showROI set to:', roiView.showROI);
-      // Refresh config with new showROI value
-      setConfigKey(prev => prev + 1);
-      fetchConfig(roiView.showROI);
     }
     
     if (roiView.refreshConfig) {
