@@ -1,0 +1,2652 @@
+{
+  "interaction_name": "T-cell entry site",
+  "rois": [
+    {
+      "roi_id": 93,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 835.0,
+        "y": 246.0,
+        "z": 81.0
+      },
+      "scores": {
+        "combined_score": 0.37601250410079956,
+        "intensity_score": 0.2520250082015991,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 95,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 820.0,
+        "y": 286.0,
+        "z": 88.0
+      },
+      "scores": {
+        "combined_score": 0.33044999837875366,
+        "intensity_score": 0.16089999675750732,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 94,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1132.0,
+        "y": 266.0,
+        "z": 76.0
+      },
+      "scores": {
+        "combined_score": 0.32881907373666763,
+        "intensity_score": 0.22906668484210968,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 125,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 294.0,
+        "y": 579.0,
+        "z": 104.0
+      },
+      "scores": {
+        "combined_score": 0.32653573155403137,
+        "intensity_score": 0.22450000047683716,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 129,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 432.0,
+        "y": 428.0,
+        "z": 96.0
+      },
+      "scores": {
+        "combined_score": 0.32477501034736633,
+        "intensity_score": 0.31621667742729187,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 3,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 90,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 941.0,
+        "y": 228.0,
+        "z": 87.0
+      },
+      "scores": {
+        "combined_score": 0.32366905361413956,
+        "intensity_score": 0.21876664459705353,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 65,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 865.0,
+        "y": 214.0,
+        "z": 65.0
+      },
+      "scores": {
+        "combined_score": 0.322562500834465,
+        "intensity_score": 0.14512500166893005,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 145,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1250.0,
+        "y": 203.0,
+        "z": 101.0
+      },
+      "scores": {
+        "combined_score": 0.32017499953508377,
+        "intensity_score": 0.14034999907016754,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 48,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 425.0,
+        "y": 432.0,
+        "z": 149.0
+      },
+      "scores": {
+        "combined_score": 0.3153357282280922,
+        "intensity_score": 0.2020999938249588,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 147,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 362.0,
+        "y": 464.0,
+        "z": 103.0
+      },
+      "scores": {
+        "combined_score": 0.3123476952314377,
+        "intensity_score": 0.24007999897003174,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 0,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1319.0,
+        "y": 106.0,
+        "z": 58.0
+      },
+      "scores": {
+        "combined_score": 0.3014774024486542,
+        "intensity_score": 0.17438334226608276,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 69,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1225.0,
+        "y": 96.0,
+        "z": 72.0
+      },
+      "scores": {
+        "combined_score": 0.30137915909290314,
+        "intensity_score": 0.2694249749183655,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 4,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 72,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1209.0,
+        "y": 103.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.30137915909290314,
+        "intensity_score": 0.2694249749183655,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 4,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 137,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 121.0,
+        "y": 673.0,
+        "z": 99.0
+      },
+      "scores": {
+        "combined_score": 0.3000854253768921,
+        "intensity_score": 0.2668375074863434,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 4,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 88,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 854.0,
+        "y": 250.0,
+        "z": 81.0
+      },
+      "scores": {
+        "combined_score": 0.2982940673828125,
+        "intensity_score": 0.16801667213439941,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 9,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 267.0,
+        "y": 480.0,
+        "z": 98.0
+      },
+      "scores": {
+        "combined_score": 0.295724980533123,
+        "intensity_score": 0.19144998490810394,
+        "attention_score": 0.3999999761581421
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 10,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 273.0,
+        "y": 481.0,
+        "z": 100.0
+      },
+      "scores": {
+        "combined_score": 0.295724980533123,
+        "intensity_score": 0.19144998490810394,
+        "attention_score": 0.3999999761581421
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 156,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 616.0,
+        "y": 82.0,
+        "z": 153.0
+      },
+      "scores": {
+        "combined_score": 0.289227694272995,
+        "intensity_score": 0.19383999705314636,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 40,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 747.0,
+        "y": 294.0,
+        "z": 126.0
+      },
+      "scores": {
+        "combined_score": 0.28625625371932983,
+        "intensity_score": 0.1725125014781952,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 47,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 157.0,
+        "y": 611.0,
+        "z": 137.0
+      },
+      "scores": {
+        "combined_score": 0.28472501039505005,
+        "intensity_score": 0.16945001482963562,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 78,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1039.0,
+        "y": 148.0,
+        "z": 72.0
+      },
+      "scores": {
+        "combined_score": 0.28267740458250046,
+        "intensity_score": 0.13678334653377533,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 119,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 906.0,
+        "y": 291.0,
+        "z": 83.0
+      },
+      "scores": {
+        "combined_score": 0.2822773978114128,
+        "intensity_score": 0.13598333299160004,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 111,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 604.0,
+        "y": 456.0,
+        "z": 97.0
+      },
+      "scores": {
+        "combined_score": 0.28099375218153,
+        "intensity_score": 0.16198749840259552,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 103,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 985.0,
+        "y": 159.0,
+        "z": 80.0
+      },
+      "scores": {
+        "combined_score": 0.28038573265075684,
+        "intensity_score": 0.13220000267028809,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 155,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 7.0,
+        "y": 494.0,
+        "z": 146.0
+      },
+      "scores": {
+        "combined_score": 0.2795276939868927,
+        "intensity_score": 0.17443999648094177,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 52,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1235.0,
+        "y": 101.0,
+        "z": 65.0
+      },
+      "scores": {
+        "combined_score": 0.27443666011095047,
+        "intensity_score": 0.21553997695446014,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 5,
+      "num_edges": 10
+    },
+    {
+      "roi_id": 133,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 336.0,
+        "y": 555.0,
+        "z": 96.0
+      },
+      "scores": {
+        "combined_score": 0.2723539471626282,
+        "intensity_score": 0.28154999017715454,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 118,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1029.0,
+        "y": 230.0,
+        "z": 83.0
+      },
+      "scores": {
+        "combined_score": 0.2715523988008499,
+        "intensity_score": 0.11453333497047424,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 20,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 177.0,
+        "y": 657.0,
+        "z": 102.0
+      },
+      "scores": {
+        "combined_score": 0.2708500027656555,
+        "intensity_score": 0.14169999957084656,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 38,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1063.0,
+        "y": 294.0,
+        "z": 118.0
+      },
+      "scores": {
+        "combined_score": 0.27039166539907455,
+        "intensity_score": 0.2074499875307083,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 5,
+      "num_edges": 10
+    },
+    {
+      "roi_id": 112,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 345.0,
+        "y": 543.0,
+        "z": 95.0
+      },
+      "scores": {
+        "combined_score": 0.2703299969434738,
+        "intensity_score": 0.3406600058078766,
+        "attention_score": 0.19999998807907104
+      },
+      "num_nodes": 5,
+      "num_edges": 20
+    },
+    {
+      "roi_id": 41,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 822.0,
+        "y": 277.0,
+        "z": 128.0
+      },
+      "scores": {
+        "combined_score": 0.2686024010181427,
+        "intensity_score": 0.10863333940505981,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 25,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 655.0,
+        "y": 312.0,
+        "z": 107.0
+      },
+      "scores": {
+        "combined_score": 0.26756395399570465,
+        "intensity_score": 0.2719700038433075,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 57,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 654.0,
+        "y": 315.0,
+        "z": 76.0
+      },
+      "scores": {
+        "combined_score": 0.26756395399570465,
+        "intensity_score": 0.2719700038433075,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 81,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 648.0,
+        "y": 322.0,
+        "z": 78.0
+      },
+      "scores": {
+        "combined_score": 0.26756395399570465,
+        "intensity_score": 0.2719700038433075,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 104,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1173.0,
+        "y": 207.0,
+        "z": 77.0
+      },
+      "scores": {
+        "combined_score": 0.2665876969695091,
+        "intensity_score": 0.14856000244617462,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 130,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 132.0,
+        "y": 641.0,
+        "z": 100.0
+      },
+      "scores": {
+        "combined_score": 0.26597394049167633,
+        "intensity_score": 0.26878997683525085,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 136,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 369.0,
+        "y": 516.0,
+        "z": 94.0
+      },
+      "scores": {
+        "combined_score": 0.264897920191288,
+        "intensity_score": 0.1964624971151352,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 4,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 3,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 94.0,
+        "y": 589.0,
+        "z": 99.0
+      },
+      "scores": {
+        "combined_score": 0.2646428048610687,
+        "intensity_score": 0.2565583288669586,
+        "attention_score": 0.27272728085517883
+      },
+      "num_nodes": 6,
+      "num_edges": 16
+    },
+    {
+      "roi_id": 11,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 89.0,
+        "y": 594.0,
+        "z": 96.0
+      },
+      "scores": {
+        "combined_score": 0.2646428048610687,
+        "intensity_score": 0.2565583288669586,
+        "attention_score": 0.27272728085517883
+      },
+      "num_nodes": 6,
+      "num_edges": 16
+    },
+    {
+      "roi_id": 135,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 72.0,
+        "y": 596.0,
+        "z": 92.0
+      },
+      "scores": {
+        "combined_score": 0.2646428048610687,
+        "intensity_score": 0.2565583288669586,
+        "attention_score": 0.27272728085517883
+      },
+      "num_nodes": 6,
+      "num_edges": 16
+    },
+    {
+      "roi_id": 107,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1178.0,
+        "y": 209.0,
+        "z": 76.0
+      },
+      "scores": {
+        "combined_score": 0.2644125074148178,
+        "intensity_score": 0.19549167156219482,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 6,
+      "num_edges": 12
+    },
+    {
+      "roi_id": 2,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 164.0,
+        "y": 540.0,
+        "z": 94.0
+      },
+      "scores": {
+        "combined_score": 0.2622208446264267,
+        "intensity_score": 0.1911083459854126,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 6,
+      "num_edges": 12
+    },
+    {
+      "roi_id": 15,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 144.0,
+        "y": 546.0,
+        "z": 96.0
+      },
+      "scores": {
+        "combined_score": 0.2622208446264267,
+        "intensity_score": 0.1911083459854126,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 6,
+      "num_edges": 12
+    },
+    {
+      "roi_id": 128,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 163.0,
+        "y": 534.0,
+        "z": 90.0
+      },
+      "scores": {
+        "combined_score": 0.2622208446264267,
+        "intensity_score": 0.1911083459854126,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 6,
+      "num_edges": 12
+    },
+    {
+      "roi_id": 117,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 164.0,
+        "y": 603.0,
+        "z": 91.0
+      },
+      "scores": {
+        "combined_score": 0.2620939463376999,
+        "intensity_score": 0.261029988527298,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 64,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1136.0,
+        "y": 265.0,
+        "z": 70.0
+      },
+      "scores": {
+        "combined_score": 0.2610277011990547,
+        "intensity_score": 0.1374400109052658,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 53,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1159.0,
+        "y": 130.0,
+        "z": 74.0
+      },
+      "scores": {
+        "combined_score": 0.25983037054538727,
+        "intensity_score": 0.30537500977516174,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 113,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1128.0,
+        "y": 142.0,
+        "z": 78.0
+      },
+      "scores": {
+        "combined_score": 0.25983037054538727,
+        "intensity_score": 0.30537500977516174,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 21,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 274.0,
+        "y": 567.0,
+        "z": 102.0
+      },
+      "scores": {
+        "combined_score": 0.25965769588947296,
+        "intensity_score": 0.1347000002861023,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 42,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 358.0,
+        "y": 501.0,
+        "z": 134.0
+      },
+      "scores": {
+        "combined_score": 0.258241668343544,
+        "intensity_score": 0.18314999341964722,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 5,
+      "num_edges": 10
+    },
+    {
+      "roi_id": 91,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 938.0,
+        "y": 235.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.2579376921057701,
+        "intensity_score": 0.1312599927186966,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 89,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 600.0,
+        "y": 459.0,
+        "z": 79.0
+      },
+      "scores": {
+        "combined_score": 0.25710269808769226,
+        "intensity_score": 0.1295900046825409,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 30,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 426.0,
+        "y": 428.0,
+        "z": 112.0
+      },
+      "scores": {
+        "combined_score": 0.2556866705417633,
+        "intensity_score": 0.17803999781608582,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 5,
+      "num_edges": 10
+    },
+    {
+      "roi_id": 161,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 513.0,
+        "y": 520.0,
+        "z": 103.0
+      },
+      "scores": {
+        "combined_score": 0.25499406456947327,
+        "intensity_score": 0.08141666650772095,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 44,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 415.0,
+        "y": 677.0,
+        "z": 136.0
+      },
+      "scores": {
+        "combined_score": 0.2543937526643276,
+        "intensity_score": 0.10878749936819077,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 19,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1332.0,
+        "y": 138.0,
+        "z": 104.0
+      },
+      "scores": {
+        "combined_score": 0.2538011968135834,
+        "intensity_score": 0.29331666231155396,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 123,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 717.0,
+        "y": 352.0,
+        "z": 83.0
+      },
+      "scores": {
+        "combined_score": 0.2517687529325485,
+        "intensity_score": 0.10353749990463257,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 50,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1291.0,
+        "y": 143.0,
+        "z": 67.0
+      },
+      "scores": {
+        "combined_score": 0.2517639473080635,
+        "intensity_score": 0.2403699904680252,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 109,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1294.0,
+        "y": 156.0,
+        "z": 65.0
+      },
+      "scores": {
+        "combined_score": 0.2517639473080635,
+        "intensity_score": 0.2403699904680252,
+        "attention_score": 0.2631579041481018
+      },
+      "num_nodes": 5,
+      "num_edges": 14
+    },
+    {
+      "roi_id": 29,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1248.0,
+        "y": 137.0,
+        "z": 107.0
+      },
+      "scores": {
+        "combined_score": 0.2516094818711281,
+        "intensity_score": 0.23049168288707733,
+        "attention_score": 0.27272728085517883
+      },
+      "num_nodes": 6,
+      "num_edges": 16
+    },
+    {
+      "roi_id": 92,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1230.0,
+        "y": 237.0,
+        "z": 74.0
+      },
+      "scores": {
+        "combined_score": 0.2511749863624573,
+        "intensity_score": 0.10234999656677246,
+        "attention_score": 0.3999999761581421
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 13,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 155.0,
+        "y": 648.0,
+        "z": 102.0
+      },
+      "scores": {
+        "combined_score": 0.25065119564533234,
+        "intensity_score": 0.2870166599750519,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 33,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 71.0,
+        "y": 599.0,
+        "z": 114.0
+      },
+      "scores": {
+        "combined_score": 0.24995356798171997,
+        "intensity_score": 0.21990713477134705,
+        "attention_score": 0.2800000011920929
+      },
+      "num_nodes": 7,
+      "num_edges": 18
+    },
+    {
+      "roi_id": 46,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 605.0,
+        "y": 461.0,
+        "z": 137.0
+      },
+      "scores": {
+        "combined_score": 0.24869375303387642,
+        "intensity_score": 0.09738750010728836,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 126,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 900.0,
+        "y": 209.0,
+        "z": 86.0
+      },
+      "scores": {
+        "combined_score": 0.2484625056385994,
+        "intensity_score": 0.09692500531673431,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 36,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1307.0,
+        "y": 226.0,
+        "z": 117.0
+      },
+      "scores": {
+        "combined_score": 0.24783748760819435,
+        "intensity_score": 0.09567499905824661,
+        "attention_score": 0.3999999761581421
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 73,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1242.0,
+        "y": 138.0,
+        "z": 82.0
+      },
+      "scores": {
+        "combined_score": 0.2459436133503914,
+        "intensity_score": 0.31240004301071167,
+        "attention_score": 0.1794871836900711
+      },
+      "num_nodes": 7,
+      "num_edges": 32
+    },
+    {
+      "roi_id": 4,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 176.0,
+        "y": 604.0,
+        "z": 101.0
+      },
+      "scores": {
+        "combined_score": 0.2451261356472969,
+        "intensity_score": 0.21752499043941498,
+        "attention_score": 0.27272728085517883
+      },
+      "num_nodes": 6,
+      "num_edges": 16
+    },
+    {
+      "roi_id": 100,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 742.0,
+        "y": 319.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.2449892908334732,
+        "intensity_score": 0.20997858047485352,
+        "attention_score": 0.2800000011920929
+      },
+      "num_nodes": 7,
+      "num_edges": 18
+    },
+    {
+      "roi_id": 141,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1159.0,
+        "y": 132.0,
+        "z": 94.0
+      },
+      "scores": {
+        "combined_score": 0.24377822875976562,
+        "intensity_score": 0.2617500126361847,
+        "attention_score": 0.22580644488334656
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 86,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1132.0,
+        "y": 139.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.24377822130918503,
+        "intensity_score": 0.2617500126361847,
+        "attention_score": 0.22580642998218536
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 43,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 363.0,
+        "y": 527.0,
+        "z": 140.0
+      },
+      "scores": {
+        "combined_score": 0.24297916889190674,
+        "intensity_score": 0.15262499451637268,
+        "attention_score": 0.3333333432674408
+      },
+      "num_nodes": 6,
+      "num_edges": 12
+    },
+    {
+      "roi_id": 148,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1130.0,
+        "y": 164.0,
+        "z": 95.0
+      },
+      "scores": {
+        "combined_score": 0.24271875247359276,
+        "intensity_score": 0.08543749898672104,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 68,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1224.0,
+        "y": 168.0,
+        "z": 67.0
+      },
+      "scores": {
+        "combined_score": 0.24250680208206177,
+        "intensity_score": 0.259207159280777,
+        "attention_score": 0.22580644488334656
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 160,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 159.0,
+        "y": 403.0,
+        "z": 64.0
+      },
+      "scores": {
+        "combined_score": 0.2420562505722046,
+        "intensity_score": 0.0841124951839447,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 149,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 592.0,
+        "y": 123.0,
+        "z": 111.0
+      },
+      "scores": {
+        "combined_score": 0.24096769839525223,
+        "intensity_score": 0.09732000529766083,
+        "attention_score": 0.38461539149284363
+      },
+      "num_nodes": 5,
+      "num_edges": 8
+    },
+    {
+      "roi_id": 7,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 333.0,
+        "y": 546.0,
+        "z": 94.0
+      },
+      "scores": {
+        "combined_score": 0.2405535727739334,
+        "intensity_score": 0.20110714435577393,
+        "attention_score": 0.2800000011920929
+      },
+      "num_nodes": 7,
+      "num_edges": 18
+    },
+    {
+      "roi_id": 37,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 772.0,
+        "y": 324.0,
+        "z": 117.0
+      },
+      "scores": {
+        "combined_score": 0.23984964191913605,
+        "intensity_score": 0.25389283895492554,
+        "attention_score": 0.22580644488334656
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 54,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1307.0,
+        "y": 163.0,
+        "z": 68.0
+      },
+      "scores": {
+        "combined_score": 0.23943454027175903,
+        "intensity_score": 0.2645833492279053,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 61,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 998.0,
+        "y": 315.0,
+        "z": 77.0
+      },
+      "scores": {
+        "combined_score": 0.2393803745508194,
+        "intensity_score": 0.264475017786026,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 98,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1300.0,
+        "y": 138.0,
+        "z": 69.0
+      },
+      "scores": {
+        "combined_score": 0.23909582942724228,
+        "intensity_score": 0.31152498722076416,
+        "attention_score": 0.1666666716337204
+      },
+      "num_nodes": 6,
+      "num_edges": 30
+    },
+    {
+      "roi_id": 157,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 324.0,
+        "y": 554.0,
+        "z": 30.0
+      },
+      "scores": {
+        "combined_score": 0.2388562522828579,
+        "intensity_score": 0.07771249860525131,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 27,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1333.0,
+        "y": 128.0,
+        "z": 105.0
+      },
+      "scores": {
+        "combined_score": 0.23861035704612732,
+        "intensity_score": 0.2514142692089081,
+        "attention_score": 0.22580644488334656
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 35,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1320.0,
+        "y": 103.0,
+        "z": 116.0
+      },
+      "scores": {
+        "combined_score": 0.23816072940826416,
+        "intensity_score": 0.19632145762443542,
+        "attention_score": 0.2800000011920929
+      },
+      "num_nodes": 7,
+      "num_edges": 18
+    },
+    {
+      "roi_id": 32,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 359.0,
+        "y": 523.0,
+        "z": 127.0
+      },
+      "scores": {
+        "combined_score": 0.23750118911266327,
+        "intensity_score": 0.26071664690971375,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 122,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 642.0,
+        "y": 326.0,
+        "z": 82.0
+      },
+      "scores": {
+        "combined_score": 0.23713214695453644,
+        "intensity_score": 0.19426429271697998,
+        "attention_score": 0.2800000011920929
+      },
+      "num_nodes": 7,
+      "num_edges": 18
+    },
+    {
+      "roi_id": 158,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1315.0,
+        "y": 102.0,
+        "z": 51.0
+      },
+      "scores": {
+        "combined_score": 0.23635833337903023,
+        "intensity_score": 0.09771666675806046,
+        "attention_score": 0.375
+      },
+      "num_nodes": 6,
+      "num_edges": 10
+    },
+    {
+      "roi_id": 162,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1306.0,
+        "y": 98.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.23635833337903023,
+        "intensity_score": 0.09771666675806046,
+        "attention_score": 0.375
+      },
+      "num_nodes": 6,
+      "num_edges": 10
+    },
+    {
+      "roi_id": 146,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1130.0,
+        "y": 257.0,
+        "z": 103.0
+      },
+      "scores": {
+        "combined_score": 0.23624002188444138,
+        "intensity_score": 0.29299286007881165,
+        "attention_score": 0.1794871836900711
+      },
+      "num_nodes": 7,
+      "num_edges": 32
+    },
+    {
+      "roi_id": 16,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 126.0,
+        "y": 649.0,
+        "z": 99.0
+      },
+      "scores": {
+        "combined_score": 0.23599642515182495,
+        "intensity_score": 0.191992849111557,
+        "attention_score": 0.2800000011920929
+      },
+      "num_nodes": 7,
+      "num_edges": 18
+    },
+    {
+      "roi_id": 151,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1129.0,
+        "y": 250.0,
+        "z": 129.0
+      },
+      "scores": {
+        "combined_score": 0.23570679873228073,
+        "intensity_score": 0.2456071525812149,
+        "attention_score": 0.22580644488334656
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 60,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 544.0,
+        "y": 396.0,
+        "z": 79.0
+      },
+      "scores": {
+        "combined_score": 0.23526786267757416,
+        "intensity_score": 0.3276785910129547,
+        "attention_score": 0.1428571343421936
+      },
+      "num_nodes": 7,
+      "num_edges": 42
+    },
+    {
+      "roi_id": 143,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1220.0,
+        "y": 111.0,
+        "z": 87.0
+      },
+      "scores": {
+        "combined_score": 0.2352062538266182,
+        "intensity_score": 0.07041250169277191,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 159,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 782.0,
+        "y": 360.0,
+        "z": 72.0
+      },
+      "scores": {
+        "combined_score": 0.2351749874651432,
+        "intensity_score": 0.07034999877214432,
+        "attention_score": 0.3999999761581421
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 142,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1060.0,
+        "y": 260.0,
+        "z": 25.0
+      },
+      "scores": {
+        "combined_score": 0.2350440640002489,
+        "intensity_score": 0.04151666536927223,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 153,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 990.0,
+        "y": 322.0,
+        "z": 68.0
+      },
+      "scores": {
+        "combined_score": 0.2342500016093254,
+        "intensity_score": 0.06849999725818634,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 163,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 580.0,
+        "y": 400.0,
+        "z": 83.0
+      },
+      "scores": {
+        "combined_score": 0.23405000567436218,
+        "intensity_score": 0.06810000538825989,
+        "attention_score": 0.4000000059604645
+      },
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    {
+      "roi_id": 77,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1159.0,
+        "y": 123.0,
+        "z": 72.0
+      },
+      "scores": {
+        "combined_score": 0.23216267675161362,
+        "intensity_score": 0.22903123497962952,
+        "attention_score": 0.23529411852359772
+      },
+      "num_nodes": 8,
+      "num_edges": 26
+    },
+    {
+      "roi_id": 74,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 700.0,
+        "y": 263.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.23201996833086014,
+        "intensity_score": 0.3101937770843506,
+        "attention_score": 0.1538461595773697
+      },
+      "num_nodes": 8,
+      "num_edges": 44
+    },
+    {
+      "roi_id": 110,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 701.0,
+        "y": 278.0,
+        "z": 81.0
+      },
+      "scores": {
+        "combined_score": 0.23201996833086014,
+        "intensity_score": 0.3101937770843506,
+        "attention_score": 0.1538461595773697
+      },
+      "num_nodes": 8,
+      "num_edges": 44
+    },
+    {
+      "roi_id": 97,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1242.0,
+        "y": 148.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.23191309720277786,
+        "intensity_score": 0.2733500003814697,
+        "attention_score": 0.190476194024086
+      },
+      "num_nodes": 8,
+      "num_edges": 34
+    },
+    {
+      "roi_id": 99,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1234.0,
+        "y": 149.0,
+        "z": 76.0
+      },
+      "scores": {
+        "combined_score": 0.23191309720277786,
+        "intensity_score": 0.2733500003814697,
+        "attention_score": 0.190476194024086
+      },
+      "num_nodes": 8,
+      "num_edges": 34
+    },
+    {
+      "roi_id": 127,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 742.0,
+        "y": 321.0,
+        "z": 89.0
+      },
+      "scores": {
+        "combined_score": 0.23151934891939163,
+        "intensity_score": 0.27256250381469727,
+        "attention_score": 0.190476194024086
+      },
+      "num_nodes": 8,
+      "num_edges": 34
+    },
+    {
+      "roi_id": 24,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 179.0,
+        "y": 610.0,
+        "z": 108.0
+      },
+      "scores": {
+        "combined_score": 0.23139607906341553,
+        "intensity_score": 0.2369857132434845,
+        "attention_score": 0.22580644488334656
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 67,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1220.0,
+        "y": 161.0,
+        "z": 71.0
+      },
+      "scores": {
+        "combined_score": 0.23105018585920334,
+        "intensity_score": 0.22680625319480896,
+        "attention_score": 0.23529411852359772
+      },
+      "num_nodes": 8,
+      "num_edges": 26
+    },
+    {
+      "roi_id": 23,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1067.0,
+        "y": 289.0,
+        "z": 78.0
+      },
+      "scores": {
+        "combined_score": 0.22848644107580185,
+        "intensity_score": 0.2774856984615326,
+        "attention_score": 0.1794871836900711
+      },
+      "num_nodes": 7,
+      "num_edges": 32
+    },
+    {
+      "roi_id": 39,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1336.0,
+        "y": 133.0,
+        "z": 127.0
+      },
+      "scores": {
+        "combined_score": 0.2276408076286316,
+        "intensity_score": 0.21998749673366547,
+        "attention_score": 0.23529411852359772
+      },
+      "num_nodes": 8,
+      "num_edges": 26
+    },
+    {
+      "roi_id": 58,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 892.0,
+        "y": 344.0,
+        "z": 69.0
+      },
+      "scores": {
+        "combined_score": 0.22757930308580399,
+        "intensity_score": 0.27567142248153687,
+        "attention_score": 0.1794871836900711
+      },
+      "num_nodes": 7,
+      "num_edges": 32
+    },
+    {
+      "roi_id": 62,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 896.0,
+        "y": 356.0,
+        "z": 77.0
+      },
+      "scores": {
+        "combined_score": 0.22757930308580399,
+        "intensity_score": 0.27567142248153687,
+        "attention_score": 0.1794871836900711
+      },
+      "num_nodes": 7,
+      "num_edges": 32
+    },
+    {
+      "roi_id": 144,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1132.0,
+        "y": 258.0,
+        "z": 89.0
+      },
+      "scores": {
+        "combined_score": 0.2266790270805359,
+        "intensity_score": 0.16764375567436218,
+        "attention_score": 0.2857142984867096
+      },
+      "num_nodes": 8,
+      "num_edges": 20
+    },
+    {
+      "roi_id": 140,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 167.0,
+        "y": 613.0,
+        "z": 98.0
+      },
+      "scores": {
+        "combined_score": 0.22588536888360977,
+        "intensity_score": 0.22596429288387299,
+        "attention_score": 0.22580644488334656
+      },
+      "num_nodes": 7,
+      "num_edges": 24
+    },
+    {
+      "roi_id": 121,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 768.0,
+        "y": 327.0,
+        "z": 89.0
+      },
+      "scores": {
+        "combined_score": 0.22532527893781662,
+        "intensity_score": 0.3163222074508667,
+        "attention_score": 0.13432835042476654
+      },
+      "num_nodes": 9,
+      "num_edges": 58
+    },
+    {
+      "roi_id": 154,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1131.0,
+        "y": 243.0,
+        "z": 127.0
+      },
+      "scores": {
+        "combined_score": 0.22510020434856415,
+        "intensity_score": 0.2149062603712082,
+        "attention_score": 0.2352941483259201
+      },
+      "num_nodes": 8,
+      "num_edges": 26
+    },
+    {
+      "roi_id": 6,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 471.0,
+        "y": 427.0,
+        "z": 94.0
+      },
+      "scores": {
+        "combined_score": 0.22415536642074585,
+        "intensity_score": 0.2340250015258789,
+        "attention_score": 0.2142857313156128
+      },
+      "num_nodes": 6,
+      "num_edges": 22
+    },
+    {
+      "roi_id": 45,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 473.0,
+        "y": 428.0,
+        "z": 77.0
+      },
+      "scores": {
+        "combined_score": 0.22190072387456894,
+        "intensity_score": 0.2643142640590668,
+        "attention_score": 0.1794871836900711
+      },
+      "num_nodes": 7,
+      "num_edges": 32
+    },
+    {
+      "roi_id": 31,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 342.0,
+        "y": 549.0,
+        "z": 111.0
+      },
+      "scores": {
+        "combined_score": 0.22074706107378006,
+        "intensity_score": 0.2062000036239624,
+        "attention_score": 0.23529411852359772
+      },
+      "num_nodes": 8,
+      "num_edges": 26
+    },
+    {
+      "roi_id": 105,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 698.0,
+        "y": 283.0,
+        "z": 76.0
+      },
+      "scores": {
+        "combined_score": 0.21968208253383636,
+        "intensity_score": 0.2757278084754944,
+        "attention_score": 0.16363635659217834
+      },
+      "num_nodes": 9,
+      "num_edges": 46
+    },
+    {
+      "roi_id": 114,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 702.0,
+        "y": 284.0,
+        "z": 83.0
+      },
+      "scores": {
+        "combined_score": 0.21968208253383636,
+        "intensity_score": 0.2757278084754944,
+        "attention_score": 0.16363635659217834
+      },
+      "num_nodes": 9,
+      "num_edges": 46
+    },
+    {
+      "roi_id": 22,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1018.0,
+        "y": 316.0,
+        "z": 107.0
+      },
+      "scores": {
+        "combined_score": 0.21795684844255447,
+        "intensity_score": 0.24543750286102295,
+        "attention_score": 0.190476194024086
+      },
+      "num_nodes": 8,
+      "num_edges": 34
+    },
+    {
+      "roi_id": 152,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1137.0,
+        "y": 236.0,
+        "z": 126.0
+      },
+      "scores": {
+        "combined_score": 0.2171355038881302,
+        "intensity_score": 0.19102779030799866,
+        "attention_score": 0.24324321746826172
+      },
+      "num_nodes": 9,
+      "num_edges": 28
+    },
+    {
+      "roi_id": 76,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1042.0,
+        "y": 304.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.21660248935222626,
+        "intensity_score": 0.333204984664917,
+        "attention_score": 0.09999999403953552
+      },
+      "num_nodes": 10,
+      "num_edges": 90
+    },
+    {
+      "roi_id": 14,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 761.0,
+        "y": 352.0,
+        "z": 101.0
+      },
+      "scores": {
+        "combined_score": 0.21589873731136322,
+        "intensity_score": 0.2681611180305481,
+        "attention_score": 0.16363635659217834
+      },
+      "num_nodes": 9,
+      "num_edges": 46
+    },
+    {
+      "roi_id": 84,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 892.0,
+        "y": 363.0,
+        "z": 71.0
+      },
+      "scores": {
+        "combined_score": 0.21584434807300568,
+        "intensity_score": 0.24121250212192535,
+        "attention_score": 0.190476194024086
+      },
+      "num_nodes": 8,
+      "num_edges": 34
+    },
+    {
+      "roi_id": 28,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 742.0,
+        "y": 324.0,
+        "z": 110.0
+      },
+      "scores": {
+        "combined_score": 0.2154693901538849,
+        "intensity_score": 0.25852498412132263,
+        "attention_score": 0.17241379618644714
+      },
+      "num_nodes": 10,
+      "num_edges": 48
+    },
+    {
+      "roi_id": 138,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 779.0,
+        "y": 330.0,
+        "z": 94.0
+      },
+      "scores": {
+        "combined_score": 0.21516261994838715,
+        "intensity_score": 0.26668888330459595,
+        "attention_score": 0.16363635659217834
+      },
+      "num_nodes": 9,
+      "num_edges": 46
+    },
+    {
+      "roi_id": 150,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1122.0,
+        "y": 246.0,
+        "z": 119.0
+      },
+      "scores": {
+        "combined_score": 0.21394167095422745,
+        "intensity_score": 0.22788333892822266,
+        "attention_score": 0.20000000298023224
+      },
+      "num_nodes": 9,
+      "num_edges": 36
+    },
+    {
+      "roi_id": 116,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 885.0,
+        "y": 346.0,
+        "z": 83.0
+      },
+      "scores": {
+        "combined_score": 0.21317307651042938,
+        "intensity_score": 0.27250000834465027,
+        "attention_score": 0.1538461446762085
+      },
+      "num_nodes": 8,
+      "num_edges": 44
+    },
+    {
+      "roi_id": 120,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 814.0,
+        "y": 357.0,
+        "z": 69.0
+      },
+      "scores": {
+        "combined_score": 0.212720837444067,
+        "intensity_score": 0.3421083390712738,
+        "attention_score": 0.0833333358168602
+      },
+      "num_nodes": 12,
+      "num_edges": 132
+    },
+    {
+      "roi_id": 63,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 714.0,
+        "y": 264.0,
+        "z": 67.0
+      },
+      "scores": {
+        "combined_score": 0.21028441190719604,
+        "intensity_score": 0.24815502762794495,
+        "attention_score": 0.17241379618644714
+      },
+      "num_nodes": 10,
+      "num_edges": 48
+    },
+    {
+      "roi_id": 79,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 708.0,
+        "y": 267.0,
+        "z": 71.0
+      },
+      "scores": {
+        "combined_score": 0.21028441190719604,
+        "intensity_score": 0.24815502762794495,
+        "attention_score": 0.17241379618644714
+      },
+      "num_nodes": 10,
+      "num_edges": 48
+    },
+    {
+      "roi_id": 108,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 692.0,
+        "y": 269.0,
+        "z": 78.0
+      },
+      "scores": {
+        "combined_score": 0.21028441190719604,
+        "intensity_score": 0.24815502762794495,
+        "attention_score": 0.17241379618644714
+      },
+      "num_nodes": 10,
+      "num_edges": 48
+    },
+    {
+      "roi_id": 8,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1319.0,
+        "y": 143.0,
+        "z": 96.0
+      },
+      "scores": {
+        "combined_score": 0.20809166133403778,
+        "intensity_score": 0.21618331968784332,
+        "attention_score": 0.20000000298023224
+      },
+      "num_nodes": 9,
+      "num_edges": 36
+    },
+    {
+      "roi_id": 34,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 490.0,
+        "y": 412.0,
+        "z": 79.0
+      },
+      "scores": {
+        "combined_score": 0.20789998397231102,
+        "intensity_score": 0.3248908817768097,
+        "attention_score": 0.09090908616781235
+      },
+      "num_nodes": 11,
+      "num_edges": 110
+    },
+    {
+      "roi_id": 49,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 501.0,
+        "y": 416.0,
+        "z": 77.0
+      },
+      "scores": {
+        "combined_score": 0.20789998397231102,
+        "intensity_score": 0.3248908817768097,
+        "attention_score": 0.09090908616781235
+      },
+      "num_nodes": 11,
+      "num_edges": 110
+    },
+    {
+      "roi_id": 131,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 793.0,
+        "y": 373.0,
+        "z": 82.0
+      },
+      "scores": {
+        "combined_score": 0.20690131559967995,
+        "intensity_score": 0.2947550117969513,
+        "attention_score": 0.1190476194024086
+      },
+      "num_nodes": 10,
+      "num_edges": 74
+    },
+    {
+      "roi_id": 87,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 865.0,
+        "y": 354.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.2051139622926712,
+        "intensity_score": 0.30343180894851685,
+        "attention_score": 0.10679611563682556
+      },
+      "num_nodes": 11,
+      "num_edges": 92
+    },
+    {
+      "roi_id": 83,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 850.0,
+        "y": 348.0,
+        "z": 84.0
+      },
+      "scores": {
+        "combined_score": 0.20333131030201912,
+        "intensity_score": 0.28761500120162964,
+        "attention_score": 0.1190476194024086
+      },
+      "num_nodes": 10,
+      "num_edges": 74
+    },
+    {
+      "roi_id": 55,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 879.0,
+        "y": 363.0,
+        "z": 71.0
+      },
+      "scores": {
+        "combined_score": 0.2029292955994606,
+        "intensity_score": 0.24222223460674286,
+        "attention_score": 0.16363635659217834
+      },
+      "num_nodes": 9,
+      "num_edges": 46
+    },
+    {
+      "roi_id": 106,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 785.0,
+        "y": 361.0,
+        "z": 89.0
+      },
+      "scores": {
+        "combined_score": 0.20262876152992249,
+        "intensity_score": 0.3084833323955536,
+        "attention_score": 0.09677419066429138
+      },
+      "num_nodes": 12,
+      "num_edges": 112
+    },
+    {
+      "roi_id": 101,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 801.0,
+        "y": 355.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.20242537185549736,
+        "intensity_score": 0.31641536951065063,
+        "attention_score": 0.08843537420034409
+      },
+      "num_nodes": 13,
+      "num_edges": 134
+    },
+    {
+      "roi_id": 59,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 820.0,
+        "y": 368.0,
+        "z": 70.0
+      },
+      "scores": {
+        "combined_score": 0.2016119286417961,
+        "intensity_score": 0.31478849053382874,
+        "attention_score": 0.08843536674976349
+      },
+      "num_nodes": 13,
+      "num_edges": 134
+    },
+    {
+      "roi_id": 51,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1026.0,
+        "y": 309.0,
+        "z": 75.0
+      },
+      "scores": {
+        "combined_score": 0.20053085684776306,
+        "intensity_score": 0.30428752303123474,
+        "attention_score": 0.09677419066429138
+      },
+      "num_nodes": 12,
+      "num_edges": 112
+    },
+    {
+      "roi_id": 80,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1031.0,
+        "y": 313.0,
+        "z": 80.0
+      },
+      "scores": {
+        "combined_score": 0.20053085684776306,
+        "intensity_score": 0.30428752303123474,
+        "attention_score": 0.09677419066429138
+      },
+      "num_nodes": 12,
+      "num_edges": 112
+    },
+    {
+      "roi_id": 56,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 528.0,
+        "y": 415.0,
+        "z": 69.0
+      },
+      "scores": {
+        "combined_score": 0.20018894970417023,
+        "intensity_score": 0.2935817837715149,
+        "attention_score": 0.10679611563682556
+      },
+      "num_nodes": 11,
+      "num_edges": 92
+    },
+    {
+      "roi_id": 134,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 824.0,
+        "y": 366.0,
+        "z": 94.0
+      },
+      "scores": {
+        "combined_score": 0.19625480100512505,
+        "intensity_score": 0.31111425161361694,
+        "attention_score": 0.08139535039663315
+      },
+      "num_nodes": 14,
+      "num_edges": 158
+    },
+    {
+      "roi_id": 26,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1021.0,
+        "y": 312.0,
+        "z": 104.0
+      },
+      "scores": {
+        "combined_score": 0.19604439288377762,
+        "intensity_score": 0.2196749895811081,
+        "attention_score": 0.17241379618644714
+      },
+      "num_nodes": 10,
+      "num_edges": 48
+    },
+    {
+      "roi_id": 66,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1053.0,
+        "y": 294.0,
+        "z": 70.0
+      },
+      "scores": {
+        "combined_score": 0.19522293657064438,
+        "intensity_score": 0.2640090882778168,
+        "attention_score": 0.12643678486347198
+      },
+      "num_nodes": 11,
+      "num_edges": 76
+    },
+    {
+      "roi_id": 139,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 807.0,
+        "y": 370.0,
+        "z": 91.0
+      },
+      "scores": {
+        "combined_score": 0.19402533024549484,
+        "intensity_score": 0.28568845987319946,
+        "attention_score": 0.10236220061779022
+      },
+      "num_nodes": 13,
+      "num_edges": 114
+    },
+    {
+      "roi_id": 18,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 841.0,
+        "y": 353.0,
+        "z": 97.0
+      },
+      "scores": {
+        "combined_score": 0.19401764124631882,
+        "intensity_score": 0.2856730818748474,
+        "attention_score": 0.10236220061779022
+      },
+      "num_nodes": 13,
+      "num_edges": 114
+    },
+    {
+      "roi_id": 124,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 811.0,
+        "y": 369.0,
+        "z": 81.0
+      },
+      "scores": {
+        "combined_score": 0.1932845264673233,
+        "intensity_score": 0.293235719203949,
+        "attention_score": 0.09333333373069763
+      },
+      "num_nodes": 14,
+      "num_edges": 136
+    },
+    {
+      "roi_id": 115,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1056.0,
+        "y": 293.0,
+        "z": 80.0
+      },
+      "scores": {
+        "combined_score": 0.1931600272655487,
+        "intensity_score": 0.2731125056743622,
+        "attention_score": 0.11320754885673523
+      },
+      "num_nodes": 12,
+      "num_edges": 94
+    },
+    {
+      "roi_id": 70,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 528.0,
+        "y": 419.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.1911620944738388,
+        "intensity_score": 0.2691166400909424,
+        "attention_score": 0.11320754885673523
+      },
+      "num_nodes": 12,
+      "num_edges": 94
+    },
+    {
+      "roi_id": 96,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 521.0,
+        "y": 418.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.1911620944738388,
+        "intensity_score": 0.2691166400909424,
+        "attention_score": 0.11320754885673523
+      },
+      "num_nodes": 12,
+      "num_edges": 94
+    },
+    {
+      "roi_id": 1,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 517.0,
+        "y": 411.0,
+        "z": 67.0
+      },
+      "scores": {
+        "combined_score": 0.1911620907485485,
+        "intensity_score": 0.2691166400909424,
+        "attention_score": 0.11320754140615463
+      },
+      "num_nodes": 12,
+      "num_edges": 94
+    },
+    {
+      "roi_id": 71,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1055.0,
+        "y": 306.0,
+        "z": 69.0
+      },
+      "scores": {
+        "combined_score": 0.18767083436250687,
+        "intensity_score": 0.24200832843780518,
+        "attention_score": 0.13333334028720856
+      },
+      "num_nodes": 12,
+      "num_edges": 78
+    },
+    {
+      "roi_id": 75,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1063.0,
+        "y": 300.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.18767083436250687,
+        "intensity_score": 0.24200832843780518,
+        "attention_score": 0.13333334028720856
+      },
+      "num_nodes": 12,
+      "num_edges": 78
+    },
+    {
+      "roi_id": 17,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 1033.0,
+        "y": 307.0,
+        "z": 97.0
+      },
+      "scores": {
+        "combined_score": 0.1870925910770893,
+        "intensity_score": 0.2664928734302521,
+        "attention_score": 0.10769230872392654
+      },
+      "num_nodes": 14,
+      "num_edges": 116
+    },
+    {
+      "roi_id": 5,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 812.0,
+        "y": 369.0,
+        "z": 93.0
+      },
+      "scores": {
+        "combined_score": 0.185862947255373,
+        "intensity_score": 0.2736866772174835,
+        "attention_score": 0.09803921729326248
+      },
+      "num_nodes": 15,
+      "num_edges": 138
+    },
+    {
+      "roi_id": 102,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 507.0,
+        "y": 409.0,
+        "z": 79.0
+      },
+      "scores": {
+        "combined_score": 0.18478303402662277,
+        "intensity_score": 0.2672038674354553,
+        "attention_score": 0.10236220061779022
+      },
+      "num_nodes": 13,
+      "num_edges": 114
+    },
+    {
+      "roi_id": 82,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 836.0,
+        "y": 347.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.1840800829231739,
+        "intensity_score": 0.26046785712242126,
+        "attention_score": 0.10769230872392654
+      },
+      "num_nodes": 14,
+      "num_edges": 116
+    },
+    {
+      "roi_id": 132,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 830.0,
+        "y": 351.0,
+        "z": 89.0
+      },
+      "scores": {
+        "combined_score": 0.18392295017838478,
+        "intensity_score": 0.2698066830635071,
+        "attention_score": 0.09803921729326248
+      },
+      "num_nodes": 15,
+      "num_edges": 138
+    },
+    {
+      "roi_id": 85,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 516.0,
+        "y": 418.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.18384070694446564,
+        "intensity_score": 0.24841536581516266,
+        "attention_score": 0.11926604807376862
+      },
+      "num_nodes": 13,
+      "num_edges": 96
+    },
+    {
+      "roi_id": 12,
+      "interaction": "T-cell entry site",
+      "position": {
+        "x": 502.0,
+        "y": 406.0,
+        "z": 69.0
+      },
+      "scores": {
+        "combined_score": 0.18345417082309723,
+        "intensity_score": 0.24764229357242584,
+        "attention_score": 0.11926604807376862
+      },
+      "num_nodes": 13,
+      "num_edges": 96
+    }
+  ],
+  "statistics": {
+    "total_rois": 164,
+    "score_ranges": {
+      "combined": {
+        "min": 0.18345417082309723,
+        "max": 0.37601250410079956
+      },
+      "intensity": {
+        "min": 0.04151666536927223,
+        "max": 0.3421083390712738
+      },
+      "attention": {
+        "min": 0.08139535039663315,
+        "max": 0.5
+      }
+    },
+    "score_means": {
+      "combined": 0.24273776981934178,
+      "intensity": 0.22388150726967468,
+      "attention": 0.26159403236900886
+    }
+  },
+  "method": "intensity_attention_combined"
+}

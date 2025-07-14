@@ -1,0 +1,86 @@
+{
+  "version": "0.1.0",
+  "type": "obsFeatureMatrix",
+  "data": {
+    "ROI_00": {
+      "score": 0.6980250030755997,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.39605000615119934,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "ROI_01": {
+      "score": 0.6826249957084656,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.36524999141693115,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "ROI_02": {
+      "score": 0.6772249937057495,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.354449987411499,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "ROI_03": {
+      "score": 0.46681249141693115,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.4336249828338623,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_04": {
+      "score": 0.46092499792575836,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.4218499958515167,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_05": {
+      "score": 0.3828773945569992,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.3371833264827728,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_06": {
+      "score": 0.36650240421295166,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.30443334579467773,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_07": {
+      "score": 0.3655875027179718,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.2311750054359436,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_08": {
+      "score": 0.3546999990940094,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.2093999981880188,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_09": {
+      "score": 0.3524499982595444,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.20489999651908875,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    }
+  }
+}

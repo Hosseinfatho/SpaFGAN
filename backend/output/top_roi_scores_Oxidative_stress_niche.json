@@ -1,0 +1,190 @@
+{
+  "interaction_name": "Oxidative stress niche",
+  "top_rois": [
+    {
+      "roi_id": 119,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 1232.0,
+        "y": 227.0,
+        "z": 93.0
+      },
+      "scores": {
+        "combined_score": 0.6980250030755997,
+        "intensity_score": 0.39605000615119934,
+        "attention_score": 1.0
+      },
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    {
+      "roi_id": 163,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 689.0,
+        "y": 629.0,
+        "z": 118.0
+      },
+      "scores": {
+        "combined_score": 0.6826249957084656,
+        "intensity_score": 0.36524999141693115,
+        "attention_score": 1.0
+      },
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    {
+      "roi_id": 108,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 79.0,
+        "y": 410.0,
+        "z": 116.0
+      },
+      "scores": {
+        "combined_score": 0.6772249937057495,
+        "intensity_score": 0.354449987411499,
+        "attention_score": 1.0
+      },
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    {
+      "roi_id": 170,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 980.0,
+        "y": 313.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.46681249141693115,
+        "intensity_score": 0.4336249828338623,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 84,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 1144.0,
+        "y": 279.0,
+        "z": 72.0
+      },
+      "scores": {
+        "combined_score": 0.46092499792575836,
+        "intensity_score": 0.4218499958515167,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 137,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 879.0,
+        "y": 102.0,
+        "z": 58.0
+      },
+      "scores": {
+        "combined_score": 0.3828773945569992,
+        "intensity_score": 0.3371833264827728,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 166,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 971.0,
+        "y": 349.0,
+        "z": 128.0
+      },
+      "scores": {
+        "combined_score": 0.36650240421295166,
+        "intensity_score": 0.30443334579467773,
+        "attention_score": 0.4285714626312256
+      },
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    {
+      "roi_id": 89,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 1002.0,
+        "y": 221.0,
+        "z": 73.0
+      },
+      "scores": {
+        "combined_score": 0.3655875027179718,
+        "intensity_score": 0.2311750054359436,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 113,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 416.0,
+        "y": 486.0,
+        "z": 90.0
+      },
+      "scores": {
+        "combined_score": 0.3546999990940094,
+        "intensity_score": 0.2093999981880188,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    {
+      "roi_id": 78,
+      "interaction": "Oxidative stress niche",
+      "position": {
+        "x": 316.0,
+        "y": 583.0,
+        "z": 141.0
+      },
+      "scores": {
+        "combined_score": 0.3524499982595444,
+        "intensity_score": 0.20489999651908875,
+        "attention_score": 0.5
+      },
+      "num_nodes": 2,
+      "num_edges": 2
+    }
+  ],
+  "total_rois": 181,
+  "top_count": 10,
+  "statistics": {
+    "total_rois": 181,
+    "score_ranges": {
+      "combined": {
+        "min": 0.21356944739818573,
+        "max": 0.6980250030755997
+      },
+      "intensity": {
+        "min": 0.04363749921321869,
+        "max": 0.47032999992370605
+      },
+      "attention": {
+        "min": 0.13432835042476654,
+        "max": 1.0
+      }
+    },
+    "score_means": {
+      "combined": 0.2833132768224781,
+      "intensity": 0.21303866163554772,
+      "attention": 0.35358789200940843
+    }
+  },
+  "method": "intensity_attention_combined"
+}

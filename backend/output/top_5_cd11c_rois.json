@@ -1,0 +1,35 @@
+{
+  "interaction_name": "Dendritic signal",
+  "top_5_rois": [
+    {
+      "roi_id": 0,
+      "interaction": "Dendritic signal",
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "scores": {
+        "intensity_score": 13.069300353527069,
+        "num_nodes": 30,
+        "mean_intensity": 0.43564334511756897
+      },
+      "num_nodes": 30,
+      "num_edges": 0
+    }
+  ],
+  "total_rois": 1,
+  "statistics": {
+    "total_rois": 1,
+    "score_ranges": {
+      "intensity": {
+        "min": 13.069300353527069,
+        "max": 13.069300353527069
+      }
+    },
+    "score_means": {
+      "intensity": 13.069300353527069
+    }
+  },
+  "method": "cd11c_intensity_nodes_multiplied"
+}

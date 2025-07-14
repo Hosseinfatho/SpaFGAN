@@ -98,7 +98,7 @@ def generate_vitessce_config():
             "init_A_obsSegmentations_6": "__dummy__"
         },
         'obsType': {
-            "init_A_obsSegmentations_0": "White Matter",
+            "init_A_obsSegmentations_0": "ROI",  # Change to ROI
             "init_A_obsSegmentations_1": "Layer 6",
             "init_A_obsSegmentations_2": "Layer 5",
             "init_A_obsSegmentations_3": "Layer 4",
@@ -117,7 +117,7 @@ def generate_vitessce_config():
             "init_A_obsSegmentations_6": 0
         },
         'spatialChannelColor': {
-            "init_A_obsSegmentations_0": [202, 104, 119],
+            "init_A_obsSegmentations_0": [255, 0, 0],  # Red color for ROI
             "init_A_obsSegmentations_1": [221, 204, 128],
             "init_A_obsSegmentations_2": [153, 153, 65],
             "init_A_obsSegmentations_3": [28, 118, 58],
@@ -150,17 +150,17 @@ def generate_vitessce_config():
             },
             "init_A_obsSegmentations_0": {
                 'segmentationLayer': {
-                    'segmentationChannel': {
-                        "init_A_obsSegmentations_0": [
-                            "init_A_obsSegmentations_0",
-                            "init_A_obsSegmentations_1",
-                            "init_A_obsSegmentations_2",
-                            "init_A_obsSegmentations_3",
-                            "init_A_obsSegmentations_4",
-                            "init_A_obsSegmentations_5",
-                            "init_A_obsSegmentations_6"
-                        ]
-                    }
+                                    'segmentationChannel': {
+                    "init_A_obsSegmentations_0": [
+                        "init_A_obsSegmentations_0",
+                        "init_A_obsSegmentations_1",
+                        "init_A_obsSegmentations_2",
+                        "init_A_obsSegmentations_3",
+                        "init_A_obsSegmentations_4",
+                        "init_A_obsSegmentations_5",
+                        "init_A_obsSegmentations_6"
+                    ]
+                }
                 },
                 'segmentationChannel': {
                     'obsType': {
@@ -277,6 +277,17 @@ def generate_vitessce_config():
                                 'path': 'table/table/obs/layer_manual'
                             }
                         ]
+                    }
+                },
+                # New ROI segmentation file
+                {
+                    'url': 'http://localhost:5000/api/spatialdata_zarr?path=shapes/roi_circles',
+                    'fileType': 'shapes.spatialdata.zarr',
+                    'coordinationValues': {
+                        'obsType': 'ROI'
+                    },
+                    'options': {
+                        'path': 'shapes/roi_circles'
                     }
                 }
             ]
@@ -467,55 +478,74 @@ def serve_roi_rectangles_annotation():
         logger.error(f"Error serving ROI rectangles annotation: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
-@app.route('/api/spatialdata_zarr', methods=['GET'])
-def serve_spatialdata_zarr():
-    """Serve SpatialData Zarr files"""
+@app.route('/api/spatialdata_zarr/<path:subpath>', methods=['GET'])
+def serve_spatialdata_zarr_files(subpath):
+    """Serve SpatialData Zarr files and directories"""
     try:
-        # Get the path parameter from the request
-        path_param = request.args.get('path', '')
-        logger.info(f"Request for SpatialData Zarr with path: {path_param}")
+        logger.info(f"Request for SpatialData Zarr file: {subpath}")
         
-        # Determine which Zarr file to serve based on the path
-        if 'shapes' in path_param or 'roi_circles' in path_param:
-            zarr_path = Path(__file__).parent / "output" / "roi_shapes.spatialdata.zarr"
-        elif 'table' in path_param:
-            zarr_path = Path(__file__).parent / "output" / "roi_shapes.spatialdata.zarr"
-        elif 'images' in path_param:
+        # Determine which Zarr file to serve based on the request path
+        if 'shapes' in subpath or 'roi_circles' in subpath:
+            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
+        elif 'table' in subpath:
+            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
+        elif 'images' in subpath:
             zarr_path = Path(__file__).parent / "output" / "test.zarr"
         else:
-            # Default to roi_shapes.spatialdata.zarr
-            zarr_path = Path(__file__).parent / "output" / "roi_shapes.spatialdata.zarr"
+            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
         
         if not zarr_path.exists():
             logger.error(f"SpatialData Zarr file not found: {zarr_path}")
             return jsonify({"error": "SpatialData Zarr file not found"}), 404
         
-        # Check if the specific path exists within the Zarr file
-        import zarr
-        try:
-            zarr_group = zarr.open(str(zarr_path), mode='r')
-            logger.info(f"Zarr group opened successfully: {zarr_group}")
-            
-            # Return a mock response for now - in production you'd serve actual Zarr data
-            return jsonify({
-                "status": "success",
-                "zarr_path": str(zarr_path),
-                "requested_path": path_param,
-                "message": "SpatialData Zarr file found and accessible",
-                "zarr_keys": list(zarr_group.keys()) if hasattr(zarr_group, 'keys') else []
-            })
-            
-        except Exception as zarr_error:
-            logger.error(f"Error opening Zarr file: {zarr_error}")
-            return jsonify({
-                "status": "error",
-                "message": f"Error opening Zarr file: {zarr_error}",
-                "zarr_path": str(zarr_path)
-            }), 500
+        # Serve the specific file or directory within the Zarr
+        from flask import send_from_directory
+        return send_from_directory(str(zarr_path), subpath)
         
     except Exception as e:
-        logger.error(f"Error serving SpatialData Zarr: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve SpatialData Zarr: {e}"}), 500
+        logger.error(f"Error serving SpatialData Zarr file {subpath}: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve SpatialData Zarr file: {e}"}), 500
+
+@app.route('/api/spatialdata_zarr', methods=['GET'])
+def serve_spatialdata_zarr_root():
+    """Serve SpatialData Zarr root metadata"""
+    try:
+        path_param = request.args.get('path', '')
+        logger.info(f"Request for SpatialData Zarr root with path: {path_param}")
+        
+        # Determine which Zarr file to serve based on the path
+        if 'shapes' in path_param or 'roi_circles' in path_param:
+            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
+        elif 'table' in path_param:
+            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
+        elif 'images' in path_param:
+            zarr_path = Path(__file__).parent / "output" / "test.zarr"
+        else:
+            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
+        
+        if not zarr_path.exists():
+            logger.error(f"SpatialData Zarr file not found: {zarr_path}")
+            return jsonify({"error": "SpatialData Zarr file not found"}), 404
+        
+        # Serve the Zarr metadata files
+        from flask import send_from_directory
+        
+        # Try to serve .zmetadata first, then .zattrs, then .zgroup
+        for metadata_file in ['.zmetadata', '.zattrs', '.zgroup']:
+            metadata_path = zarr_path / metadata_file
+            if metadata_path.exists():
+                return send_from_directory(str(zarr_path), metadata_file)
+        
+        # If no metadata files found, return basic info
+        return jsonify({
+            "status": "success",
+            "zarr_path": str(zarr_path),
+            "message": "SpatialData Zarr file found"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error serving SpatialData Zarr root: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve SpatialData Zarr root: {e}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 
