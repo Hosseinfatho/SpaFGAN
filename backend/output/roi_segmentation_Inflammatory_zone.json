@@ -1,5 +1,5 @@
 {
-  "ROI_T-cell_00": [
+  "Inflammatory_zone_00": [
     [
       [
         2792,
@@ -135,7 +135,7 @@
       ]
     ]
   ],
-  "ROI_T-cell_01": [
+  "Inflammatory_zone_01": [
     [
       [
         256,
@@ -271,7 +271,7 @@
       ]
     ]
   ],
-  "ROI_T-cell_02": [
+  "Inflammatory_zone_02": [
     [
       [
         8864,
@@ -407,7 +407,7 @@
       ]
     ]
   ],
-  "ROI_T-cell_03": [
+  "Inflammatory_zone_03": [
     [
       [
         2752,
@@ -543,7 +543,7 @@
       ]
     ]
   ],
-  "ROI_T-cell_04": [
+  "Inflammatory_zone_04": [
     [
       [
         2176,
@@ -679,7 +679,7 @@
       ]
     ]
   ],
-  "ROI_T-cell_05": [
+  "Inflammatory_zone_05": [
     [
       [
         5128,
@@ -815,7 +815,7 @@
       ]
     ]
   ],
-  "ROI_T-cell_06": [
+  "Inflammatory_zone_06": [
     [
       [
         10760,
@@ -951,7 +951,7 @@
       ]
     ]
   ],
-  "ROI_T-cell_07": [
+  "Inflammatory_zone_07": [
     [
       [
         3192,

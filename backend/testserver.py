@@ -1,13 +1,16 @@
 # Backend server code
 import json
 import logging
-import subprocess
-from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
+from flask import Flask, jsonify, send_from_directory, request
+import os
+from collections import OrderedDict
 
 import zarr as pyzarr
 import s3fs
 from pathlib import Path
+
+ZARR_BASE_DIR = os.path.abspath("output/roi_shapes.spatialdata.zarr")
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +24,10 @@ ZARR_BASE_URL = "s3://lsp-public-data/yapp-2023-3d-melanoma/Dataset1-LSP13626-me
 ZARR_IMAGE_GROUP_PATH = "0"
 TARGET_RESOLUTION_PATH = "3"
 
+# Local data paths
+LOCAL_ZARR_PATH = os.path.abspath("input/selected_channels.zarr")
+LOCAL_ROI_ZARR_PATH = os.path.abspath("output/roi_shapes.spatialdata.zarr")
+
 @app.route('/api/channel_names')
 def get_channel_names():
     """Reads OME-Zarr metadata to get channel names."""
@@ -29,312 +36,768 @@ def get_channel_names():
     root_store = None
     root_group = None
     try:
-        logger.info("Attempting to create S3FileSystem...")
         s3_local = s3fs.S3FileSystem(anon=True)
-        logger.info("S3FileSystem created successfully.")
-        
-        logger.info(f"Attempting to create S3Map for root: {ZARR_BASE_URL}")
         root_store = s3fs.S3Map(root=ZARR_BASE_URL, s3=s3_local, check=False)
-        logger.info("S3Map created successfully.")
-
-        logger.info("Attempting to open root Zarr group...")
         root_group = pyzarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else pyzarr.open_group(store=root_store, mode='r')
-        logger.info(f"Root group opened successfully. Type: {type(root_group)}")
-
-        # Access OME metadata: Look inside the image group (e.g., '0')
         omero_meta = None
         image_group_key = '0'
-        logger.info(f"Checking for image group '{image_group_key}'...")
         if root_group and image_group_key in root_group:
             image_group = root_group[image_group_key]
-            logger.info(f"Image group '{image_group_key}' found. Checking for 'omero' in its attributes...")
             if hasattr(image_group, 'attrs') and 'omero' in image_group.attrs:
                 omero_meta = image_group.attrs['omero']
-                logger.info(f"Found 'omero' metadata in image group '{image_group_key}' attributes.")
             else:
                  logger.warning(f"Could not find 'omero' metadata in image group '{image_group_key}' attributes.")
         else:
              logger.warning(f"Image group '{image_group_key}' not found in root group.")
-
         # Now check the extracted omero_meta for channels
         if omero_meta and 'channels' in omero_meta:
-            logger.info(f"Found {len(omero_meta['channels'])} channels in metadata.")
             for i, channel_info in enumerate(omero_meta['channels']): 
                 channel_map[str(i)] = channel_info.get('label', f'Channel {i}') 
-            logger.info(f" Successfully extracted channel names: {channel_map}")
             return jsonify(channel_map)
         else:
-            logger.warning("Could not find valid 'omero' metadata with 'channels'. Returning 404.")
             return jsonify({"error": "Channel metadata ('omero' with 'channels') not found in Zarr store"}), 404
-
     except Exception as e:
-        logger.error(f" Failed during channel name retrieval: {e}", exc_info=True)
-        logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}, root_store={'Exists' if root_store else 'None'}, root_group={'Exists' if root_group else 'None'}")
         return jsonify({"error": f"Failed to read channel names: {e}"}), 500
 
-# === STANDARD VITESSCE CONFIG GENERATOR ===
+
+# #######do not deletet this commented function
+# def generate_bio_med_vis_config():
+#     """Generate a valid Vitessce config for BioMedVis Challenge with image channels and ROI segmentations using zarr file."""
+
+#     dataset_uid = "A"
+#     image_layer_id = "init_A_image_0"
+#     segmentation_layer_id = "init_A_obsSegmentations_0"
+
+#     # Image channels configuration (preserved as requested)
+#     image_channels = {
+#         "init_A_image_0": {"window": [300, 20000], "targetC": 19, "color": [0, 255, 0]},      # CD31
+#         "init_A_image_1": {"window": [1000, 7000], "targetC": 27, "color": [255, 255, 0]},     # CD20
+#         "init_A_image_2": {"window": [700, 6000], "targetC": 37, "color": [255, 0, 255]},      # CD11b
+#         "init_A_image_3": {"window": [1638, 10000], "targetC": 25, "color": [0, 255, 255]},    # CD4
+#         "init_A_image_4": {"window": [370, 1432], "targetC": 42, "color": [128, 0, 128]},      # Catalase
+#         "init_A_image_5": {"window": [3000, 10000], "targetC": 59, "color": [128, 128, 0]}     # CD11c
+#     }
+
+#     # ROI interaction types and colors
+#     roi_interactions = [
+#         "B-cell infiltration",
+#         "Inflammatory zone", 
+#         "T-cell entry site",
+#         "Oxidative stress niche"
+#     ]
+    
+#     roi_colors = [
+#         [0, 200, 200],    # B-cell infiltration - Cyan
+#         [0, 255, 0],      # Inflammatory zone - Green
+#         [0, 0, 255],      # T-cell entry site - Blue
+#         [255, 255, 0]     # Oxidative stress niche - Yellow
+#     ]
+
+#     # Create segmentation channel IDs
+#     segmentation_channels = [
+#         "init_A_obsSegmentations_0",
+#         "init_A_obsSegmentations_1", 
+#         "init_A_obsSegmentations_2",
+#         "init_A_obsSegmentations_3"
+#     ]
+
+#     # Build coordination space
+#     coordination_space = {
+#         "dataset": {dataset_uid: dataset_uid},
+#         "imageLayer": {image_layer_id: "__dummy__"},
+#         "photometricInterpretation": {image_layer_id: "BlackIsZero"},
+#         "spatialRenderingMode": {image_layer_id: "3D"},
+#         "spatialLayerOpacity": {image_layer_id: 1.0},
+#         "spatialLayerVisible": {image_layer_id: True},
+#         "spatialTargetResolution": {image_layer_id: 3},
+#         "spatialTargetT": {image_layer_id: 0},
+#         "spatialTargetX": {image_layer_id: 5454},
+#         "spatialTargetY": {image_layer_id: 2754},
+#         "spatialTargetZ": {image_layer_id: 0},
+#         "spatialZoom": {image_layer_id: -3.0},
+#         "spotLayer": {"init_A_obsSpots_0": "__dummy__"},
+#         "segmentationLayer": {segmentation_layer_id: "__dummy__"},
+#         "imageChannel": {},
+#         "spatialChannelColor": {},
+#         "spatialChannelOpacity": {},
+#         "spatialChannelVisible": {},
+#         "spatialChannelWindow": {},
+#         "spatialTargetC": {},
+#         "segmentationChannel": {},
+#         "obsType": {
+#             "init_A_obsSegmentations_0": "B-cell infiltration",
+#             "init_A_obsSegmentations_1": "Inflammatory zone", 
+#             "init_A_obsSegmentations_2": "T-cell entry site",
+#             "init_A_obsSegmentations_3": "Oxidative stress niche",
+#             "A": "spot"
+#         },
+#         "obsColorEncoding": {
+#             "init_A_obsSegmentations_0": "spatialChannelColor",
+#             "init_A_obsSegmentations_1": "spatialChannelColor",
+#             "init_A_obsSegmentations_2": "spatialChannelColor",
+#             "init_A_obsSegmentations_3": "spatialChannelColor",
+#             "A": "geneSelection"
+#         },
+#         "spatialSegmentationLayer": {
+#             "A": {
+#                 "radius": 200,
+#                 "stroked": True,
+#                 "visible": True,
+#                 "opacity": 0.8,
+#                 "color": [0, 200, 200]  # Cyan for B-cell infiltration
+#             },
+#             "B": {
+#                 "radius": 200,
+#                 "stroked": True,
+#                 "visible": True,
+#                 "opacity": 0.8,
+#                 "color": [0, 255, 0]  # Green for Inflammatory zone
+#             },
+#             "C": {
+#                 "radius": 200,
+#                 "stroked": True,
+#                 "visible": True,
+#                 "opacity": 0.8,
+#                 "color": [0, 0, 255]  # Blue for T-cell entry site
+#             },
+#             "D": {
+#                 "radius": 200,
+#                 "stroked": True,
+#                 "visible": True,
+#                 "opacity": 0.8,
+#                 "color": [255, 255, 0]  # Yellow for Oxidative stress niche
+#             }
+#         },
+#         "metaCoordinationScopes": {
+#             image_layer_id: {
+#                 "imageLayer": image_layer_id,
+#                 "spatialRenderingMode": image_layer_id,
+#                 "spatialLayerOpacity": image_layer_id,
+#                 "spatialLayerVisible": image_layer_id,
+#                 "spatialTargetResolution": image_layer_id,
+#                 "spatialTargetT": image_layer_id,
+#                 "spatialTargetX": image_layer_id,
+#                 "spatialTargetY": image_layer_id,
+#                 "spatialTargetZ": image_layer_id,
+#                 "spatialZoom": image_layer_id
+#             },
+#             "init_A_obsSpots_0": {
+#                 "spotLayer": "init_A_obsSpots_0"
+#             },
+#             segmentation_layer_id: {
+#                 "segmentationLayer": [segmentation_layer_id]
+#             }
+#         },
+#         "metaCoordinationScopesBy": {
+#             image_layer_id: {
+#                 "imageLayer": {
+#                     "imageChannel": {image_layer_id: list(image_channels.keys())},
+#                     "photometricInterpretation": {image_layer_id: image_layer_id},
+#                     "spatialLayerOpacity": {image_layer_id: image_layer_id},
+#                     "spatialLayerVisible": {image_layer_id: image_layer_id},
+#                     "spatialTargetResolution": {image_layer_id: image_layer_id},
+#                     "spatialRenderingMode": {image_layer_id: image_layer_id},
+#                     "spatialTargetT": {image_layer_id: image_layer_id},
+#                     "spatialTargetX": {image_layer_id: image_layer_id},
+#                     "spatialTargetY": {image_layer_id: image_layer_id},
+#                     "spatialTargetZ": {image_layer_id: image_layer_id},
+#                     "spatialZoom": {image_layer_id: image_layer_id}
+#                 },
+#                 "imageChannel": {
+#                     "spatialChannelColor": {},
+#                     "spatialChannelOpacity": {},
+#                     "spatialChannelVisible": {},
+#                     "spatialChannelWindow": {},
+#                     "spatialTargetC": {}
+#                 }
+#             },
+#             "init_A_obsSpots_0": {
+#                 "spotLayer": {
+#                     "obsColorEncoding": {"init_A_obsSpots_0": "A"},
+#                     "featureSelection": {"init_A_obsSpots_0": "A"}
+#                 }
+#             },
+#             segmentation_layer_id: {
+#                 "segmentationLayer": {
+#                     "segmentationChannel": {
+#                         segmentation_layer_id: segmentation_channels
+#                     }
+#                 },
+#                 "segmentationChannel": {
+#                     "obsType": {},
+#                     "obsColorEncoding": {},
+#                     "spatialTargetC": {},
+#                     "spatialChannelVisible": {},
+#                     "spatialChannelOpacity": {},
+#                     "spatialChannelColor": {}
+#                 }
+#             }
+#         }
+#     }
+
+#     # Add image channels (preserved as requested)
+#     for ch_id, props in image_channels.items():
+#         coordination_space["imageChannel"][ch_id] = "__dummy__"
+#         coordination_space["spatialChannelColor"][ch_id] = props["color"]
+#         coordination_space["spatialChannelOpacity"][ch_id] = 1.0
+#         coordination_space["spatialChannelVisible"][ch_id] = True
+#         coordination_space["spatialChannelWindow"][ch_id] = props["window"]
+#         coordination_space["spatialTargetC"][ch_id] = props["targetC"]
+
+#         for key in ["spatialChannelColor", "spatialChannelOpacity", "spatialChannelVisible", "spatialChannelWindow", "spatialTargetC"]:
+#             coordination_space["metaCoordinationScopesBy"][image_layer_id]["imageChannel"][key][ch_id] = ch_id
+
+#     # Add segmentation channels for ROI interactions
+#     for idx, (interaction, color) in enumerate(zip(roi_interactions, roi_colors)):
+#         channel_id = segmentation_channels[idx]
+        
+#         coordination_space["segmentationChannel"][channel_id] = "__dummy__"
+#         coordination_space["spatialTargetC"][channel_id] = idx
+#         coordination_space["spatialChannelColor"][channel_id] = color
+#         coordination_space["spatialChannelOpacity"][channel_id] = 0.7
+#         coordination_space["spatialChannelVisible"][channel_id] = True
+
+#         # Add to meta coordination scopes
+#         coordination_space["metaCoordinationScopesBy"][segmentation_layer_id]["segmentationChannel"]["obsType"][channel_id] = channel_id
+#         coordination_space["metaCoordinationScopesBy"][segmentation_layer_id]["segmentationChannel"]["obsColorEncoding"][channel_id] = channel_id
+#         coordination_space["metaCoordinationScopesBy"][segmentation_layer_id]["segmentationChannel"]["spatialTargetC"][channel_id] = channel_id
+#         coordination_space["metaCoordinationScopesBy"][segmentation_layer_id]["segmentationChannel"]["spatialChannelVisible"][channel_id] = dataset_uid
+#         coordination_space["metaCoordinationScopesBy"][segmentation_layer_id]["segmentationChannel"]["spatialChannelOpacity"][channel_id] = dataset_uid
+#         coordination_space["metaCoordinationScopesBy"][segmentation_layer_id]["segmentationChannel"]["spatialChannelColor"][channel_id] = channel_id
+
+#     # Dataset files configuration
+#     dataset_files = [
+#         {
+#             "fileType": "image.ome-zarr",
+#             "url": "http://localhost:5000/api/spatialdata_zarr/selected_channels.zarr"
+#         },
+#         {
+#             "fileType": "obsSpots.spatialdata.zarr",
+#             "url": "http://localhost:5000/api/spatialdata_zarr/roi_shapes.spatialdata.zarr",
+#             "coordinationValues": {
+#                 "obsType": "spot"
+#             },
+#             "options": {
+#                 "path": "shapes/roi_circles",
+#                 "tablePath": "table/table"
+#             }
+#         }
+#     ]
+
+#     return {
+#         "version": "1.0.16",
+#         "name": "BioMedVis Challenge - Image and ROI Segmentation",
+#         "description": "Render base image with marker channels and ROI segmentation layer using zarr file",
+#         "initStrategy": "auto",
+#         "datasets": [{
+#             "uid": dataset_uid,
+#             "name": "Blood Vessel",
+#             "files": dataset_files
+#         }],
+#         "coordinationSpace": coordination_space,
+#         "layout": [
+#             {
+#                 "component": "spatialBeta",
+#                 "coordinationScopes": {
+#                     "dataset": dataset_uid,
+#                     "imageLayer": image_layer_id,
+#                     "segmentationLayer": segmentation_layer_id,
+#                     "metaCoordinationScopes": ["init_A_obsSpots_0", image_layer_id, segmentation_layer_id],
+#                     "metaCoordinationScopesBy": ["init_A_obsSpots_0", image_layer_id, segmentation_layer_id],
+#                     "spatialSegmentationLayer": ["A", "B", "C", "D"],
+#                     "obsType": ["A", "B", "C", "D"],
+#                     "obsColorEncoding": ["A", "B", "C", "D"],
+#                     "imageChannel": list(image_channels.keys()),
+#                     "spatialChannelColor": list(image_channels.keys()),
+#                     "spatialChannelOpacity": list(image_channels.keys()),
+#                     "spatialChannelVisible": list(image_channels.keys()),
+#                     "spatialChannelWindow": list(image_channels.keys()),
+#                     "spatialTargetC": list(image_channels.keys()),
+#                     "spatialRenderingMode": image_layer_id,
+#                     "spatialLayerOpacity": image_layer_id,
+#                     "spatialLayerVisible": image_layer_id,
+#                     "spatialTargetResolution": image_layer_id,
+#                     "spatialTargetT": image_layer_id,
+#                     "spatialTargetX": image_layer_id,
+#                     "spatialTargetY": image_layer_id,
+#                     "spatialTargetZ": image_layer_id,
+#                     "spatialZoom": image_layer_id
+#                 },
+#                 "x": 0, "y": 0, "w": 8, "h": 12
+#             },
+#             {
+#                 "component": "layerControllerBeta",
+#                 "coordinationScopes": {
+#                     "dataset": dataset_uid,
+#                     "imageLayer": image_layer_id,
+#                     "segmentationLayer": segmentation_layer_id,
+#                     "metaCoordinationScopes": ["init_A_obsSpots_0", image_layer_id, segmentation_layer_id],
+#                     "metaCoordinationScopesBy": ["init_A_obsSpots_0", image_layer_id, segmentation_layer_id],
+#                     "spatialSegmentationLayer": ["A", "B", "C", "D"],
+#                     "obsType": ["A", "B", "C", "D"],
+#                     "imageChannel": list(image_channels.keys()),
+#                     "spatialChannelColor": list(image_channels.keys()),
+#                     "spatialChannelOpacity": list(image_channels.keys()),
+#                     "spatialChannelVisible": list(image_channels.keys()),
+#                     "spatialChannelWindow": list(image_channels.keys()),
+#                     "spatialTargetC": list(image_channels.keys()),
+#                     "spatialRenderingMode": image_layer_id,
+#                     "spatialLayerOpacity": image_layer_id,
+#                     "spatialLayerVisible": image_layer_id,
+#                     "spatialTargetResolution": image_layer_id,
+#                     "spatialTargetT": image_layer_id,
+#                     "spatialTargetX": image_layer_id,
+#                     "spatialTargetY": image_layer_id,
+#                     "spatialTargetZ": image_layer_id,
+#                     "spatialZoom": image_layer_id
+#                 },
+#                 "x": 8, "y": 0, "w": 4, "h": 12
+#             }
+#         ]
+#     }
+# ## end config generator
+
 
 def generate_vitessce_config():
-    """Generate Vitessce configuration based on Maynard et al. example"""
+    """Generate Vitessce configuration based on sampleconfig.json structure"""
     
-    # Build coordination space
-    coordination_space = {
-        'dataset': {"A": "A"},
-        'featureSelection': {"A": ["33334"]},
-        'obsColorEncoding': {"A": "geneSelection"},
-        'spatialChannelVisible': {"A": True},
-        'spatialChannelOpacity': {"A": 0.5},
-        'spotLayer': {"init_A_obsSpots_0": "__dummy__"},
-        'imageLayer': {"init_A_image_0": "__dummy__"},
-        'photometricInterpretation': {"init_A_image_0": "RGB"},
-        'segmentationLayer': {"init_A_obsSegmentations_0": "__dummy__"},
-        'segmentationChannel': {
-            "init_A_obsSegmentations_0": "__dummy__",
-            "init_A_obsSegmentations_1": "__dummy__",
-            "init_A_obsSegmentations_2": "__dummy__",
-            "init_A_obsSegmentations_3": "__dummy__",
-            "init_A_obsSegmentations_4": "__dummy__",
-            "init_A_obsSegmentations_5": "__dummy__",
-            "init_A_obsSegmentations_6": "__dummy__"
-        },
-        'obsType': {
-            "init_A_obsSegmentations_0": "ROI",  # Change to ROI
-            "init_A_obsSegmentations_1": "Layer 6",
-            "init_A_obsSegmentations_2": "Layer 5",
-            "init_A_obsSegmentations_3": "Layer 4",
-            "init_A_obsSegmentations_4": "Layer 3",
-            "init_A_obsSegmentations_5": "Layer 2",
-            "init_A_obsSegmentations_6": "Layer 1",
-            "A": "spot"
-        },
-        'spatialTargetC': {
-            "init_A_obsSegmentations_0": 6,
-            "init_A_obsSegmentations_1": 5,
-            "init_A_obsSegmentations_2": 4,
-            "init_A_obsSegmentations_3": 3,
-            "init_A_obsSegmentations_4": 2,
-            "init_A_obsSegmentations_5": 1,
-            "init_A_obsSegmentations_6": 0
-        },
-        'spatialChannelColor': {
-            "init_A_obsSegmentations_0": [255, 0, 0],  # Red color for ROI
-            "init_A_obsSegmentations_1": [221, 204, 128],
-            "init_A_obsSegmentations_2": [153, 153, 65],
-            "init_A_obsSegmentations_3": [28, 118, 58],
-            "init_A_obsSegmentations_4": [74, 169, 154],
-            "init_A_obsSegmentations_5": [139, 203, 235],
-            "init_A_obsSegmentations_6": [70, 119, 167]
-        },
-        'metaCoordinationScopes': {
-            "init_A_obsSpots_0": {
-                'spotLayer': "init_A_obsSpots_0"
-            },
-            "init_A_image_0": {
-                'imageLayer': "init_A_image_0"
-            },
-            "init_A_obsSegmentations_0": {
-                'segmentationLayer': ["init_A_obsSegmentations_0"]
-            }
-        },
-        'metaCoordinationScopesBy': {
-            "init_A_obsSpots_0": {
-                'spotLayer': {
-                    'obsColorEncoding': {"init_A_obsSpots_0": "A"},
-                    'featureSelection': {"init_A_obsSpots_0": "A"}
-                }
-            },
-            "init_A_image_0": {
-                'imageLayer': {
-                    'photometricInterpretation': {"init_A_image_0": "init_A_image_0"}
-                }
-            },
-            "init_A_obsSegmentations_0": {
-                'segmentationLayer': {
-                                    'segmentationChannel': {
-                    "init_A_obsSegmentations_0": [
-                        "init_A_obsSegmentations_0",
-                        "init_A_obsSegmentations_1",
-                        "init_A_obsSegmentations_2",
-                        "init_A_obsSegmentations_3",
-                        "init_A_obsSegmentations_4",
-                        "init_A_obsSegmentations_5",
-                        "init_A_obsSegmentations_6"
-                    ]
-                }
-                },
-                'segmentationChannel': {
-                    'obsType': {
-                        "init_A_obsSegmentations_0": "init_A_obsSegmentations_0",
-                        "init_A_obsSegmentations_1": "init_A_obsSegmentations_1",
-                        "init_A_obsSegmentations_2": "init_A_obsSegmentations_2",
-                        "init_A_obsSegmentations_3": "init_A_obsSegmentations_3",
-                        "init_A_obsSegmentations_4": "init_A_obsSegmentations_4",
-                        "init_A_obsSegmentations_5": "init_A_obsSegmentations_5",
-                        "init_A_obsSegmentations_6": "init_A_obsSegmentations_6"
-                    },
-                    'spatialTargetC': {
-                        "init_A_obsSegmentations_0": "init_A_obsSegmentations_0",
-                        "init_A_obsSegmentations_1": "init_A_obsSegmentations_1",
-                        "init_A_obsSegmentations_2": "init_A_obsSegmentations_2",
-                        "init_A_obsSegmentations_3": "init_A_obsSegmentations_3",
-                        "init_A_obsSegmentations_4": "init_A_obsSegmentations_4",
-                        "init_A_obsSegmentations_5": "init_A_obsSegmentations_5",
-                        "init_A_obsSegmentations_6": "init_A_obsSegmentations_6"
-                    },
-                    'spatialChannelVisible': {
-                        "init_A_obsSegmentations_0": "A",
-                        "init_A_obsSegmentations_1": "A",
-                        "init_A_obsSegmentations_2": "A",
-                        "init_A_obsSegmentations_3": "A",
-                        "init_A_obsSegmentations_4": "A",
-                        "init_A_obsSegmentations_5": "A",
-                        "init_A_obsSegmentations_6": "A"
-                    },
-                    'spatialChannelOpacity': {
-                        "init_A_obsSegmentations_0": "A",
-                        "init_A_obsSegmentations_1": "A",
-                        "init_A_obsSegmentations_2": "A",
-                        "init_A_obsSegmentations_3": "A",
-                        "init_A_obsSegmentations_4": "A",
-                        "init_A_obsSegmentations_5": "A",
-                        "init_A_obsSegmentations_6": "A"
-                    },
-                    'spatialChannelColor': {
-                        "init_A_obsSegmentations_0": "init_A_obsSegmentations_0",
-                        "init_A_obsSegmentations_1": "init_A_obsSegmentations_1",
-                        "init_A_obsSegmentations_2": "init_A_obsSegmentations_2",
-                        "init_A_obsSegmentations_3": "init_A_obsSegmentations_3",
-                        "init_A_obsSegmentations_4": "init_A_obsSegmentations_4",
-                        "init_A_obsSegmentations_5": "init_A_obsSegmentations_5",
-                        "init_A_obsSegmentations_6": "init_A_obsSegmentations_6"
-                    }
-                }
-            }
-        }
-    }
-
+    # Create the config dictionary exactly like sampleconfig.json
     config = {
-        'version': '1.0.16',
-        'name': 'Maynard et al., Nature Neuroscience 2021',
-        'description': 'Human dorsolateral prefrontal cortex profiled by 10x Genomics Visium',
-        'datasets': [{
-            'uid': 'A',
-            'name': 'My dataset',
-            'files': [
-                {
-                    'url': 'https://storage.googleapis.com/vitessce-demo-data/maynard-2021/151673.sdata.zarr',
-                    'fileType': 'image.spatialdata.zarr',
-                    'options': {
-                        'path': 'images/visium_151673_full_image'
-                    }
-                },
-                {
-                    'url': 'https://storage.googleapis.com/vitessce-demo-data/maynard-2021/151673.sdata.zarr',
-                    'fileType': 'labels.spatialdata.zarr',
-                    'options': {
-                        'path': 'images/visium_151673_annotations'
-                    }
-                },
-                {
-                    'url': 'https://storage.googleapis.com/vitessce-demo-data/maynard-2021/151673.sdata.zarr',
-                    'fileType': 'obsFeatureMatrix.spatialdata.zarr',
-                    'coordinationValues': {
-                        'obsType': 'spot'
+        "version": "1.0.16",
+        "name": "Multi-obsType segmentations",
+        "description": "Segmentations of functional tissue units in the kidney with associated quantitative features",
+        "datasets": [
+            {
+                "uid": "S-1905-017737",
+                "name": "S-1905-017737",
+                "files": [
+                    {
+                        "fileType": "obsSegmentations.ome-tiff",
+                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/S-1905-017737_PAS_2of2.ome.tif",
+                        "options": {
+                            "offsetsUrl": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/S-1905-017737_PAS_2of2.offsets.json"
+                        },
+                        "coordinationValues": {
+                            "fileUid": "S-1905-017737"
+                        }
                     },
-                    'options': {
-                        'path': 'table/table/layers/logcounts',
-                        'initialFeatureFilterPath': 'table/table/var/is_top_hvg'
-                    }
-                },
-                {
-                    'url': 'https://storage.googleapis.com/vitessce-demo-data/maynard-2021/151673.sdata.zarr',
-                    'fileType': 'featureLabels.spatialdata.zarr',
-                    'options': {
-                        'path': 'table/table/var/gene_name'
-                    }
-                },
-                {
-                    'url': 'https://storage.googleapis.com/vitessce-demo-data/maynard-2021/151673.sdata.zarr',
-                    'fileType': 'obsSpots.spatialdata.zarr',
-                    'coordinationValues': {
-                        'obsType': 'spot'
+
+                    {
+                        "fileType": "obsFeatureMatrix.anndata.zarr",
+                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Cortical Interstitium.adata.zarr",
+                        "options": {
+                            "path": "X"
+                        },
+                        "coordinationValues": {
+                            "obsType": "Cortical Interstitia",
+                            "featureType": "feature",
+                            "featureValueType": "value"
+                        }
                     },
-                    'options': {
-                        'path': 'shapes/visium_151673',
-                        'tablePath': 'table/table'
-                    }
-                },
-                {
-                    'url': 'https://storage.googleapis.com/vitessce-demo-data/maynard-2021/151673.sdata.zarr',
-                    'fileType': 'obsSets.spatialdata.zarr',
-                    'coordinationValues': {
-                        'obsType': 'spot'
+                    {
+                        "fileType": "obsFeatureMatrix.anndata.zarr",
+                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Glomeruli.adata.zarr",
+                        "options": {
+                            "path": "X"
+                        },
+                        "coordinationValues": {
+                            "obsType": "Non-Globally Sclerotic Glomeruli",
+                            "featureType": "feature",
+                            "featureValueType": "value"
+                        }
                     },
-                    'options': {
-                        'obsSets': [
-                            {
-                                'name': 'Layer',
-                                'path': 'table/table/obs/layer_manual'
-                            }
-                        ]
-                    }
-                },
-                # New ROI segmentation file
-                {
-                    'url': 'http://localhost:5000/api/spatialdata_zarr?path=shapes/roi_circles',
-                    'fileType': 'shapes.spatialdata.zarr',
-                    'coordinationValues': {
-                        'obsType': 'ROI'
+                    {
+                        "fileType": "obsFeatureMatrix.anndata.zarr",
+                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Globally Sclerotic Glomeruli.adata.zarr",
+                        "options": {
+                            "path": "X"
+                        },
+                        "coordinationValues": {
+                            "obsType": "Globally Sclerotic Glomeruli",
+                            "featureType": "feature",
+                            "featureValueType": "value"
+                        }
                     },
-                    'options': {
-                        'path': 'shapes/roi_circles'
+                    {
+                        "fileType": "obsFeatureMatrix.anndata.zarr",
+                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Tubules with Area non infinity.adata.zarr",
+                        "options": {
+                            "path": "X"
+                        },
+                        "coordinationValues": {
+                            "obsType": "Tubules",
+                            "featureType": "feature",
+                            "featureValueType": "value"
+                        }
+                    },
+                    {
+                        "fileType": "obsFeatureMatrix.anndata.zarr",
+                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/IFTA.adata.zarr",
+                        "options": {
+                            "path": "X"
+                        },
+                        "coordinationValues": {
+                            "obsType": "Interstitial Fibrosis and Tubular Atrophy",
+                            "featureType": "feature",
+                            "featureValueType": "value"
+                        }
+                    },
+                    {
+                        "fileType": "obsFeatureMatrix.anndata.zarr",
+                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Peritubular Capillaries renamed.adata.zarr",
+                        "options": {
+                            "path": "X"
+                        },
+                        "coordinationValues": {
+                            "obsType": "Peritubular Capillaries",
+                            "featureType": "feature",
+                            "featureValueType": "value"
+                        }
+                    },
+
+
+
+                ]
+            }
+        ],
+        "initStrategy": "auto",
+        "coordinationSpace": {
+            "fileUid": {
+                "bitmask": "S-1905-017737"
+            },
+            "segmentationLayer": {
+                "ml": "ml"
+            },
+            "segmentationChannel": {
+                "ci": "ci",
+                "ngsg": "ngsg",
+                "gsg": "gsg",
+                "t": "t",
+                "a": "a",
+                "ifta": "ifta",
+                "ptc": "ptc"
+            },
+            "obsType": {
+                "ci": "Cortical Interstitia",
+                "ngsg": "Non-Globally Sclerotic Glomeruli",
+                "gsg": "Globally Sclerotic Glomeruli",
+                "t": "Tubules",
+                "a": "Arteries/Arterioles",
+                "ifta": "Interstitial Fibrosis and Tubular Atrophy",
+                "ptc": "Peritubular Capillaries"
+            },
+            "obsColorEncoding": {
+                "ci": "spatialChannelColor",
+                "ngsg": "spatialChannelColor",
+                "gsg": "spatialChannelColor",
+                "t": "spatialChannelColor",
+                "a": "spatialChannelColor",
+                "ifta": "spatialChannelColor",
+                "ptc": "spatialChannelColor"
+            },
+            "featureValueColormap": {
+                "ci": "plasma",
+                "ngsg": "plasma",
+                "gsg": "plasma",
+                "t": "plasma",
+                "a": "plasma",
+                "ifta": "plasma",
+                "ptc": "plasma"
+            },
+            "featureValueColormapRange": {
+                "ci": [0, 1],
+                "ngsg": [0, 0.4759995742718275],
+                "gsg": [0.02697802596272391, 1],
+                "t": [0, 0.3],
+                "a": [0, 1],
+                "ifta": [0, 1],
+                "ptc": [0, 0.2]
+            },
+            "featureType": {
+                "global": "feature"
+            },
+            "featureValueType": {
+                "global": "value"
+            },
+            "featureSelection": {
+                "ci": None,
+                "ngsg": None,
+                "gsg": None,
+                "t": None,
+                "a": None,
+                "ifta": None,
+                "ptc": None
+            },
+            "spatialTargetC": {
+                "ci": 0,
+                "ngsg": 1,
+                "gsg": 2,
+                "t": 3,
+                "a": 4,
+                "ifta": 5,
+                "ptc": 6
+            },
+            "spatialChannelColor": {
+                "ci": [255, 255, 255],
+                "ngsg": [91, 181, 231],
+                "gsg": [16, 115, 176],
+                "t": [22, 157, 116],
+                "a": [239, 226, 82],
+                "ifta": [228, 158, 37],
+                "ptc": [211, 94, 26]
+            },
+            "spatialChannelVisible": {
+                "ci": False,
+                "ngsg": False,
+                "gsg": False,
+                "t": True,
+                "a": False,
+                "ifta": False,
+                "ptc": False
+            },
+            "spatialLayerVisible": {
+                "bitmask": True
+            },
+            "spatialChannelOpacity": {
+                "ci": 1,
+                "ngsg": 1,
+                "gsg": 1,
+                "t": 1,
+                "a": 1,
+                "ifta": 1,
+                "ptc": 1
+            },
+            "spatialLayerOpacity": {
+                "bitmask": 1
+            },
+            "spatialSegmentationFilled": {
+                "ci": True,
+                "ngsg": True,
+                "gsg": True,
+                "t": True,
+                "a": True,
+                "ifta": True,
+                "ptc": True
+            },
+            "spatialSegmentationStrokeWidth": {
+                "ci": 1,
+                "ngsg": 1,
+                "gsg": 1,
+                "t": 1,
+                "a": 1,
+                "ifta": 1,
+                "ptc": 1
+            },
+            "obsHighlight": {
+                "ci": None,
+                "ngsg": None,
+                "gsg": None,
+                "t": None,
+                "a": None,
+                "ifta": None,
+                "ptc": None
+            },
+            "spatialTargetX": {
+                "A": 19375.01239458
+            },
+            "spatialTargetY": {
+                "A": 18524.67196937
+            },
+            "spatialZoom": {
+                "A": -3.60703913795
+            },
+
+
+            "metaCoordinationScopes": {
+            "metaA": {
+                    "obsType": ["ci", "ngsg", "gsg", "t", "a", "ifta", "ptc"],
+                "segmentationLayer": ["ml"]
+            }
+        },
+            "metaCoordinationScopesBy": {
+            "metaA": {
+
+                    "segmentationLayer": {
+                        "fileUid": {
+                            "ml": "bitmask"
+                        },
+                        "segmentationChannel": {
+                            "ml": ["ci", "ngsg", "gsg", "t", "a", "ifta", "ptc"]
+                        },
+                        "spatialLayerVisible": {
+                            "ml": "bitmask"
+                        },
+                        "spatialLayerOpacity": {
+                            "ml": "bitmask"
+                        }
+                    },
+                    "segmentationChannel": {
+                        "obsType": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc",
+                            "dummy": "dummy"
+                        },
+                        "featureType": {
+                            "ci": "global",
+                            "ngsg": "global",
+                            "gsg": "global",
+                            "t": "global",
+                            "a": "global",
+                            "ifta": "global",
+                            "ptc": "global"
+                        },
+                        "featureValueType": {
+                            "ci": "global",
+                            "ngsg": "global",
+                            "gsg": "global",
+                            "t": "global",
+                            "a": "global",
+                            "ifta": "global",
+                            "ptc": "global"
+                        },
+                        "featureSelection": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "spatialTargetC": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "obsColorEncoding": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "featureValueColormap": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "featureValueColormapRange": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "spatialChannelVisible": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "spatialChannelOpacity": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "spatialChannelColor": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "spatialSegmentationFilled": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "spatialSegmentationStrokeWidth": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        },
+                        "obsHighlight": {
+                            "ci": "ci",
+                            "ngsg": "ngsg",
+                            "gsg": "gsg",
+                            "t": "t",
+                            "a": "a",
+                            "ifta": "ifta",
+                            "ptc": "ptc"
+                        }
                     }
                 }
-            ]
-        }],
-        'initStrategy': 'auto',
-        'coordinationSpace': coordination_space,
-        'layout': [
+            }
+        },
+        "layout": [
             {
-                'component': 'spatialBeta',
-                'coordinationScopes': {
-                    'dataset': "A",
-                    'metaCoordinationScopes': [
-                        "init_A_obsSpots_0",
-                        "init_A_image_0",
-                        "init_A_obsSegmentations_0"
-                    ],
-                    'metaCoordinationScopesBy': [
-                        "init_A_obsSpots_0",
-                        "init_A_image_0",
-                        "init_A_obsSegmentations_0"
-                    ],
-                    'obsType': "A"
+                "component": "spatialBeta",
+                "coordinationScopes": {
+                    "metaCoordinationScopes": ["metaA"],
+                    "metaCoordinationScopesBy": ["metaA"],
+                    "spatialTargetX": "A",
+                    "spatialTargetY": "A",
+                    "spatialZoom": "A"
                 },
-                'x': 0, 'y': 0, 'w': 6, 'h': 12
+                "x": 0,
+                "y": 0,
+                "w": 8,
+                "h": 12
             },
             {
-                'component': 'layerControllerBeta',
-                'coordinationScopes': {
-                    'dataset': "A",
-                    'metaCoordinationScopes': [
-                        "init_A_obsSpots_0",
-                        "init_A_image_0",
-                        "init_A_obsSegmentations_0"
-                    ],
-                    'metaCoordinationScopesBy': [
-                        "init_A_obsSpots_0",
-                        "init_A_image_0",
-                        "init_A_obsSegmentations_0"
-                    ],
-                    'obsType': "A"
+                "component": "layerControllerBeta",
+                "coordinationScopes": {
+                    "metaCoordinationScopes": ["metaA"],
+                    "metaCoordinationScopesBy": ["metaA"],
+                    "spatialTargetX": "A",
+                    "spatialTargetY": "A",
+                    "spatialZoom": "A"
                 },
-                'x': 6, 'y': 0, 'w': 6, 'h': 12
+                "x": 8,
+                "y": 0,
+                "w": 4,
+                "h": 12
             }
         ]
     }
 
     return config
+
+
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
@@ -349,89 +812,228 @@ def get_config():
         logger.error(f"Error generating config: {e}", exc_info=True)
         return jsonify({"error": f"Failed to generate config: {e}"}), 500
 
+from flask import send_from_directory, jsonify
+from pathlib import Path
+
+# Define absolute path to the .sdata.zarr directory
+ZARR_BASE_DIR = Path("D:/VIS2025/BIoVisChallenges/SpaFGAN/backend/output/roi_shapes.spatialdata.zarr")
+
+@app.route("/api/zarr/<path:filename>", methods=["GET"])
+def serve_zarr_file(filename):
+    """Serve internal files from the Zarr store directory"""
+    try:
+        return send_from_directory(ZARR_BASE_DIR, filename)
+    except Exception as e:
+        logger.error(f"Error serving Zarr file '{filename}': {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve Zarr file '{filename}': {e}"}), 500
+
+@app.route("/api/image/<path:filename>", methods=["GET"])
+def serve_image_file(filename):
+    """Serve image files from the output directory"""
+    try:
+        image_dir = Path(__file__).parent / "output"
+        return send_from_directory(image_dir, filename)
+    except Exception as e:
+        logger.error(f"Error serving image file '{filename}': {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve image file '{filename}': {e}"}), 500
+
+@app.route('/api/roi_segmentation.json', methods=['GET'])
+def get_roi_segmentation():
+    """Serve the roi_Segmentation.json file"""
+    logger.info("Request received for /api/roi_segmentation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_Segmentation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"roi_Segmentation.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_Segmentation.json file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving roi_Segmentation.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_Segmentation.json: {e}"}), 500
+
 @app.route('/api/roi_segmentation_B-cell_infiltration.json', methods=['GET'])
 def get_roi_segmentation_b_cell():
-    """Serve the B-cell infiltration ROI segmentation JSON file"""
+    """Serve the roi_segmentation_B-cell_infiltration.json file"""
     logger.info("Request received for /api/roi_segmentation_B-cell_infiltration.json [GET]")
     
     try:
         roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_B-cell_infiltration.json'
         
         if not roi_file_path.exists():
-            logger.error(f"B-cell infiltration ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "B-cell infiltration ROI segmentation file not found"}), 404
+            logger.error(f"roi_segmentation_B-cell_infiltration.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_B-cell_infiltration.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
         
+        # Keys are already correct, return as is
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving B-cell infiltration ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve B-cell infiltration ROI segmentation: {e}"}), 500
-
-@app.route('/api/roi_segmentation_T-cell_entry_site.json', methods=['GET'])
-def get_roi_segmentation_t_cell():
-    """Serve the T-cell entry site ROI segmentation JSON file"""
-    logger.info("Request received for /api/roi_segmentation_T-cell_entry_site.json [GET]")
-    
-    try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_entry_site.json'
-        
-        if not roi_file_path.exists():
-            logger.error(f"T-cell entry site ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "T-cell entry site ROI segmentation file not found"}), 404
-        
-        with open(roi_file_path, 'r') as f:
-            roi_data = json.load(f)
-        
-        return jsonify(roi_data)
-        
-    except Exception as e:
-        logger.error(f"Error serving T-cell entry site ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve T-cell entry site ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_B-cell_infiltration.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_B-cell_infiltration.json: {e}"}), 500
 
 @app.route('/api/roi_segmentation_Inflammatory_zone.json', methods=['GET'])
 def get_roi_segmentation_inflammatory():
-    """Serve the Inflammatory zone ROI segmentation JSON file"""
+    """Serve the roi_segmentation_Inflammatory_zone.json file"""
     logger.info("Request received for /api/roi_segmentation_Inflammatory_zone.json [GET]")
     
     try:
         roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Inflammatory_zone.json'
         
         if not roi_file_path.exists():
-            logger.error(f"Inflammatory zone ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "Inflammatory zone ROI segmentation file not found"}), 404
+            logger.error(f"roi_segmentation_Inflammatory_zone.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_Inflammatory_zone.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
         
+        # Keys are already correct, return as is
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving Inflammatory zone ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve Inflammatory zone ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_Inflammatory_zone.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_Inflammatory_zone.json: {e}"}), 500
+
+@app.route('/api/roi_segmentation_T-cell_entry_site.json', methods=['GET'])
+def get_roi_segmentation_t_cell():
+    """Serve the roi_segmentation_T-cell_entry_site.json file"""
+    logger.info("Request received for /api/roi_segmentation_T-cell_entry_site.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_entry_site.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"roi_segmentation_T-cell_entry_site.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_T-cell_entry_site.json file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        # Keys are already correct, return as is
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving roi_segmentation_T-cell_entry_site.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_T-cell_entry_site.json: {e}"}), 500
 
 @app.route('/api/roi_segmentation_Oxidative_stress_niche.json', methods=['GET'])
 def get_roi_segmentation_oxidative():
-    """Serve the Oxidative stress niche ROI segmentation JSON file"""
+    """Serve the roi_segmentation_Oxidative_stress_niche.json file"""
     logger.info("Request received for /api/roi_segmentation_Oxidative_stress_niche.json [GET]")
     
     try:
         roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_niche.json'
         
         if not roi_file_path.exists():
-            logger.error(f"Oxidative stress niche ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "Oxidative stress niche ROI segmentation file not found"}), 404
+            logger.error(f"roi_segmentation_Oxidative_stress_niche.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_Oxidative_stress_niche.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
         
+        # Keys are already correct, return as is
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving Oxidative stress niche ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve Oxidative stress niche ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_Oxidative_stress_niche.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_Oxidative_stress_niche.json: {e}"}), 500
+
+@app.route('/api/roi_segmentation_combined.json', methods=['GET'])
+def get_roi_segmentation_combined():
+    """Serve combined ROI segmentation data with all interactions"""
+    logger.info("Request received for /api/roi_segmentation_combined.json [GET]")
+    
+    try:
+        # Load all ROI files with proper mapping
+        roi_files = {
+            'B-cell_infiltration': 'roi_segmentation_B-cell_infiltration.json',
+            'Inflammatory_zone': 'roi_segmentation_Inflammatory_zone.json',
+            'T-cell_entry_site': 'roi_segmentation_T-cell_entry_site.json',
+            'Oxidative_stress_niche': 'roi_segmentation_Oxidative_stress_niche.json'
+        }
+        
+        combined_data = {}
+        
+        for interaction_name, filename in roi_files.items():
+            file_path = Path(__file__).parent / 'output' / filename
+            
+            if file_path.exists():
+                with open(file_path, 'r') as f:
+                    roi_data = json.load(f)
+                    
+                    # Map the ROI keys to the interaction name
+                    for roi_key, roi_coordinates in roi_data.items():
+                        # Create a new key that matches the obsType
+                        new_key = roi_key.replace('ROI_Inflammatory_B-cell_', f'{interaction_name}_')
+                        new_key = new_key.replace('ROI_T-Cell_', f'{interaction_name}_')
+                        new_key = new_key.replace('ROI_Inflammatory_', f'{interaction_name}_')
+                        new_key = new_key.replace('ROI_Oxidative_', f'{interaction_name}_')
+                        
+                        combined_data[new_key] = roi_coordinates
+                    
+                    logger.info(f"Loaded {len(roi_data)} ROIs from {filename}")
+            else:
+                logger.warning(f"File not found: {filename}")
+        
+        return jsonify(combined_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving combined ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve combined ROI segmentation: {e}"}), 500
+
+@app.route('/api/roi_segmentation_filtered.json', methods=['GET'])
+def get_roi_segmentation_filtered():
+    """Serve filtered ROI segmentation data based on query parameter"""
+    logger.info("Request received for /api/roi_segmentation_filtered.json [GET]")
+    
+    try:
+        # Get the interaction type from query parameter
+        interaction_type = request.args.get('type', 'B-cell_infiltration')
+        
+        # Map interaction type to filename
+        roi_files = {
+            'B-cell_infiltration': 'roi_segmentation_B-cell_infiltration.json',
+            'Inflammatory_zone': 'roi_segmentation_Inflammatory_zone.json',
+            'T-cell_entry_site': 'roi_segmentation_T-cell_entry_site.json',
+            'Oxidative_stress_niche': 'roi_segmentation_Oxidative_stress_niche.json'
+        }
+        
+        if interaction_type not in roi_files:
+            return jsonify({"error": f"Unknown interaction type: {interaction_type}"}), 400
+        
+        filename = roi_files[interaction_type]
+        file_path = Path(__file__).parent / 'output' / filename
+        
+        if not file_path.exists():
+            return jsonify({"error": f"File not found: {filename}"}), 404
+        
+        with open(file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        # Map the ROI keys to the interaction name
+        filtered_data = {}
+        for roi_key, roi_coordinates in roi_data.items():
+            new_key = roi_key.replace('ROI_Inflammatory_B-cell_', f'{interaction_type}_')
+            new_key = new_key.replace('ROI_T-Cell_', f'{interaction_type}_')
+            new_key = new_key.replace('ROI_Inflammatory_', f'{interaction_type}_')
+            new_key = new_key.replace('ROI_Oxidative_', f'{interaction_type}_')
+            
+            filtered_data[new_key] = roi_coordinates
+        
+        logger.info(f"Served {len(filtered_data)} ROIs for {interaction_type}")
+        return jsonify(filtered_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving filtered ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve filtered ROI segmentation: {e}"}), 500
 
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
@@ -462,90 +1064,140 @@ def serve_roi_shapes():
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI shapes: {e}"}), 500
 
-@app.route('/api/roi_rectangles_annotation', methods=['GET'])
-def serve_roi_rectangles_annotation():
+@app.route("/api/local_image", methods=["GET"])
+def serve_local_image():
+    """Serve local image data from selected_channels.zarr"""
     try:
-        roi_path = Path(__file__).parent / "output" / "roi_rectangles_annotation.json"
-        if not roi_path.exists():
-            logger.warning("ROI rectangles annotation file not found.")
-            return jsonify({"error": "ROI rectangles annotation not found"}), 404
-
-        with open(roi_path, 'r') as f:
-            roi_data = json.load(f)
-
-        return jsonify(roi_data)
-    except Exception as e:
-        logger.error(f"Error serving ROI rectangles annotation: {e}")
-        return jsonify({"error": "Internal server error"}), 500
-
-@app.route('/api/spatialdata_zarr/<path:subpath>', methods=['GET'])
-def serve_spatialdata_zarr_files(subpath):
-    """Serve SpatialData Zarr files and directories"""
-    try:
-        logger.info(f"Request for SpatialData Zarr file: {subpath}")
-        
-        # Determine which Zarr file to serve based on the request path
-        if 'shapes' in subpath or 'roi_circles' in subpath:
-            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
-        elif 'table' in subpath:
-            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
-        elif 'images' in subpath:
-            zarr_path = Path(__file__).parent / "output" / "test.zarr"
+        if os.path.exists(LOCAL_ZARR_PATH):
+            return send_from_directory("input", "selected_channels.zarr")
         else:
-            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
-        
-        if not zarr_path.exists():
-            logger.error(f"SpatialData Zarr file not found: {zarr_path}")
-            return jsonify({"error": "SpatialData Zarr file not found"}), 404
-        
-        # Serve the specific file or directory within the Zarr
-        from flask import send_from_directory
-        return send_from_directory(str(zarr_path), subpath)
-        
+            return jsonify({"error": "Local image data not found"}), 404
     except Exception as e:
-        logger.error(f"Error serving SpatialData Zarr file {subpath}: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve SpatialData Zarr file: {e}"}), 500
+        return jsonify({"error": f"Failed to serve local image: {e}"}), 500
 
-@app.route('/api/spatialdata_zarr', methods=['GET'])
-def serve_spatialdata_zarr_root():
-    """Serve SpatialData Zarr root metadata"""
+@app.route("/api/local_roi", methods=["GET"])
+def serve_local_roi():
+    """Serve local ROI data from roi_shapes.spatialdata.zarr"""
     try:
-        path_param = request.args.get('path', '')
-        logger.info(f"Request for SpatialData Zarr root with path: {path_param}")
-        
-        # Determine which Zarr file to serve based on the path
-        if 'shapes' in path_param or 'roi_circles' in path_param:
-            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
-        elif 'table' in path_param:
-            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
-        elif 'images' in path_param:
-            zarr_path = Path(__file__).parent / "output" / "test.zarr"
+        if os.path.exists(LOCAL_ROI_ZARR_PATH):
+            return send_from_directory("output", "roi_shapes.spatialdata.zarr")
         else:
-            zarr_path = Path(__file__).parent / "output" / "sample_roi_overlay.zarr"
-        
-        if not zarr_path.exists():
-            logger.error(f"SpatialData Zarr file not found: {zarr_path}")
-            return jsonify({"error": "SpatialData Zarr file not found"}), 404
-        
-        # Serve the Zarr metadata files
-        from flask import send_from_directory
-        
-        # Try to serve .zmetadata first, then .zattrs, then .zgroup
-        for metadata_file in ['.zmetadata', '.zattrs', '.zgroup']:
-            metadata_path = zarr_path / metadata_file
-            if metadata_path.exists():
-                return send_from_directory(str(zarr_path), metadata_file)
-        
-        # If no metadata files found, return basic info
-        return jsonify({
-            "status": "success",
-            "zarr_path": str(zarr_path),
-            "message": "SpatialData Zarr file found"
-        })
-        
+            return jsonify({"error": "Local ROI data not found"}), 404
     except Exception as e:
-        logger.error(f"Error serving SpatialData Zarr root: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve SpatialData Zarr root: {e}"}), 500
+        return jsonify({"error": f"Failed to serve local ROI: {e}"}), 500
+
+@app.route("/api/spatialdata_zarr/<path:filename>", methods=["GET"])
+def serve_spatialdata_zarr(filename):
+    """Serve SpatialData Zarr files and their internal files"""
+    try:
+        logger.info(f"Serving SpatialData Zarr file: {filename}")
+        
+        # Handle nested paths within Zarr files
+        if "/" in filename:
+            # This is a request for internal Zarr files (e.g., "selected_channels.zarr/.zattrs")
+            zarr_name, internal_path = filename.split("/", 1)
+            
+            if zarr_name == "selected_channels.zarr":
+                input_dir = Path(__file__).parent / "input" / "selected_channels.zarr"
+                if (input_dir / internal_path).exists():
+                    return send_from_directory(input_dir, internal_path)
+                else:
+                    logger.error(f"Internal file not found: {input_dir / internal_path}")
+                    return jsonify({"error": f"Internal file '{internal_path}' not found"}), 404
+            elif zarr_name == "roi_shapes.spatialdata.zarr":
+                output_dir = Path(__file__).parent / "output" / "roi_shapes.spatialdata.zarr"
+                if (output_dir / internal_path).exists():
+                    return send_from_directory(output_dir, internal_path)
+                else:
+                    logger.error(f"Internal file not found: {output_dir / internal_path}")
+                    return jsonify({"error": f"Internal file '{internal_path}' not found"}), 404
+            else:
+                return jsonify({"error": f"Zarr file '{zarr_name}' not supported"}), 404
+        else:
+            # This is a request for the main Zarr directory
+            if filename == "selected_channels.zarr":
+                input_dir = Path(__file__).parent / "input" / "selected_channels.zarr"
+                if input_dir.exists():
+                    # Return a simple JSON response indicating this is a Zarr directory
+                    return jsonify({
+                        "type": "zarr_directory",
+                        "name": filename,
+                        "path": str(input_dir)
+                    })
+                else:
+                    logger.error(f"Directory not found: {input_dir}")
+                    return jsonify({"error": f"Zarr directory '{filename}' not found"}), 404
+            elif filename == "roi_shapes.spatialdata.zarr":
+                output_dir = Path(__file__).parent / "output" / "roi_shapes.spatialdata.zarr"
+                if output_dir.exists():
+                    # Return a simple JSON response indicating this is a Zarr directory
+                    return jsonify({
+                        "type": "zarr_directory",
+                        "name": filename,
+                        "path": str(output_dir)
+                    })
+                else:
+                    logger.error(f"Directory not found: {output_dir}")
+                    return jsonify({"error": f"Zarr directory '{filename}' not found"}), 404
+            else:
+                return jsonify({"error": f"Zarr file '{filename}' not supported"}), 404
+    except Exception as e:
+        logger.error(f"Error serving SpatialData Zarr file '{filename}': {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve Zarr file '{filename}': {e}"}), 500
+
+@app.route("/api/annodata_zarr/<path:filename>", methods=["GET"])
+def serve_annodata_zarr(filename):
+    """Serve AnnData-Zarr files from Zarrannodata directory"""
+    try:
+        logger.info(f"Serving AnnData Zarr file: {filename}")
+        
+        # Handle nested paths within Zarr files
+        if "/" in filename:
+            # This is a request for internal Zarr files (e.g., "obsFeatureMatrix.anndata.zarr/.zattrs")
+            zarr_name, internal_path = filename.split("/", 1)
+            
+            zarr_dir = Path(__file__).parent / "output" / "Zarrannodata" / zarr_name
+            if (zarr_dir / internal_path).exists():
+                return send_from_directory(zarr_dir, internal_path)
+            else:
+                logger.error(f"Internal file not found: {zarr_dir / internal_path}")
+                return jsonify({"error": f"Internal file '{internal_path}' not found"}), 404
+        else:
+            # This is a request for the main Zarr directory
+            zarr_dir = Path(__file__).parent / "output" / "Zarrannodata" / filename
+            if zarr_dir.exists():
+                # Return a simple JSON response indicating this is a Zarr directory
+                return jsonify({
+                    "type": "zarr_directory",
+                    "name": filename,
+                    "path": str(zarr_dir)
+                })
+            else:
+                logger.error(f"Directory not found: {zarr_dir}")
+                return jsonify({"error": f"Zarr directory '{filename}' not found"}), 404
+    except Exception as e:
+        logger.error(f"Error serving AnnData Zarr file '{filename}': {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve Zarr file '{filename}': {e}"}), 500
+
+@app.route("/api/segmentation/<path:filename>", methods=["GET"])
+def serve_segmentation_file(filename):
+    """Serve segmentation files (ome-tiff and offsets)"""
+    try:
+        logger.info(f"Serving segmentation file: {filename}")
+        
+        segmentation_dir = Path(__file__).parent / "output"
+        file_path = segmentation_dir / filename
+        
+        if file_path.exists():
+            return send_from_directory(segmentation_dir, filename)
+        else:
+            logger.error(f"Segmentation file not found: {file_path}")
+            return jsonify({"error": f"Segmentation file '{filename}' not found"}), 404
+    except Exception as e:
+        logger.error(f"Error serving segmentation file '{filename}': {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve segmentation file '{filename}': {e}"}), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 

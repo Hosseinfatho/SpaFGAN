@@ -1,5 +1,5 @@
 {
-  "ROI_T-Cell_00": [
+  "T-cell_entry_site_00": [
     [
       [
         6880,
@@ -135,7 +135,7 @@
       ]
     ]
   ],
-  "ROI_T-Cell_01": [
+  "T-cell_entry_site_01": [
     [
       [
         9256,
@@ -271,7 +271,7 @@
       ]
     ]
   ],
-  "ROI_T-Cell_02": [
+  "T-cell_entry_site_02": [
     [
       [
         2552,
@@ -407,7 +407,7 @@
       ]
     ]
   ],
-  "ROI_T-Cell_03": [
+  "T-cell_entry_site_03": [
     [
       [
         3656,
@@ -543,7 +543,7 @@
       ]
     ]
   ],
-  "ROI_T-Cell_04": [
+  "T-cell_entry_site_04": [
     [
       [
         7728,
@@ -679,7 +679,7 @@
       ]
     ]
   ],
-  "ROI_T-Cell_05": [
+  "T-cell_entry_site_05": [
     [
       [
         10200,
@@ -815,7 +815,7 @@
       ]
     ]
   ],
-  "ROI_T-Cell_06": [
+  "T-cell_entry_site_06": [
     [
       [
         3600,
@@ -951,7 +951,7 @@
       ]
     ]
   ],
-  "ROI_T-Cell_07": [
+  "T-cell_entry_site_07": [
     [
       [
         3096,

@@ -7,6 +7,7 @@ import Plot from 'react-plotly.js';
 const MainView = () => {
   const [config, setConfig] = useState(null);
   const [error, setError] = useState(null);
+  const [prevCellSetSelection, setPrevCellSetSelection] = useState(null);
 
 
   const [heatmapResults, setHeatmapResults] = useState({});
@@ -168,6 +169,31 @@ const MainView = () => {
   const handleCircleClick = (circleId) => {
     console.log('Circle clicked:', circleId);
     setSelectedCircle(circleId);
+  };
+
+  const changeHandler = (newConfig) => {
+    console.log('Config changed:', newConfig);
+    
+    // Check for cell set selections changes
+    if (newConfig.coordinationSpace && newConfig.coordinationSpace.obsSetSelection) {
+      const currentSelection = newConfig.coordinationSpace.obsSetSelection.A;
+      if (currentSelection !== prevCellSetSelection) {
+        console.log('Cell set selection changed from', prevCellSetSelection, 'to', currentSelection);
+        setPrevCellSetSelection(currentSelection);
+      }
+    }
+    
+    // Check for spatial channel visibility changes
+    if (newConfig.coordinationSpace && newConfig.coordinationSpace.spatialChannelVisible) {
+      console.log('Spatial channel visibility:', newConfig.coordinationSpace.spatialChannelVisible);
+    }
+    
+    // Check for obsType changes
+    if (newConfig.coordinationSpace && newConfig.coordinationSpace.obsType) {
+      console.log('ObsType changes:', newConfig.coordinationSpace.obsType);
+    }
+    
+    setConfig(newConfig);
   };
 
   const handleGroupToggle = (groupId) => {
@@ -356,6 +382,7 @@ const MainView = () => {
           ref={vitessceRef}
           key={configKey}
           config={config}
+          onConfigChange={changeHandler}
           theme="light"
           height={null}
           width={null}

@@ -1,5 +1,5 @@
 {
-  "ROI_Inflammatory_B-cell_00": [
+  "B-cell_infiltration_00": [
     [
       [
         6880,
@@ -135,7 +135,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_01": [
+  "B-cell_infiltration_01": [
     [
       [
         256,
@@ -271,7 +271,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_02": [
+  "B-cell_infiltration_02": [
     [
       [
         3656,
@@ -407,7 +407,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_03": [
+  "B-cell_infiltration_03": [
     [
       [
         2752,
@@ -543,7 +543,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_04": [
+  "B-cell_infiltration_04": [
     [
       [
         3600,
@@ -679,7 +679,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_05": [
+  "B-cell_infiltration_05": [
     [
       [
         7728,
@@ -815,7 +815,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_06": [
+  "B-cell_infiltration_06": [
     [
       [
         2552,
@@ -951,7 +951,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_07": [
+  "B-cell_infiltration_07": [
     [
       [
         9256,
@@ -1087,7 +1087,7 @@
       ]
     ]
   ],
-  "ROI_Inflammatory_B-cell_08": [
+  "B-cell_infiltration_08": [
     [
       [
         2792,
