@@ -1,0 +1,29 @@
+{
+  "original_file": "output\\vitessce_files\\S-1905-017737_PAS_2of2.ome.tif",
+  "pages": 7,
+  "shape": [
+    35526,
+    121572
+  ],
+  "dtype": "uint16",
+  "compression": 5,
+  "offsets": [
+    16,
+    24706974,
+    46633902,
+    68380492,
+    95210243,
+    117040308,
+    139617454
+  ],
+  "channel_mapping": {
+    "ci": "Cortical Interstitia",
+    "ngsg": "Non-Globally Sclerotic Glomeruli",
+    "gsg": "Globally Sclerotic Glomeruli",
+    "t": "Tubules",
+    "a": "Arteries/Arterioles",
+    "ifta": "Interstitial Fibrosis and Tubular Atrophy",
+    "ptc": "Peritubular Capillaries"
+  },
+  "ome_metadata_available": true
+}

@@ -359,159 +359,68 @@ def get_channel_names():
 
 
 def generate_vitessce_config():
-    """Generate Vitessce configuration based on sampleconfig.json structure"""
+    """Generate Vitessce configuration exactly like simplere.json"""
     
-    # Create the config dictionary exactly like sampleconfig.json
+    # Create the config dictionary exactly like simplere.json
     config = {
         "version": "1.0.16",
-        "name": "Multi-obsType segmentations",
-        "description": "Segmentations of functional tissue units in the kidney with associated quantitative features",
+        "name": "SpaFGAN Interactions",
+        "description": "4teractions: B-cell infiltration, Inflammatory zone, Oxidative stress niche, T-cell entry site",
         "datasets": [
             {
-                "uid": "S-1905-017737",
-                "name": "S-1905-017737",
+                "uid": "spafgan",
+                "name": "SpaFGAN Dataset",
                 "files": [
                     {
                         "fileType": "obsSegmentations.ome-tiff",
-                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/S-1905-017737_PAS_2of2.ome.tif",
+                        "url": "http://localhost:5000/api/segmentation/obsSegmentations.ome.tiff",
                         "options": {
-                            "offsetsUrl": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/S-1905-017737_PAS_2of2.offsets.json"
+                            "offsetsUrl": "http://localhost:5000/api/segmentation/obsSegmentations.offsets.json"
                         },
-                        "coordinationValues": {
-                            "fileUid": "S-1905-017737"
-                        }
-                    },
-
-                    {
-                        "fileType": "obsFeatureMatrix.anndata.zarr",
-                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Cortical Interstitium.adata.zarr",
-                        "options": {
-                            "path": "X"
-                        },
-                        "coordinationValues": {
-                            "obsType": "Cortical Interstitia",
-                            "featureType": "feature",
-                            "featureValueType": "value"
-                        }
-                    },
-                    {
-                        "fileType": "obsFeatureMatrix.anndata.zarr",
-                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Glomeruli.adata.zarr",
-                        "options": {
-                            "path": "X"
-                        },
-                        "coordinationValues": {
-                            "obsType": "Non-Globally Sclerotic Glomeruli",
-                            "featureType": "feature",
-                            "featureValueType": "value"
-                        }
-                    },
-                    {
-                        "fileType": "obsFeatureMatrix.anndata.zarr",
-                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Globally Sclerotic Glomeruli.adata.zarr",
-                        "options": {
-                            "path": "X"
-                        },
-                        "coordinationValues": {
-                            "obsType": "Globally Sclerotic Glomeruli",
-                            "featureType": "feature",
-                            "featureValueType": "value"
-                        }
-                    },
-                    {
-                        "fileType": "obsFeatureMatrix.anndata.zarr",
-                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Tubules with Area non infinity.adata.zarr",
-                        "options": {
-                            "path": "X"
-                        },
-                        "coordinationValues": {
-                            "obsType": "Tubules",
-                            "featureType": "feature",
-                            "featureValueType": "value"
-                        }
-                    },
-                    {
-                        "fileType": "obsFeatureMatrix.anndata.zarr",
-                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/IFTA.adata.zarr",
-                        "options": {
-                            "path": "X"
-                        },
-                        "coordinationValues": {
-                            "obsType": "Interstitial Fibrosis and Tubular Atrophy",
-                            "featureType": "feature",
-                            "featureValueType": "value"
-                        }
-                    },
-                    {
-                        "fileType": "obsFeatureMatrix.anndata.zarr",
-                        "url": "https://storage.googleapis.com/vitessce-demo-data/kpmp-f2f-march-2023/S-1905-017737/Peritubular Capillaries renamed.adata.zarr",
-                        "options": {
-                            "path": "X"
-                        },
-                        "coordinationValues": {
-                            "obsType": "Peritubular Capillaries",
-                            "featureType": "feature",
-                            "featureValueType": "value"
-                        }
-                    },
-
-
-
+                        # "coordinationValues": {
+                        #     "fileUid": "spafgan"
+                        # }
+                    }
                 ]
             }
         ],
         "initStrategy": "auto",
         "coordinationSpace": {
             "fileUid": {
-                "bitmask": "S-1905-017737"
+                "bitmask": "spafgan"
             },
             "segmentationLayer": {
                 "ml": "ml"
             },
             "segmentationChannel": {
-                "ci": "ci",
-                "ngsg": "ngsg",
-                "gsg": "gsg",
-                "t": "t",
-                "a": "a",
-                "ifta": "ifta",
-                "ptc": "ptc"
+                "bci": "bci",
+                "iz": "iz",
+                "osn": "osn",
+                "tces": "tces"
             },
             "obsType": {
-                "ci": "Cortical Interstitia",
-                "ngsg": "Non-Globally Sclerotic Glomeruli",
-                "gsg": "Globally Sclerotic Glomeruli",
-                "t": "Tubules",
-                "a": "Arteries/Arterioles",
-                "ifta": "Interstitial Fibrosis and Tubular Atrophy",
-                "ptc": "Peritubular Capillaries"
+                "bci": "B-cell infiltration",
+                "iz": "Inflammatory zone",
+                "osn": "Oxidative stress niche",
+                "tces": "T-cell entry site"
             },
             "obsColorEncoding": {
-                "ci": "spatialChannelColor",
-                "ngsg": "spatialChannelColor",
-                "gsg": "spatialChannelColor",
-                "t": "spatialChannelColor",
-                "a": "spatialChannelColor",
-                "ifta": "spatialChannelColor",
-                "ptc": "spatialChannelColor"
+                "bci": "spatialChannelColor",
+                "iz": "spatialChannelColor",
+                "osn": "spatialChannelColor",
+                "tces": "spatialChannelColor"
             },
             "featureValueColormap": {
-                "ci": "plasma",
-                "ngsg": "plasma",
-                "gsg": "plasma",
-                "t": "plasma",
-                "a": "plasma",
-                "ifta": "plasma",
-                "ptc": "plasma"
+                "bci": "plasma",
+                "iz": "plasma",
+                "osn": "plasma",
+                "tces": "plasma"
             },
             "featureValueColormapRange": {
-                "ci": [0, 1],
-                "ngsg": [0, 0.4759995742718275],
-                "gsg": [0.02697802596272391, 1],
-                "t": [0, 0.3],
-                "a": [0, 1],
-                "ifta": [0, 1],
-                "ptc": [0, 0.2]
+                "bci": [0, 1],
+                "iz": [0, 1],
+                "osn": [0, 1],
+                "tces": [0, 1]
             },
             "featureType": {
                 "global": "feature"
@@ -520,109 +429,82 @@ def generate_vitessce_config():
                 "global": "value"
             },
             "featureSelection": {
-                "ci": None,
-                "ngsg": None,
-                "gsg": None,
-                "t": None,
-                "a": None,
-                "ifta": None,
-                "ptc": None
+                "bci": None,
+                "iz": None,
+                "osn": None,
+                "tces": None
             },
             "spatialTargetC": {
-                "ci": 0,
-                "ngsg": 1,
-                "gsg": 2,
-                "t": 3,
-                "a": 4,
-                "ifta": 5,
-                "ptc": 6
+                "bci": 0,
+                "iz": 1,
+                "osn": 2,
+                "tces": 3
             },
             "spatialChannelColor": {
-                "ci": [255, 255, 255],
-                "ngsg": [91, 181, 231],
-                "gsg": [16, 115, 176],
-                "t": [22, 157, 116],
-                "a": [239, 226, 82],
-                "ifta": [228, 158, 37],
-                "ptc": [211, 94, 26]
+                "bci": [0, 200, 200],      # Cyan
+                "iz": [0, 255, 0],         # Green
+                "osn": [255, 255, 0],      # Yellow
+                "tces": [0, 0, 255]        # Blue
             },
             "spatialChannelVisible": {
-                "ci": False,
-                "ngsg": False,
-                "gsg": False,
-                "t": True,
-                "a": False,
-                "ifta": False,
-                "ptc": False
+                "bci": True,
+                "iz": True,
+                "osn": True,
+                "tces": True
             },
             "spatialLayerVisible": {
                 "bitmask": True
             },
             "spatialChannelOpacity": {
-                "ci": 1,
-                "ngsg": 1,
-                "gsg": 1,
-                "t": 1,
-                "a": 1,
-                "ifta": 1,
-                "ptc": 1
+                "bci": 1,
+                "iz": 1,
+                "osn": 1,
+                "tces": 1
             },
             "spatialLayerOpacity": {
                 "bitmask": 1
             },
             "spatialSegmentationFilled": {
-                "ci": True,
-                "ngsg": True,
-                "gsg": True,
-                "t": True,
-                "a": True,
-                "ifta": True,
-                "ptc": True
+                "bci": True,
+                "iz": True,
+                "osn": True,
+                "tces": True
             },
             "spatialSegmentationStrokeWidth": {
-                "ci": 1,
-                "ngsg": 1,
-                "gsg": 1,
-                "t": 1,
-                "a": 1,
-                "ifta": 1,
-                "ptc": 1
+                "bci": 1,
+                "iz": 1,
+                "osn": 1,
+                "tces": 1
             },
             "obsHighlight": {
-                "ci": None,
-                "ngsg": None,
-                "gsg": None,
-                "t": None,
-                "a": None,
-                "ifta": None,
-                "ptc": None
+                "bci": None,
+                "iz": None,
+                "osn": None,
+                "tces": None
             },
             "spatialTargetX": {
-                "A": 19375.01239458
+                "A": 5500
             },
             "spatialTargetY": {
-                "A": 18524.67196937
+                "A": 2700
             },
             "spatialZoom": {
-                "A": -3.60703913795
+                "A": -3.0
             },
-
-
             "metaCoordinationScopes": {
             "metaA": {
-                    "obsType": ["ci", "ngsg", "gsg", "t", "a", "ifta", "ptc"],
-                "segmentationLayer": ["ml"]
+                    "obsType": ["bci", "iz", "osn", "tces"],
+                    "segmentationLayer": ["ml"]
             }
         },
             "metaCoordinationScopesBy": {
             "metaA": {
-
-                    "segmentationLayer": {
+                "segmentationLayer": {
                         "fileUid": {
                             "ml": "bitmask"
-                        },
-                        "segmentationChannel": {
-                            "ml": ["ci", "ngsg", "gsg", "t", "a", "ifta", "ptc"]
+                },
+                "segmentationChannel": {
+                            "ml": ["bci", "iz", "osn", "tces"]
                         },
                         "spatialLayerVisible": {
                             "ml": "bitmask"
@@ -633,131 +515,88 @@ def generate_vitessce_config():
                     },
                     "segmentationChannel": {
                         "obsType": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc",
-                            "dummy": "dummy"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "featureType": {
-                            "ci": "global",
-                            "ngsg": "global",
-                            "gsg": "global",
-                            "t": "global",
-                            "a": "global",
-                            "ifta": "global",
-                            "ptc": "global"
+                            "bci": "global",
+                            "iz": "global",
+                            "osn": "global",
+                            "tces": "global"
                         },
                         "featureValueType": {
-                            "ci": "global",
-                            "ngsg": "global",
-                            "gsg": "global",
-                            "t": "global",
-                            "a": "global",
-                            "ifta": "global",
-                            "ptc": "global"
+                            "bci": "global",
+                            "iz": "global",
+                            "osn": "global",
+                            "tces": "global"
                         },
                         "featureSelection": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "spatialTargetC": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "obsColorEncoding": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "featureValueColormap": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "featureValueColormapRange": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "spatialChannelVisible": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "spatialChannelOpacity": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "spatialChannelColor": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "spatialSegmentationFilled": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "spatialSegmentationStrokeWidth": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         },
                         "obsHighlight": {
-                            "ci": "ci",
-                            "ngsg": "ngsg",
-                            "gsg": "gsg",
-                            "t": "t",
-                            "a": "a",
-                            "ifta": "ifta",
-                            "ptc": "ptc"
+                            "bci": "bci",
+                            "iz": "iz",
+                            "osn": "osn",
+                            "tces": "tces"
                         }
                     }
                 }
@@ -1147,16 +986,16 @@ def serve_spatialdata_zarr(filename):
 
 @app.route("/api/annodata_zarr/<path:filename>", methods=["GET"])
 def serve_annodata_zarr(filename):
-    """Serve AnnData-Zarr files from Zarrannodata directory"""
+    """Serve AnnData-Zarr files from vitessce_files directory"""
     try:
         logger.info(f"Serving AnnData Zarr file: {filename}")
         
         # Handle nested paths within Zarr files
         if "/" in filename:
-            # This is a request for internal Zarr files (e.g., "obsFeatureMatrix.anndata.zarr/.zattrs")
+            # This is a request for internal Zarr files (e.g., "B_cell_infiltration_obsFeatureMatrix.anndata.zarr/.zattrs")
             zarr_name, internal_path = filename.split("/", 1)
             
-            zarr_dir = Path(__file__).parent / "output" / "Zarrannodata" / zarr_name
+            zarr_dir = Path(__file__).parent / "output" / "vitessce_files" / zarr_name
             if (zarr_dir / internal_path).exists():
                 return send_from_directory(zarr_dir, internal_path)
             else:
@@ -1164,7 +1003,7 @@ def serve_annodata_zarr(filename):
                 return jsonify({"error": f"Internal file '{internal_path}' not found"}), 404
         else:
             # This is a request for the main Zarr directory
-            zarr_dir = Path(__file__).parent / "output" / "Zarrannodata" / filename
+            zarr_dir = Path(__file__).parent / "output" / "vitessce_files" / filename
             if zarr_dir.exists():
                 # Return a simple JSON response indicating this is a Zarr directory
                 return jsonify({
@@ -1181,18 +1020,32 @@ def serve_annodata_zarr(filename):
 
 @app.route("/api/segmentation/<path:filename>", methods=["GET"])
 def serve_segmentation_file(filename):
-    """Serve segmentation files (ome-tiff and offsets)"""
+    """Serve segmentation files (ome-tif and offsets)"""
     try:
         logger.info(f"Serving segmentation file: {filename}")
         
-        segmentation_dir = Path(__file__).parent / "output"
+        # First try vitessce_files directory
+        segmentation_dir = Path(__file__).parent / "output" / "vitessce_files"
         file_path = segmentation_dir / filename
         
         if file_path.exists():
-            return send_from_directory(segmentation_dir, filename)
+            # Disable range requests to avoid 416 errors
+            response = send_from_directory(segmentation_dir, filename)
+            response.headers['Accept-Ranges'] = 'none'
+            return response
         else:
-            logger.error(f"Segmentation file not found: {file_path}")
-            return jsonify({"error": f"Segmentation file '{filename}' not found"}), 404
+            # If not found in vitessce_files, try output directory
+            segmentation_dir = Path(__file__).parent / "output"
+            file_path = segmentation_dir / filename
+            
+            if file_path.exists():
+                # Disable range requests to avoid 416 errors
+                response = send_from_directory(segmentation_dir, filename)
+                response.headers['Accept-Ranges'] = 'none'
+                return response
+            else:
+                logger.error(f"Segmentation file not found: {file_path}")
+                return jsonify({"error": f"Segmentation file '{filename}' not found"}), 404
     except Exception as e:
         logger.error(f"Error serving segmentation file '{filename}': {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve segmentation file '{filename}': {e}"}), 500

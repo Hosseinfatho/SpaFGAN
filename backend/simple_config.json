@@ -1,0 +1,215 @@
+{
+  "version": "1.0.16",
+  "name": "Simple SpaFGAN Viewer",
+  "description": "Simple viewer for segmentation and feature matrix",
+  "datasets": [
+    {
+      "uid": "dataset",
+      "name": "SpaFGAN Dataset",
+      "files": [
+        {
+          "fileType": "obsSegmentations.ome-tiff",
+          "url": "http://localhost:5000/api/segmentation/obsSegmentations.ome.tiff",
+          "coordinationValues": {
+            "fileUid": "dataset"
+          }
+        },
+        {
+          "fileType": "obsFeatureMatrix.anndata.zarr",
+          "url": "http://localhost:5000/api/annodata_zarr/B_cell_infiltration_obsFeatureMatrix.anndata.zarr",
+          "options": {
+            "path": "X"
+          },
+          "coordinationValues": {
+            "obsType": "cell",
+            "featureType": "gene",
+            "featureValueType": "expression"
+          }
+        }
+      ]
+    }
+  ],
+  "initStrategy": "auto",
+  "coordinationSpace": {
+    "fileUid": {
+      "dataset": "dataset"
+    },
+    "obsType": {
+      "cell": "cell"
+    },
+    "featureType": {
+      "gene": "gene"
+    },
+    "featureValueType": {
+      "expression": "expression"
+    },
+    "spatialTargetX": {
+      "dataset": 2754
+    },
+    "spatialTargetY": {
+      "dataset": 2754
+    },
+    "spatialZoom": {
+      "dataset": -3.0
+    },
+    "spatialTargetC": {
+      "dataset": 0
+    },
+    "spatialLayerVisible": {
+      "dataset": true
+    },
+    "spatialLayerOpacity": {
+      "dataset": 1.0
+    },
+    "spatialSegmentationFilled": {
+      "dataset": true
+    },
+    "spatialSegmentationStrokeWidth": {
+      "dataset": 1
+    },
+    "obsHighlight": {
+      "dataset": null
+    },
+    "featureSelection": {
+      "dataset": null
+    },
+    "featureValueColormap": {
+      "dataset": "plasma"
+    },
+    "featureValueColormapRange": {
+      "dataset": [
+        0,
+        1
+      ]
+    },
+    "obsColorEncoding": {
+      "dataset": "spatialChannelColor"
+    },
+    "spatialChannelColor": {
+      "dataset": [
+        255,
+        0,
+        0
+      ]
+    },
+    "spatialChannelVisible": {
+      "dataset": true
+    },
+    "spatialChannelOpacity": {
+      "dataset": 1.0
+    },
+    "metaCoordinationScopes": {
+      "dataset": {
+        "obsType": [
+          "cell"
+        ],
+        "featureType": [
+          "gene"
+        ],
+        "featureValueType": [
+          "expression"
+        ]
+      }
+    },
+    "metaCoordinationScopesBy": {
+      "dataset": {
+        "obsType": {
+          "cell": "cell"
+        },
+        "featureType": {
+          "gene": "gene"
+        },
+        "featureValueType": {
+          "expression": "expression"
+        },
+        "spatialTargetC": {
+          "dataset": "dataset"
+        },
+        "spatialLayerVisible": {
+          "dataset": "dataset"
+        },
+        "spatialLayerOpacity": {
+          "dataset": "dataset"
+        },
+        "spatialSegmentationFilled": {
+          "dataset": "dataset"
+        },
+        "spatialSegmentationStrokeWidth": {
+          "dataset": "dataset"
+        },
+        "obsHighlight": {
+          "dataset": "dataset"
+        },
+        "featureSelection": {
+          "dataset": "dataset"
+        },
+        "featureValueColormap": {
+          "dataset": "dataset"
+        },
+        "featureValueColormapRange": {
+          "dataset": "dataset"
+        },
+        "obsColorEncoding": {
+          "dataset": "dataset"
+        },
+        "spatialChannelColor": {
+          "dataset": "dataset"
+        },
+        "spatialChannelVisible": {
+          "dataset": "dataset"
+        },
+        "spatialChannelOpacity": {
+          "dataset": "dataset"
+        }
+      }
+    }
+  },
+  "layout": [
+    {
+      "component": "spatialBeta",
+      "coordinationScopes": {
+        "spatialTargetX": "dataset",
+        "spatialTargetY": "dataset",
+        "spatialZoom": "dataset",
+        "spatialTargetC": "dataset",
+        "spatialLayerVisible": "dataset",
+        "spatialLayerOpacity": "dataset",
+        "spatialSegmentationFilled": "dataset",
+        "spatialSegmentationStrokeWidth": "dataset",
+        "obsHighlight": "dataset",
+        "featureSelection": "dataset",
+        "featureValueColormap": "dataset",
+        "featureValueColormapRange": "dataset",
+        "obsColorEncoding": "dataset",
+        "spatialChannelColor": "dataset",
+        "spatialChannelVisible": "dataset",
+        "spatialChannelOpacity": "dataset"
+      },
+      "x": 0,
+      "y": 0,
+      "w": 8,
+      "h": 12
+    },
+    {
+      "component": "layerControllerBeta",
+      "coordinationScopes": {
+        "spatialLayerVisible": "dataset",
+        "spatialLayerOpacity": "dataset",
+        "spatialSegmentationFilled": "dataset",
+        "spatialSegmentationStrokeWidth": "dataset",
+        "obsHighlight": "dataset",
+        "featureSelection": "dataset",
+        "featureValueColormap": "dataset",
+        "featureValueColormapRange": "dataset",
+        "obsColorEncoding": "dataset",
+        "spatialChannelColor": "dataset",
+        "spatialChannelVisible": "dataset",
+        "spatialChannelOpacity": "dataset"
+      },
+      "x": 8,
+      "y": 0,
+      "w": 4,
+      "h": 12
+    }
+  ]
+}

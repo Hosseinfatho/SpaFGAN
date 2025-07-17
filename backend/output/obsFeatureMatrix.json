@@ -1,0 +1,326 @@
+{
+  "version": "0.1.0",
+  "type": "obsFeatureMatrix",
+  "data": {
+    "ROI_0": {
+      "score": 0.39121250808238983,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.28242501616477966,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_1": {
+      "score": 0.36726875603199005,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.3345375061035156,
+      "attention_score": 0.4000000059604645,
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    "ROI_2": {
+      "score": 0.35745833814144135,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.3815833330154419,
+      "attention_score": 0.3333333432674408,
+      "num_nodes": 3,
+      "num_edges": 6
+    },
+    "ROI_3": {
+      "score": 0.34858573973178864,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.2686000168323517,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_4": {
+      "score": 0.3459440618753433,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.26331666111946106,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_5": {
+      "score": 0.3453940749168396,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.2622166872024536,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_6": {
+      "score": 0.3440440595149994,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.2595166563987732,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_7": {
+      "score": 0.33593573421239853,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.24330000579357147,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_8": {
+      "score": 0.3346500024199486,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.16930000483989716,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_9": {
+      "score": 0.3332524001598358,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.23793333768844604,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_10": {
+      "score": 0.37175239622592926,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.31493332982063293,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_11": {
+      "score": 0.33797499537467957,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.27595001459121704,
+      "attention_score": 0.3999999761581421,
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    "ROI_12": {
+      "score": 0.32979999482631683,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.15959998965263367,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_13": {
+      "score": 0.32229405641555786,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.21601665019989014,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_14": {
+      "score": 0.3068416714668274,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.280349999666214,
+      "attention_score": 0.3333333432674408,
+      "num_nodes": 4,
+      "num_edges": 8
+    },
+    "ROI_15": {
+      "score": 0.3024875074625015,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.20497500896453857,
+      "attention_score": 0.4000000059604645,
+      "num_nodes": 4,
+      "num_edges": 6
+    },
+    "ROI_16": {
+      "score": 0.29401666671037674,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.21303333342075348,
+      "attention_score": 0.375,
+      "num_nodes": 6,
+      "num_edges": 10
+    },
+    "ROI_17": {
+      "score": 0.2900416702032089,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.24674999713897705,
+      "attention_score": 0.3333333432674408,
+      "num_nodes": 4,
+      "num_edges": 8
+    },
+    "ROI_18": {
+      "score": 0.2900416702032089,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.24674999713897705,
+      "attention_score": 0.3333333432674408,
+      "num_nodes": 4,
+      "num_edges": 8
+    },
+    "ROI_19": {
+      "score": 0.28171780705451965,
+      "interaction": "Inflammatory zone",
+      "intensity_score": 0.2907083332538605,
+      "attention_score": 0.27272728085517883,
+      "num_nodes": 6,
+      "num_edges": 16
+    },
+    "ROI_20": {
+      "score": 0.6980250030755997,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.39605000615119934,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "ROI_21": {
+      "score": 0.6826249957084656,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.36524999141693115,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "ROI_22": {
+      "score": 0.6772249937057495,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.354449987411499,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "ROI_23": {
+      "score": 0.46681249141693115,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.4336249828338623,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_24": {
+      "score": 0.46092499792575836,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.4218499958515167,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_25": {
+      "score": 0.3828773945569992,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.3371833264827728,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_26": {
+      "score": 0.36650240421295166,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.30443334579467773,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_27": {
+      "score": 0.3655875027179718,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.2311750054359436,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_28": {
+      "score": 0.3546999990940094,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.2093999981880188,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_29": {
+      "score": 0.3524499982595444,
+      "interaction": "Oxidative stress niche",
+      "intensity_score": 0.20489999651908875,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_30": {
+      "score": 0.37601250410079956,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.2520250082015991,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_31": {
+      "score": 0.33044999837875366,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.16089999675750732,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_32": {
+      "score": 0.32881907373666763,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.22906668484210968,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_33": {
+      "score": 0.32653573155403137,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.22450000047683716,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_34": {
+      "score": 0.32477501034736633,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.31621667742729187,
+      "attention_score": 0.3333333432674408,
+      "num_nodes": 3,
+      "num_edges": 6
+    },
+    "ROI_35": {
+      "score": 0.32366905361413956,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.21876664459705353,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_36": {
+      "score": 0.322562500834465,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.14512500166893005,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_37": {
+      "score": 0.32017499953508377,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.14034999907016754,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
+    },
+    "ROI_38": {
+      "score": 0.3153357282280922,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.2020999938249588,
+      "attention_score": 0.4285714626312256,
+      "num_nodes": 3,
+      "num_edges": 4
+    },
+    "ROI_39": {
+      "score": 0.3123476952314377,
+      "interaction": "T-cell entry site",
+      "intensity_score": 0.24007999897003174,
+      "attention_score": 0.38461539149284363,
+      "num_nodes": 5,
+      "num_edges": 8
+    }
+  }
+}

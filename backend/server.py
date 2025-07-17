@@ -205,7 +205,7 @@ def generate_vitessce_config():
             'files': [
                 {
                     'fileType': 'image.ome-zarr',
-                    'url': 'https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0',
+                    'url': 'https://lsp-public-data.s3.amazonaws.com/biomedvis-challenge-2025/Dataset1-LSP13626-melanoma-in-situ/0',
                 },
                 {
                     'fileType': 'obsSegmentations.json',

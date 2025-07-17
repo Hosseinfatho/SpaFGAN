@@ -61,5 +61,5 @@ backend/input/
 
 # Project specific
 Input/
-Output/
+# Output/
 SPA/
