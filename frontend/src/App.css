@@ -75,6 +75,26 @@ body, html, #root, .app {
   position: relative;
   overflow: hidden;
   background-color: #242424;
+  display: flex;
+}
+
+.view-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.controls-panel {
+  width: 300px;
+  background: #f8f9fa;
+  border-left: 1px solid #dee2e6;
+  overflow-y: auto;
+  padding: 20px;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Base styles for each view area */

@@ -18,22 +18,6 @@
       "num_edges": 4
     },
     {
-      "roi_id": 443,
-      "interaction": "Inflammatory zone",
-      "position": {
-        "x": 7.0,
-        "y": 494.0,
-        "z": 146.0
-      },
-      "scores": {
-        "combined_score": 0.33797499537467957,
-        "intensity_score": 0.27595001459121704,
-        "attention_score": 0.3999999761581421
-      },
-      "num_nodes": 4,
-      "num_edges": 6
-    },
-    {
       "roi_id": 22,
       "interaction": "Inflammatory zone",
       "position": {
@@ -82,60 +66,12 @@
       "num_edges": 8
     },
     {
-      "roi_id": 67,
-      "interaction": "Inflammatory zone",
-      "position": {
-        "x": 1081.0,
-        "y": 272.0,
-        "z": 130.0
-      },
-      "scores": {
-        "combined_score": 0.3024875074625015,
-        "intensity_score": 0.20497500896453857,
-        "attention_score": 0.4000000059604645
-      },
-      "num_nodes": 4,
-      "num_edges": 6
-    },
-    {
-      "roi_id": 449,
-      "interaction": "Inflammatory zone",
-      "position": {
-        "x": 616.0,
-        "y": 82.0,
-        "z": 153.0
-      },
-      "scores": {
-        "combined_score": 0.29401666671037674,
-        "intensity_score": 0.21303333342075348,
-        "attention_score": 0.375
-      },
-      "num_nodes": 6,
-      "num_edges": 10
-    },
-    {
       "roi_id": 296,
       "interaction": "Inflammatory zone",
       "position": {
         "x": 1320.0,
         "y": 229.0,
         "z": 56.0
-      },
-      "scores": {
-        "combined_score": 0.2900416702032089,
-        "intensity_score": 0.24674999713897705,
-        "attention_score": 0.3333333432674408
-      },
-      "num_nodes": 4,
-      "num_edges": 8
-    },
-    {
-      "roi_id": 341,
-      "interaction": "Inflammatory zone",
-      "position": {
-        "x": 1351.0,
-        "y": 216.0,
-        "z": 75.0
       },
       "scores": {
         "combined_score": 0.2900416702032089,

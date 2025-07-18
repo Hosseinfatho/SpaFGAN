@@ -18,38 +18,6 @@
       "num_edges": 0
     },
     {
-      "roi_id": 163,
-      "interaction": "Oxidative stress niche",
-      "position": {
-        "x": 689.0,
-        "y": 629.0,
-        "z": 118.0
-      },
-      "scores": {
-        "combined_score": 0.6826249957084656,
-        "intensity_score": 0.36524999141693115,
-        "attention_score": 1.0
-      },
-      "num_nodes": 1,
-      "num_edges": 0
-    },
-    {
-      "roi_id": 108,
-      "interaction": "Oxidative stress niche",
-      "position": {
-        "x": 79.0,
-        "y": 410.0,
-        "z": 116.0
-      },
-      "scores": {
-        "combined_score": 0.6772249937057495,
-        "intensity_score": 0.354449987411499,
-        "attention_score": 1.0
-      },
-      "num_nodes": 1,
-      "num_edges": 0
-    },
-    {
       "roi_id": 170,
       "interaction": "Oxidative stress niche",
       "position": {
@@ -80,22 +48,6 @@
       },
       "num_nodes": 2,
       "num_edges": 2
-    },
-    {
-      "roi_id": 137,
-      "interaction": "Oxidative stress niche",
-      "position": {
-        "x": 879.0,
-        "y": 102.0,
-        "z": 58.0
-      },
-      "scores": {
-        "combined_score": 0.3828773945569992,
-        "intensity_score": 0.3371833264827728,
-        "attention_score": 0.4285714626312256
-      },
-      "num_nodes": 3,
-      "num_edges": 4
     },
     {
       "roi_id": 166,
@@ -144,26 +96,10 @@
       },
       "num_nodes": 2,
       "num_edges": 2
-    },
-    {
-      "roi_id": 78,
-      "interaction": "Oxidative stress niche",
-      "position": {
-        "x": 316.0,
-        "y": 583.0,
-        "z": 141.0
-      },
-      "scores": {
-        "combined_score": 0.3524499982595444,
-        "intensity_score": 0.20489999651908875,
-        "attention_score": 0.5
-      },
-      "num_nodes": 2,
-      "num_edges": 2
     }
   ],
   "total_rois": 181,
-  "top_count": 10,
+  "top_count": 6,
   "statistics": {
     "total_rois": 181,
     "score_ranges": {

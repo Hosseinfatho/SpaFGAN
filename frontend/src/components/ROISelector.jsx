@@ -3,12 +3,27 @@ import Heatmaps from './Heatmaps';
 import InteractionHeatmaps from './InteractionHeatmaps';
 import './ROISelector.css';
 
-function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
+
+
+function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGroupSelection }) {
   const [rois, setRois] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [interactionGroups, setInteractionGroups] = useState([]);
   const [showCircles, setShowCircles] = useState(false);
+
+  // Notify parent component when selectedGroups changes
+  useEffect(() => {
+    console.log('ROISelector: selectedGroups changed to:', selectedGroups);
+    console.log('ROISelector: showCircles:', showCircles);
+    
+    // Notify parent component about group selection
+    if (onGroupSelection) {
+      onGroupSelection(selectedGroups);
+    }
+    
+    // Config is now generated directly in frontend - no need to send to backend
+  }, [selectedGroups, showCircles, onGroupSelection]);
 
   const computeCentroid = (allCoords) => {
     const flatCoords = allCoords.flat();
@@ -144,9 +159,15 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   };
 
   const toggleGroup = (group) => {
-    const newSelectedGroups = selectedGroups.includes(group) 
-      ? selectedGroups.filter(g => g !== group) 
-      : [...selectedGroups, group];
+    let newSelectedGroups;
+    
+    if (selectedGroups.includes(group)) {
+      // If the group is already selected, unselect it
+      newSelectedGroups = selectedGroups.filter(g => g !== group);
+    } else {
+      // If selecting a new group, unselect all others and select only this one
+      newSelectedGroups = [group];
+    }
     
     setSelectedGroups(newSelectedGroups);
     setCurrentIndex(0);
@@ -173,34 +194,20 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
     return (
       <div style={{ padding: "10px", border: "1px solid #ccc", marginBottom: "10px" }}>
         <h4>ROI Navigator</h4>
-        <p>No ROIs found for selected groups: {selectedGroups.join(", ")}</p>
+        <p>Please select an interaction type to view ROIs:</p>
         <p>Available interaction types:</p>
         {interactionGroups.map(group => (
           <label key={group} style={{ display: "block", marginLeft: "10px", marginBottom: "5px" }}>
             <input
-              type="checkbox"
+              type="radio"
+              name="interactionType"
               checked={selectedGroups.includes(group)}
               onChange={() => toggleGroup(group)}
             />
             {group}
           </label>
         ))}
-        <div style={{ textAlign: "center", marginTop: "15px" }}>
-          <button 
-            onClick={() => setSelectedGroups(interactionGroups.slice(0, 1))}
-            style={{ 
-              padding: "8px 16px", 
-              fontSize: "14px", 
-              backgroundColor: "#007bff", 
-              color: "white", 
-              border: "none", 
-              borderRadius: "5px", 
-              cursor: "pointer"
-            }}
-          >
-            Select First Interaction Type
-          </button>
-        </div>
+
       </div>
     );
   }
@@ -208,11 +215,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
   return (
     <div style={{ padding: "10px", border: "1px solid #ccc", marginBottom: "10px" }}>
       <h4>ROI Navigator</h4>
-      <p>Select Interaction Types:</p>
+      <p>Select Interaction Type (only one at a time):</p>
       {interactionGroups.map(group => (
         <label key={group} style={{ display: "block", marginLeft: "10px", marginBottom: "5px" }}>
           <input
-            type="checkbox"
+            type="radio"
+            name="interactionType"
             checked={selectedGroups.includes(group)}
             onChange={() => toggleGroup(group)}
           />
@@ -229,7 +237,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
           borderRadius: "4px",
           color: "#856404"
         }}>
-          <strong>Note:</strong> Please select at least one interaction type above to view ROIs.
+          <strong>Note:</strong> Please select one interaction type above to view ROIs.
         </div>
       )}
 
@@ -324,7 +332,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults }) {
           color: "#666",
           fontStyle: "italic"
         }}>
-          Select interaction types above to view ROIs
+          Select one interaction type above to view ROIs
         </div>
       )}
     </div>

@@ -148,34 +148,34 @@ def generate_vitessce_config():
         'spatialTargetX': {"init_bv_image_0": 5454},
         'spatialTargetY': {"init_bv_image_0": 2754},
         'spatialTargetZ': {"init_bv_image_0": 0},
-        'spatialZoom': {"init_bv_image_0": -3.0},
+        'spatialZoom': {"init_bv_image_0": -3.5},
         'spatialSegmentationLayer': {
             "A": {
-                "radius": 500,
+                "radius": 200,
                 "stroked": True,
                 "visible": True,
-                "opacity": 0.8,
+                "opacity": 0.2,
                 "color": [255, 100, 100]  # Red for B-cell infiltration
             },
             "B": {
-                "radius": 500,
+                "radius": 200,
                 "stroked": True,
                 "visible": True,
-                "opacity": 0.8,
+                "opacity": 0.2,
                 "color": [0, 255, 0]  # Green for Inflammatory zone
             },
             "C": {
-                "radius": 500,
+                "radius": 200,
                 "stroked": True,
                 "visible": True,
-                "opacity": 0.8,
+                "opacity": 0.2,
                 "color": [0, 0, 255]  # Blue for T-cell entry site
             },
             "D": {
-                "radius": 500,
+                "radius": 200,
                 "stroked": True,
                 "visible": True,
-                "opacity": 0.8,
+                "opacity": 0.2,
                 "color": [255, 255, 0]  # Yellow for Oxidative stress niche
             }
         }
@@ -280,6 +280,26 @@ def get_config():
     except Exception as e:
         logger.error(f"Error generating config: {e}", exc_info=True)
         return jsonify({"error": f"Failed to generate config: {e}"}), 500
+
+@app.route('/api/config', methods=['POST'])
+def update_config():
+    """Update the Vitessce config based on selected interaction types"""
+    logger.info("Request received for /api/config [POST]")
+    
+    try:
+        data = request.get_json()
+        selected_groups = data.get('selectedGroups', [])
+        show_circles = data.get('showCircles', False)
+        
+        logger.info(f"Updating config with selected groups: {selected_groups}, show circles: {show_circles}")
+        
+        # Generate dynamic config based on selected groups
+        config = generate_dynamic_vitessce_config(selected_groups, show_circles)
+        return jsonify(config)
+        
+    except Exception as e:
+        logger.error(f"Error updating config: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to update config: {e}"}), 500
 
 @app.route('/api/roi_segmentation_B-cell_infiltration.json', methods=['GET'])
 def get_roi_segmentation_b_cell():
