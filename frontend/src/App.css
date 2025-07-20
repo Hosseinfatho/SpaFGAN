@@ -1,383 +1,385 @@
-body, html, #root, .app {
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: #181818;
-}
-
-.view-area {
-  width: 100vw;
-  height: 100vh;
-  position: relative;
-  overflow: hidden;
-}
-
-.fullscreen-vitessce {
-  position: relative !important;
-  width: 100% !important;
-  height: 100vh !important;
-  overflow: hidden !important;
-  z-index: 1 !important;
-}
-
-.fullscreen-vitessce .vitessce-container {
-  position: relative !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.top-panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  z-index: 10;
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-  padding: 20px;
-  pointer-events: none;
-}
-
-.top-panel > * {
-  pointer-events: auto;
-}
-
-.overlay-panel {
-  position: fixed;
-  top: 80px;
-  right: 40px;
-  min-width: 300px;
-  max-width: 400px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 8px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
-  z-index: 10;
-  padding: 20px;
-  color: #fff;
-  font-family: sans-serif;
-  font-size: 1rem;
-}
-
-::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
-}
-
-/* Make the main App container a flex container */
-.app {
-  height: 100vh;
-  width: 100vw;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  overflow: hidden;
-  background-color: #242424;
-  display: flex;
-}
-
-.view-area {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.controls-panel {
-  width: 300px;
-  background: #f8f9fa;
-  border-left: 1px solid #dee2e6;
-  overflow-y: auto;
-  padding: 20px;
-  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Base styles for each view area */
-.view-area {
-  position: relative;
-  overflow: hidden;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Positioning the grid areas */
-
-
-/* Ensure Vitessce container fills the flex parent */
-.view-area > div:first-child { 
-  flex: 1;
-  min-height: 0; 
-  position: relative; 
-  display: flex;
-  flex-direction: column;
-}
-
-/* Ensure the react-grid-layout fills its container */
-.view-area .react-grid-layout {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Grid items */
-.react-grid-item {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-/* Vitessce container */
-.vitessce-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Style for the FIRST grid item (Spatial View - Fullscreen WITHIN Area) */
-.view-area .react-grid-layout > .react-grid-item:nth-child(1) {
-  position: absolute !important;
-  left: 100 !important;
-  top: 100 !important;
-  width: 100% !important;
-  height: 100% !important;
-  transform: none !important;
-  z-index: 1 !important;         /* Ensure it's below the panel */
-  /* background-color: #f0f0f0; */ /* Optional background removed */
-}
-
-/* Style for the SECOND grid item (Spatial Panel - Overlay WITHIN Area) */
-/* Using the final styles from before the grid change */
-.view-area .react-grid-layout > .react-grid-item:nth-child(2) {
-  position: absolute !important;
-  right: 10px !important;        /* Final position from right */
-  top: 100px !important;          /* Final position from top */
-  width: 640px !important;       /* Final width */
-  height: auto !important;       /* Final height */
-  /* Use the max-height from user's edit */
-
-  max-height: calc(75% ) !important;
-  /* Add scaling */
-  transform: scale(0.75) !important;
-  transform-origin: top right !important; /* Scale from top right corner */
-
-
-  /* Use the background from user's edit */
-  background-color: rgba(255, 255, 255, 0.3) !important;
-  z-index: 1 !important;
-  overflow-y: auto !important;
-  padding: 15px !important;
-  border-radius: 6px !important; /* Final rounded corners */
-   /* Use the shadow from user's edit */
-  box-shadow: 0 1px 1px rgba(249, 247, 247, 0.05) !important;
-  box-sizing: border-box !important;
-   /* Use the text color from user's edit */
-
-  color: #f0f0f0; /* Light text color */
-  font-family: sans-serif;
-  font-size: 0.9em;
-}
-
-/* Styling for Panel Inner Elements (transparent background) WITHIN each Area */
-.view-area .react-grid-layout > .react-grid-item:nth-child(2) .vit-makeStyles-title,
-.view-area .react-grid-layout > .react-grid-item:nth-child(2) .vit-makeStyles-card,
-.view-area .react-grid-layout > .react-grid-item:nth-child(2) .vit-MuiPaper-root {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  color: #f0f0f0; /* Light text color */
-  font-family: sans-serif;
-  font-size: 0.8em;
-}
-
-/* Light Theme Styles */
-@media (prefers-color-scheme: light) {
-  .app {
-    background-color: #ffffff;
-  }
-  
-  button {
-    background-color: #f9f9f9;
-    color: #213547;
-  }
-}
-
-/* Additional container for new divs */
-.content-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  position: relative;
-}
-
-/* Generic div styles */
-.generic-div {
-  position: relative;
-  width: 100%;
-  height: auto;
+/* Reset and Base Styles */
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #000;
+  color: #fff;
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/* Main App Container */
+.App {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  background-color: #000;
+}
+
+/* Left Panel - Main Content */
+.left-panel {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  background-color: #000;
+}
+
+/* Fullscreen Vitessce Container */
+.fullscreen-vitessce {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  background-color: #000;
+}
+
+/* Vitessce Component Styling */
+.vitessce-container {
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+}
+
 /* ROI Selector Container */
 .roi-selector-container {
-  position: absolute !important;
-  left: 10px !important;
-  top: 100px !important;
-  z-index: 1000 !important;
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-radius: 10px !important;
-  padding: 10px !important;
-  margin: 0 !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-  width: 350px !important;
-  height: auto !important;
-  min-width: 300px !important;
-  max-width: 400px !important;
-  display: block !important;
-  line-height: normal !important;
-  max-height: 80vh !important;
-  overflow-y: auto !important;
-}
-
-.roi-selector {
-  position: relative;
-  width: 100%;
-  height: auto;
-  z-index: 1;
-  pointer-events: auto;
-  margin: 0;
-  padding: 0;
-  line-height: normal;
-}
-
-.roi-box {
-  position: absolute;
-  border: 2px solid #00ff00;
-  background-color: rgba(0, 255, 0, 0.1);
-  pointer-events: auto;
-  cursor: move;
-  width: 800px;
-  height: 800px;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-  margin: 0;
-  padding: 0;
-  line-height: 0;
-}
-
-.roi-info {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  pointer-events: none;
-  margin: 0;
-  line-height: 1.2;
-}
-
-/* Panel Container */
-.panel-container {
-  position: absolute !important;
-  left: 10px !important;
-  top: 10px !important;
-  z-index: 10 !important;
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-radius: 10px !important;
-  padding: 10px !important;
-  margin: 0 !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-  width: auto !important;
-  height: auto !important;
-  min-width: 200px !important;
-  max-width: 400px !important;
-  display: block !important;
-  line-height: normal !important;
-  max-height: 80vh !important;
-  overflow-y: auto !important;
-}
-
-/* Fix channel names positioning */
-.view-area .react-grid-layout > .react-grid-item:nth-child(2) .vit-MuiPaper-root {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  color: #f0f0f0; /* Light text color */
-  font-family: sans-serif;
-  font-size: 1.9em;
-  position: relative !important;
-  left: 100 !important;
-  top: 100 !important;
-  transform: none !important;
-}
-
-/* Regular Heatmaps positioning fix */
-.heatmaps-container {
-  position: fixed !important;
-  bottom: 10px !important;
-  left: 10px !important;
-  right: auto !important;
-  width: fit-content !important;
-  max-width: calc(100vw - 20px) !important;
-  background-color: rgba(244, 239, 239, 0.9) !important;
-  padding: 10px !important;
-  box-shadow: 0 2px 4px rgba(241, 228, 228, 0.3) !important;
-  z-index: 5 !important;
-  max-height: 50vh !important;
-  overflow-y: auto !important;
-  border-radius: 10px !important;
-}
-
-.top-panel {
-  z-index: 10;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
+  bottom: 5px;
+  left: 4px;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  padding: 1px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  width: 220px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 13px;
+  color: #000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: scale(1.21);
+  transform-origin: bottom left;
 }
 
-.left-panel {
-  position: absolute;
-  top: 30px;
-  left: -30px;
-  z-index: 15;
-  background: transparent;
-  padding: 0;
+/* Heatmap Results Container */
+.heatmap-results-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 400px !important;
+  z-index: 11 !important;
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 15px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: scale(0.75) !important;
+  transform-origin: bottom left !important;
+}
+
+/* Interaction Heatmap Container */
+.interaction-heatmap-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: -350px !important;
+  z-index: 12 !important;
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 15px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  max-width: 450px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  transform-origin: bottom right !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+}
+
+/* Heatmap Grid */
+.heatmap-grid {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.heatmap-item {
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Checkbox Styles */
+.checkbox-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #000;
+  font-size: 10px;
+}
+
+.checkbox-item input[type="checkbox"] {
   margin: 0;
-  box-shadow: none;
-  width: auto;
-  height: auto;
-  min-width: unset;
-  max-width: unset;
-  color: #d8d5d5;
-  font-family: sans-serif;
-  font-size: 1rem;
+  cursor: pointer;
 }
 
-/* Make the Vitessce Layer Controller panel 1.5x bigger */
-.MuiDrawer-paper, .MuiPaper-root, .MuiList-root, .MuiListItem-root, .MuiFormControlLabel-root {
-    font-size: 150% !important;
-    min-width: 300px !important;
-    max-width: 400px !important;
-}
-.MuiCheckbox-root, .MuiSvgIcon-root {
-    font-size: 2.2rem !important;
-}
-.MuiFormControlLabel-label {
-    font-size: 150% !important;
+.checkbox-item span {
+  cursor: pointer;
 }
 
+/* Button Styles */
+.btn {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #000;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 9px;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Title Styles */
+.heatmap-title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.interaction-title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* Loading States */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #fff;
+  font-size: 16px;
+}
+
+.loading-text {
+  text-align: center;
+  color: #666;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+/* Error States */
+.error {
+  color: #ff6b6b;
+  padding: 20px;
+  text-align: center;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  margin: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .roi-selector-container {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+  
+  .heatmap-results-container {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+  
+  .interaction-heatmap-container {
+    bottom: 10px;
+    right: 10px;
+    width: auto;
+  }
+  
+  .heatmap-grid {
+    flex-direction: column;
+  }
+  
+  .heatmap-item {
+    width: 100%;
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Vitessce Custom Variables */
+:root {
+  --vitessce-layer-control-bg: rgba(0, 0, 0, 0.8);
+  --vitessce-layer-control-border: 1px solid rgba(255, 255, 255, 0.2);
+  --vitessce-layer-control-color: #fff;
+  --vitessce-spatial-beta-bg: #000;
+}
+
+/* Spatial Layer Control Scaling */
+.vitessce-spatial-layer-control {
+  transform: scale(0.8) !important;
+  transform-origin: top left !important;
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block !important;
+}
+
+.flex {
+  display: flex !important;
+}
+
+.flex-column {
+  flex-direction: column !important;
+}
+
+.flex-center {
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.text-white {
+  color: #fff !important;
+}
+
+.text-gray {
+  color: #666 !important;
+}
+
+.bg-black {
+  background-color: #000 !important;
+}
+
+.bg-transparent {
+  background-color: transparent !important;
+}
+
+.border-radius {
+  border-radius: 8px !important;
+}
+
+.backdrop-blur {
+  backdrop-filter: blur(10px) !important;
+} 

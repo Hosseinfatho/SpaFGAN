@@ -9,7 +9,7 @@ function Heatmaps({ currentROI, onHeatmapResults }) {
     setIsAnalyzingHeatmaps(true);
     try {
       const factor = 8;
-      const roiSize = 800;
+      const roiSize = 400;
 
       const x = Number(currentROI.x) || 0;
       const y = Number(currentROI.y) || 0;
@@ -74,14 +74,14 @@ function Heatmaps({ currentROI, onHeatmapResults }) {
           backgroundColor: '#ffc107',
           color: 'black',
           border: 'none',
-          borderRadius: '5px',
-          padding: '12px 24px',
-          fontSize: '16px',
-          marginRight: '10px',
+          borderRadius: '4px',
+          padding: '6px 12px',
+          fontSize: '12px',
+          marginRight: '4px',
           cursor: isAnalyzingHeatmaps ? 'not-allowed' : 'pointer'
         }}
       >
-        {isAnalyzingHeatmaps ? 'Analyzing...' : 'Analyze Heatmaps'}
+        {isAnalyzingHeatmaps ? 'Analyzing...' : 'Heatmaps'}
       </button>
     </div>
   );

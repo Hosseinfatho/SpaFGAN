@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Vitessce, CoordinationType } from 'vitessce';
 import ROISelector from './ROISelector';
-import InteractiveCircles from './InteractiveCircles';
 import Plot from 'react-plotly.js';
+import HeatmapResults from './HeatmapResults';
 
 // Constants for Image Channels
 const IMAGE_CHANNELS = {
@@ -19,25 +19,25 @@ const INTERACTION_TO_ROI = {
     'file': 'roi_segmentation_B-cell_infiltration.json',
     'obsType': 'ROI_B-cell',
     'color': [255, 180, 180],  // Light Red
-    'strokeWidth': 6
+    'strokeWidth': 16
   },
   'Inflammatory zone': {
     'file': 'roi_segmentation_Inflammatory_zone.json',
     'obsType': 'ROI_Inflammatory',
     'color': [180, 255, 180],  // Light Green
-    'strokeWidth': 6
+    'strokeWidth': 16
   },
   'T-cell entry site': {
     'file': 'roi_segmentation_T-cell_entry_site.json',
     'obsType': 'ROI_T-cell',
     'color': [180, 180, 255],  // Light Blue
-    'strokeWidth': 6
+    'strokeWidth': 16
   },
   'Oxidative stress niche': {
     'file': 'roi_segmentation_Oxidative_stress_niche.json',
     'obsType': 'ROI_Oxidative',
     'color': [255, 255, 180],  // Light Yellow
-    'strokeWidth': 6
+    'strokeWidth':16
   }
 };
 
@@ -46,20 +46,21 @@ const generateVitessceConfig = (selectedGroups = []) => {
   // Build coordination space
   const coordination_space = {
     'dataset': { "A": "bv" },
+
     'imageLayer': { "image": "image" },
     'imageChannel': {},
     'spatialChannelColor': {"A": [255, 100, 100]},
-    'spatialChannelOpacity': {"image": 0.2 },
+    'spatialChannelOpacity': {"image": 1 },
     'spatialChannelVisible': {},
     'spatialChannelWindow': {},
     'spatialTargetC': {},
-    'spatialLayerOpacity': { "image": 0.2 },
+    'spatialLayerOpacity': { "image":1.0 },
     'spatialLayerVisible': { "image": true },
     'spatialRenderingMode': { "image": "3D" },
     'spatialTargetX': { "A": 5454 },
-    'spatialTargetY': { "A": 2754 },
+    'spatialTargetY': { "A": 1600 },
     'spatialTargetZ': { "A": 0 },
-    'spatialZoom': { "A": -3.5 },
+    'spatialZoom': { "A": -3.0 },
     'spatialTargetResolution': { "image": 3 },
     'spatialTargetT': { "image": 0 },
     'photometricInterpretation': { "image": "BlackIsZero" },
@@ -72,6 +73,8 @@ const generateVitessceConfig = (selectedGroups = []) => {
         "spatialChannelVisible": ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
         "spatialChannelOpacity": ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
         "spatialChannelColor": [],
+        "spatialLayerOpacity": ["image"],
+        "spatialLayerVisible": ["image"],
         "spatialSegmentationFilled": [],
         "spatialSegmentationStrokeWidth": [],
         [CoordinationType.TOOLTIPS_VISIBLE]: []
@@ -90,6 +93,7 @@ const generateVitessceConfig = (selectedGroups = []) => {
         },
         "imageChannel": {
           "spatialTargetC": {},
+
           "spatialChannelColor": {},
           "spatialChannelVisible": {},
           "spatialChannelOpacity": {},
@@ -103,7 +107,7 @@ const generateVitessceConfig = (selectedGroups = []) => {
   Object.entries(IMAGE_CHANNELS).forEach(([chName, chProps]) => {
     coordination_space['imageChannel'][chName] = "__dummy__";
     coordination_space['spatialChannelColor'][chName] = chProps['color'];
-    coordination_space['spatialChannelOpacity'][chName] = 0.5;
+    coordination_space['spatialChannelOpacity'][chName] = 1.0;
     coordination_space['spatialChannelVisible'][chName] = true;
     coordination_space['spatialChannelWindow'][chName] = chProps['window'];
     coordination_space['spatialTargetC'][chName] = chProps['targetC'];
@@ -127,25 +131,29 @@ const generateVitessceConfig = (selectedGroups = []) => {
     }
   ];
 
-  // Add ROI segmentation files for selected groups
+  // Add ROI segmentation files for selected groups (simplified)
   selectedGroups.forEach(group => {
     if (INTERACTION_TO_ROI[group]) {
       const roi_info = INTERACTION_TO_ROI[group];
       const obs_type = roi_info['obsType'];
       
-      // Add coordination settings
-      coordination_space['spatialSegmentationFilled'][obs_type] = false; // ROIs are hollow
-      coordination_space['spatialSegmentationStrokeWidth'][obs_type] = roi_info['strokeWidth'];
-      coordination_space[CoordinationType.TOOLTIPS_VISIBLE][obs_type] = true; // Enable tooltips for ROIs
+              // Simple coordination settings
+        coordination_space['spatialSegmentationFilled'][obs_type] = false; // ROIs are hollow
+        coordination_space['spatialSegmentationStrokeWidth'][obs_type] = roi_info['strokeWidth'];
+        coordination_space['spatialLayerOpacity'][obs_type] = 0.5; // Set opacity to 0.5 for ROIs
+        coordination_space['spatialLayerVisible'][obs_type] = true; // Make ROIs visible in layer controller
+        coordination_space[CoordinationType.TOOLTIPS_VISIBLE][obs_type] = true; // Enable tooltips for ROIs
+        
+        // Add ROI color to spatialChannelColor
+        coordination_space['spatialChannelColor'][obs_type] = roi_info['color'];
       
-      // Add ROI color to spatialChannelColor (required by Vitessce)
-      coordination_space['spatialChannelColor'][obs_type] = roi_info['color'];
-      
-      // Add to meta coordination scopes
-      coordination_space['metaCoordinationScopes']['metaA']['spatialSegmentationFilled'].push(obs_type);
-      coordination_space['metaCoordinationScopes']['metaA']['spatialSegmentationStrokeWidth'].push(obs_type);
-      coordination_space['metaCoordinationScopes']['metaA'][CoordinationType.TOOLTIPS_VISIBLE].push(obs_type);
-      coordination_space['metaCoordinationScopes']['metaA']['spatialChannelColor'].push(obs_type);
+              // Add to meta coordination scopes (simplified)
+        coordination_space['metaCoordinationScopes']['metaA']['spatialSegmentationFilled'].push(obs_type);
+        coordination_space['metaCoordinationScopes']['metaA']['spatialSegmentationStrokeWidth'].push(obs_type);
+        coordination_space['metaCoordinationScopes']['metaA']['spatialLayerOpacity'].push(obs_type);
+        coordination_space['metaCoordinationScopes']['metaA']['spatialLayerVisible'].push(obs_type);
+        coordination_space['metaCoordinationScopes']['metaA'][CoordinationType.TOOLTIPS_VISIBLE].push(obs_type);
+        coordination_space['metaCoordinationScopes']['metaA']['spatialChannelColor'].push(obs_type);
       
       files.push({
         'fileType': 'obsSegmentations.json',
@@ -182,13 +190,15 @@ const generateVitessceConfig = (selectedGroups = []) => {
           'spatialTargetT': "image",
           'spatialRenderingMode': "image",
           'spatialChannelVisible': ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
-          'spatialChannelOpacity': ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
-          'spatialChannelColor': Object.keys(coordination_space['spatialChannelColor']),
+          'spatialChannelOpacity': Object.keys(coordination_space['spatialChannelOpacity']),
+          'spatialChannelColor': ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
+          'spatialLayerOpacity': Object.keys(coordination_space['spatialLayerOpacity']),
+          'spatialLayerVisible': Object.keys(coordination_space['spatialLayerVisible']),
           'spatialSegmentationFilled': Object.keys(coordination_space['spatialSegmentationFilled']),
           'spatialSegmentationStrokeWidth': Object.keys(coordination_space['spatialSegmentationStrokeWidth']),
           [CoordinationType.TOOLTIPS_VISIBLE]: Object.keys(coordination_space[CoordinationType.TOOLTIPS_VISIBLE])
         },
-        'x': 0, 'y': 0, 'w': 8, 'h': 12
+        'x': 2, 'y': 0, 'w': 10, 'h': 12
       },
       {
         'component': 'layerControllerBeta',
@@ -203,13 +213,15 @@ const generateVitessceConfig = (selectedGroups = []) => {
           'spatialTargetT': "image",
           'spatialRenderingMode': "image",
           'spatialChannelVisible': ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
-          'spatialChannelOpacity': ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
-          'spatialChannelColor': Object.keys(coordination_space['spatialChannelColor']),
+          'spatialChannelOpacity': Object.keys(coordination_space['spatialChannelOpacity']),
+          'spatialChannelColor': ["CD31", "CD20", "CD11b", "CD4", "CD11c"],
+          'spatialLayerOpacity': Object.keys(coordination_space['spatialLayerOpacity']),
+          'spatialLayerVisible': Object.keys(coordination_space['spatialLayerVisible']),
           'spatialSegmentationFilled': Object.keys(coordination_space['spatialSegmentationFilled']),
           'spatialSegmentationStrokeWidth': Object.keys(coordination_space['spatialSegmentationStrokeWidth']),
           [CoordinationType.TOOLTIPS_VISIBLE]: Object.keys(coordination_space[CoordinationType.TOOLTIPS_VISIBLE])
         },
-        'x': 0, 'y': 8, 'w': 4, 'h': 12
+        'x': 0, 'y': 0, 'w': 2, 'h': 8
       }
     ]
   };
@@ -232,23 +244,22 @@ const MainView = ({ onSetView }) => {
   });
   const [configKey, setConfigKey] = useState(0);
   const [rois, setRois] = useState([]);
-  const [showCircles, setShowCircles] = useState(false);
   const [selectedCircle, setSelectedCircle] = useState(null);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const vitessceRef = useRef(null);
 
   const groupColors = {
-    1: '#d7191c',
-    2: '#fdae61',
-    3: '#abd9e9',
-    4: '#2c7bb6'
+    1: '#e41a1c',  // Red
+    2: '#377eb8',  // Blue
+    3: '#4daf4a',  // Green
+    4: '#984ea3'   // Purple
   };
 
   const groupNames = {
-    1: 'Endothelial-immune interface (CD31 + CD11b)',
-    2: 'ROS detox, immune stress (CD11b + Catalase)',
-    3: 'T/B cell recruitment via vessels (CD31 + CD4/CD20)',
-    4: 'T-B collaboration (CD4 + CD20)'
+    1: 'Endothelial-immune interface',
+    2: 'ROS detox, immune stress',
+    3: 'T/B cell recruitment',
+    4: 'T-B collaboration'
   };
 
   // Generate config locally
@@ -348,13 +359,46 @@ const MainView = ({ onSetView }) => {
   const handleSetView = (roiView) => {
     console.log('Mainview handleSetView:', roiView);
     
-    if (roiView.hasOwnProperty('showCircles')) {
-      setShowCircles(roiView.showCircles);
-      console.log('Mainview: showCircles set to:', roiView.showCircles);
-    }
+
     
     if (roiView.refreshConfig) {
+      // Generate new config with NO segmentation files - only image
+      const newConfig = generateVitessceConfig([]); // Empty array = no segmentation files
+      
+      // Update spatial coordinates if provided
+      if (roiView.spatialTargetX !== undefined) {
+        newConfig.coordinationSpace.spatialTargetX.A = roiView.spatialTargetX;
+      }
+      if (roiView.spatialTargetY !== undefined) {
+        newConfig.coordinationSpace.spatialTargetY.A = roiView.spatialTargetY;
+      }
+      if (roiView.spatialZoom !== undefined) {
+        newConfig.coordinationSpace.spatialZoom.A = roiView.spatialZoom;
+      }
+      
+      setConfig(newConfig);
       setConfigKey(prev => prev + 1);
+      
+      // Store config globally for debugging
+      window.lastConfig = newConfig;
+      console.log('Generated new config for Set View - NO segmentation files:', newConfig);
+      console.log('Config files:', newConfig.datasets[0].files);
+      
+      // Send config to backend
+      fetch('http://localhost:5000/api/updateconfig', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newConfig)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Config sent to backend:', data);
+      })
+      .catch(error => {
+        console.error('Error sending config to backend:', error);
+      });
     }
 
     if (roiView.selectedGroups && JSON.stringify(roiView.selectedGroups) !== JSON.stringify(selectedGroups)) {
@@ -369,10 +413,12 @@ const MainView = ({ onSetView }) => {
   };
 
   const handleHeatmapResults = (results) => {
+    console.log('Received heatmap results:', results);
     setHeatmapResults(results);
   };
 
   const handleInteractionResults = (results) => {
+    console.log('Received interaction results:', results);
     setInteractionHeatmapResult(results);
   };
 
@@ -410,92 +456,7 @@ const MainView = ({ onSetView }) => {
     }));
   };
 
-  const renderInteractionHeatmap = () => {
-    if (!interactionHeatmapResult || !interactionHeatmapResult.heatmaps) return null;
 
-    const activeHeatmaps = Object.entries(interactionHeatmapResult.heatmaps)
-      .filter(([group]) => activeGroups[group.split('_')[1]]);
-
-    if (activeHeatmaps.length === 0) return null;
-
-    const combinedHeatmap = activeHeatmaps.reduce((acc, [group, data], index) => {
-      const normalizedData = data.map(row => 
-        row.map(val => val * (index + 1) / activeHeatmaps.length)
-      );
-      
-      if (acc.length === 0) {
-        return normalizedData;
-      }
-      
-      return acc.map((row, i) => 
-        row.map((val, j) => val + normalizedData[i][j])
-      );
-    }, []);
-
-    return (
-      <div style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        padding: '15px',
-        borderRadius: '8px',
-        zIndex: 1000,
-        width: '300px'
-      }}>
-        <div style={{ marginBottom: '10px' }}>
-          {Object.entries(groupNames).map(([id, name]) => (
-            <label key={id} style={{ 
-              marginRight: '10px', 
-              display: 'inline-block',
-              color: 'white',
-              fontSize: '12px'
-            }}>
-              <input
-                type="checkbox"
-                checked={activeGroups[id]}
-                onChange={() => handleGroupToggle(id)}
-                style={{ marginRight: '5px' }}
-              />
-              <span style={{ color: groupColors[id] }}>{name}</span>
-            </label>
-          ))}
-        </div>
-        <Plot
-          data={[{
-            z: combinedHeatmap,
-            type: 'heatmap',
-            colorscale: [
-              [0, 'black'],
-              [0.25, groupColors[1]],
-              [0.5, groupColors[2]],
-              [0.75, groupColors[3]],
-              [1, groupColors[4]]
-            ],
-            showscale: true,
-            colorbar: {
-              title: 'Interaction Intensity',
-              titleside: 'right',
-              titlefont: { color: 'white' },
-              tickfont: { color: 'white' }
-            }
-          }]}
-          layout={{
-            title: {
-              text: 'Combined Interactions',
-              font: { color: 'white' }
-            },
-            width: 280,
-            height: 280,
-            margin: { t: 30, b: 20, l: 20, r: 20 },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)'
-          }}
-          config={{ displayModeBar: false }}
-        />
-      </div>
-    );
-  };
 
   if (error) {
     return <p style={{ color: 'red', padding: '10px' }}>Error generating Mainview: {error}</p>;
@@ -511,56 +472,22 @@ const MainView = ({ onSetView }) => {
 
   return (
     <div className="left-panel">
-      {Object.keys(heatmapResults).length > 0 && (
-        <div className="heatmaps-container">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-            <div>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(6, 200px)',
-                gap: '1px',
-                padding: '1px'
-              }}>
-                {Object.entries(heatmapResults).map(([channel, data]) => (
-                  <div key={channel} style={{ 
-                    border: '1px solid #ccc',
-                    borderRadius: '5px',
-                    padding: '1px',
-                    backgroundColor: 'rgb(0, 0, 0,0.85)'
-                  }}>
-                    <Plot
-                      data={[{
-                        z: data,
-                        type: 'heatmap',
-                        colorscale: 'Viridis',
-                        showscale: true
-                      }]}
-                      layout={{
-                        title: {
-                          text: ` ${channel}`,
-                          font: {
-                            size: 16,
-                            color: '#ffffff'
-                          },
-                          y: 0.95
-                        },
-                        width: 200,
-                        height: 200,
-                        margin: { t: 30, b: 20, l: 20, r: 1},
-                        paper_bgcolor: 'rgba(0,0,0,0.0)',
-                        plot_bgcolor: 'rgba(0,0,0,0.0)'
-                      }}
-                      config={{ displayModeBar: false }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* HeatmapResults component will be rendered separately - only when there are results */}
+      {(Object.keys(heatmapResults).length > 0 || interactionHeatmapResult) && (
+        <HeatmapResults
+          heatmapResults={heatmapResults}
+          interactionHeatmapResult={interactionHeatmapResult}
+          activeGroups={activeGroups}
+          groupColors={groupColors}
+          groupNames={groupNames}
+          onClose={() => {
+            setHeatmapResults({});
+            setInteractionHeatmapResult(null);
+          }}
+          onHeatmapClick={() => {}}
+          onGroupToggle={handleGroupToggle}
+        />
       )}
-
-      {interactionHeatmapResult && renderInteractionHeatmap()}
 
       <div className="fullscreen-vitessce" style={{ position: 'relative', width: '100%', height: '100vh' }}>
 
@@ -577,24 +504,19 @@ const MainView = ({ onSetView }) => {
           theme="light"
           height={null}
           width={null}
+          style={{
+            '--vitessce-layer-control-transform': 'scale(0.8)',
+            '--vitessce-layer-control-transform-origin': 'top left'
+          }}
         />
         
-        {showCircles && (
-          <InteractiveCircles
-            rois={rois}
-            showCircles={showCircles}
-            onCircleClick={handleCircleClick}
-            selectedCircle={selectedCircle}
-            selectedInteractions={selectedGroups}
-          />
-        )}
+
         
-        <div className="roi-selector-container" style={{ position: 'absolute', top: '60px', left: 0, zIndex: 10 }}>
+        <div className="roi-selector-container">
           <ROISelector 
             onSetView={handleSetView} 
             onHeatmapResults={handleHeatmapResults}
             onInteractionResults={handleInteractionResults}
-
             onGroupSelection={(groups) => {
               console.log('ROISelector onGroupSelection called with:', groups);
               setSelectedGroups(groups);

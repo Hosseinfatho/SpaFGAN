@@ -1,71 +1,643 @@
-
-
+# Backend server code will go here 
 import json
 import logging
+from flask import Flask, jsonify, request, Response, stream_with_context
+from flask import Flask, jsonify, request, Response, stream_with_context, send_file
 from flask_cors import CORS
-from flask import Flask, jsonify, send_from_directory, request
+import requests
+from vitessce import (
+    VitessceConfig,
+    CoordinationLevel as CL,
+    get_initial_coordination_scope_prefix,
+    Component
+)
+# Removed unused ipywidgets import
+import zarr # Use zarr directly
+import numpy as np
+from scipy import ndimage
+from skimage.measure import label # Used for connected components if needed, optional
+import traceback # For better error logging
+import s3fs # Needed for opening S3 Zarr store
+import time # For timing operations, used in copied functions
+import base64
+import io
+from PIL import Image # Pillow import
 import os
-from collections import OrderedDict
-
-import zarr as pyzarr
-import s3fs
+import pickle
 from pathlib import Path
 
-ZARR_BASE_DIR = os.path.abspath("output/roi_shapes.spatialdata.zarr")
-
+# --- Analysis Functions (Copied from test_zarr_exploration.py) ---
 # Configure basic logging
-logging.basicConfig(level=logging.WARNING)  # Reduce logging level for better performance
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+# Enable CORS for all routes during development
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Enable Flask caching for better performance
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 3600  # Cache static files for 1 hour
-
-
-
+# --- Constants for Zarr Access ---
+# Use local Zarr file
+ZARR_BASE_URL = None  # We'll use local file
+LOCAL_ZARR_PATH = Path(__file__).parent / 'input' / 'selected_channels.zarr'
+ZARR_IMAGE_GROUP_PATH = "data"
+TARGET_RESOLUTION_PATH = "" # Use the root of data directory
+# ---
+REQUIRED_CHANNEL_INDICES_FOR_RGB_INTERACTION = {
+    'CD31': 0,
+    'CD11b': 1,
+    'Catalase': 2,
+    'CD4': 3,
+    'CD20': 4,
+    'CD11c': 5
+}
+# Define the interaction compositions and their target RGB channels
+RGB_INTERACTION_DEFINITIONS = [
+    {'name': 'Vascular inflammation + oxidative stress', 'channels': ['CD31', 'CD11b', 'Catalase'], 'rgb_target': 0}, # Red
+    {'name': 'Complex immune cell interaction', 'channels': ['CD4', 'CD20', 'CD11b'], 'rgb_target': 2}, # Blue
+    {'name': 'T/B cell entry via vessels', 'channels': ['CD31', 'CD4', 'CD20'], 'rgb_target': 1}  # Green
+]
+# --- New Endpoint for Channel Names ---
 @app.route('/api/channel_names')
 def get_channel_names():
     """Reads OME-Zarr metadata to get channel names."""
     logger.info("Request received for /api/channel_names")
     channel_map = {}
-    root_store = None
-    root_group = None
+    s3_local = None
+    root_store = None # Initialize here for broader scope in logging
+    root_group = None # Initialize here
     try:
+        logger.info("Attempting to create S3FileSystem...")
         s3_local = s3fs.S3FileSystem(anon=True)
         root_store = s3fs.S3Map(root=ZARR_BASE_URL, s3=s3_local, check=False)
-        root_group = pyzarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else pyzarr.open_group(store=root_store, mode='r')
+        logger.info("S3Map created successfully.")
+
+        logger.info("Attempting to open root Zarr group...")
+        # Open the root group, not a specific resolution array
+        root_group = zarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else zarr.open_group(store=root_store, mode='r')
+        logger.info(f"Root group opened successfully. Type: {type(root_group)}")
+
+        # Access OME metadata: Look inside the image group (e.g., '0')
         omero_meta = None
-        image_group_key = '0'
+        image_group_key = '0' # Assuming the main image data is in group '0'
+        logger.info(f"Checking for image group '{image_group_key}'...")
         if root_group and image_group_key in root_group:
             image_group = root_group[image_group_key]
+            logger.info(f"Image group '{image_group_key}' found. Checking for 'omero' in its attributes...")
             if hasattr(image_group, 'attrs') and 'omero' in image_group.attrs:
                 omero_meta = image_group.attrs['omero']
+                logger.info(f"Found 'omero' metadata in image group '{image_group_key}' attributes.")
             else:
                  logger.warning(f"Could not find 'omero' metadata in image group '{image_group_key}' attributes.")
+                 # Optional: Log available attributes for debugging
+                 # if hasattr(image_group, 'attrs'):
+                 #    logger.debug(f"Available image group attributes: {list(image_group.attrs.keys())}")
         else:
              logger.warning(f"Image group '{image_group_key}' not found in root group.")
+
         # Now check the extracted omero_meta for channels
         if omero_meta and 'channels' in omero_meta:
+            logger.info(f"Found {len(omero_meta['channels'])} channels in metadata.")
             for i, channel_info in enumerate(omero_meta['channels']): 
+                # Ensure key is string for JSON compatibility
                 channel_map[str(i)] = channel_info.get('label', f'Channel {i}') 
+            logger.info(f" Successfully extracted channel names: {channel_map}")
             return jsonify(channel_map)
         else:
+            logger.warning("Could not find valid 'omero' metadata with 'channels'. Returning 404.")
+            # Return empty map or error?
             return jsonify({"error": "Channel metadata ('omero' with 'channels') not found in Zarr store"}), 404
-    except Exception as e:
-        return jsonify({"error": f"Failed to read channel names: {e}"}), 500
 
-# Define absolute path to the .sdata.zarr directory
-@app.route("/api/image/<path:filename>", methods=["GET"])
-def serve_image_file(filename):
-    """Serve image files from the output directory"""
-    try:
-        image_dir = Path(__file__).parent / "output"
-        return send_from_directory(image_dir, filename)
     except Exception as e:
-        logger.error(f"Error serving image file '{filename}': {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve image file '{filename}': {e}"}), 500
+        logger.error(f" Failed during channel name retrieval: {e}", exc_info=True)
+        # Log details about variables at the time of error
+        logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}, root_store={'Exists' if root_store else 'None'}, root_group={'Exists' if root_group else 'None'}")
+        return jsonify({"error": f"Failed to read channel names: {e}"}), 500
+# --- End Channel Names Endpoint ---
+
+def open_target_zarr_array():
+    """Opens and returns the target Zarr array from local file. Returns None on failure."""
+    target_image_arr = None
+    try:
+        # Use local Zarr file
+        zarr_path = LOCAL_ZARR_PATH / ZARR_IMAGE_GROUP_PATH / TARGET_RESOLUTION_PATH
+        
+        logger.info(f"Attempting to open local Zarr array from: {zarr_path}")
+        
+        # Check if path exists
+        if not zarr_path.exists():
+            logger.error(f"Zarr path does not exist: {zarr_path}")
+            return None
+        
+        # Open the Zarr array
+        target_image_arr = zarr.open_array(str(zarr_path), mode='r')
+        
+        logger.info(f"✅ Successfully opened target Zarr array from local file")
+        logger.info(f"Array shape: {target_image_arr.shape}")
+        logger.info(f"Array dtype: {target_image_arr.dtype}")
+        return target_image_arr
+
+    except Exception as e:
+        logger.error(f"Failed to open target Zarr array: {e}", exc_info=True)
+        return None
+
+def calculate_z_projection_heatmap(zarr_array, channel_index, roi_z, roi_y, roi_x, projection_type='sum'):
+    """Calculates the Z-projection (heatmap) for a specific channel within a defined ROI."""
+    if zarr_array is None:
+        return {'error': 'Zarr array is None.'}
+    valid_projection_types = ['sum', 'mean', 'max']
+    if projection_type not in valid_projection_types:
+        return {'error': f"Invalid projection_type '{projection_type}'. Must be one of {valid_projection_types}"}
+    try:
+        if zarr_array.ndim != 5:
+            logger.warning(f"[Heatmap] Expected 5D array (t,c,z,y,x), but got {zarr_array.ndim}D. Proceeding cautiously.")
+        channel_axis = 1
+        if not (0 <= channel_index < zarr_array.shape[channel_axis]):
+            return {'error': f'Invalid channel_index {channel_index}. Must be between 0 and {zarr_array.shape[channel_axis] - 1}. Array shape: {zarr_array.shape}'}
+        
+        # Log array shape and ROI values
+        logger.info(f"Array shape: {zarr_array.shape}")
+        logger.info(f"ROI values - Z: {roi_z}, Y: {roi_y}, X: {roi_x}")
+        
+        max_z_arr, max_y_arr, max_x_arr = zarr_array.shape[2:]
+        if not (0 <= roi_z[0] < roi_z[1] <= max_z_arr and
+                0 <= roi_y[0] < roi_y[1] <= max_y_arr and
+                0 <= roi_x[0] < roi_x[1] <= max_x_arr):
+            return {'error': f'ROI Z{roi_z}, Y{roi_y}, X{roi_x} is out of bounds for array shape Z{max_z_arr}, Y{max_y_arr}, X{max_x_arr}.'}
+        
+        total_y_height_in_zarr = zarr_array.shape[3]
+        zarr_slice_y_start = total_y_height_in_zarr - roi_y[1]
+        zarr_slice_y_end = total_y_height_in_zarr - roi_y[0]
+        zarr_slice_y_start = max(0, zarr_slice_y_start)
+        zarr_slice_y_end = min(total_y_height_in_zarr, zarr_slice_y_end)
+
+        if zarr_slice_y_start >= zarr_slice_y_end and not (roi_y[0] == 0 and roi_y[1] == total_y_height_in_zarr):
+            return {'error': f'Transformed Y ROI resulted in invalid slice: [{zarr_slice_y_start}, {zarr_slice_y_end}). Original roi_y: {roi_y}, Zarr Y height: {total_y_height_in_zarr}'}
+        
+        logger.info(f"[Heatmap] Original roi_y (bottom-up): {roi_y}")
+        logger.info(f"[Heatmap] Transformed Zarr Y slice (top-down): [{zarr_slice_y_start}, {zarr_slice_y_end})")
+        
+        # Use full Z range (0-193) for projection instead of roi_z
+        roi_slice = (
+            slice(0, 1),
+            slice(channel_index, channel_index + 1),
+            slice(0, max_z_arr),  # Use full Z range (0-193)
+            slice(zarr_slice_y_start, zarr_slice_y_end),
+            slice(roi_x[0], roi_x[1])
+        )
+        
+        logger.info(f"[Heatmap] Reading slice: Ch={channel_index}, Z_roi={roi_z}, Y_ZARR_SLICE=[{zarr_slice_y_start}:{zarr_slice_y_end}], X_roi={roi_x}")
+        start_read = time.time()
+        
+        try:
+            data_roi = zarr_array[roi_slice]
+            end_read = time.time()
+            logger.info(f"[Heatmap] Read in {end_read - start_read:.2f}s. Result shape: {data_roi.shape}, Size: {data_roi.size}")
+            
+            if data_roi.size == 0:
+                return {'error': 'Specified ROI resulted in an empty data slice.'}
+            
+            # Convert to float32 for calculations
+            data_roi = data_roi.astype(np.float32)
+            
+            if projection_type == 'sum':
+                # Additive projection (sum along Z axis)
+                projected_data = np.sum(data_roi, axis=2)
+            elif projection_type == 'mean':
+                # Mean projection along Z axis
+                projected_data = np.mean(data_roi, axis=2)
+            elif projection_type == 'max':
+                # Max projection along Z axis
+                projected_data = np.max(data_roi, axis=2)
+            
+            heatmap_2d = np.squeeze(projected_data, axis=(0, 1))
+            
+            # Normalize the heatmap to [0, 1]
+            min_val = np.min(heatmap_2d)
+            max_val = np.max(heatmap_2d)
+            if max_val > min_val:
+                heatmap_2d = (heatmap_2d - min_val) / (max_val - min_val)
+            else:
+                heatmap_2d = np.zeros_like(heatmap_2d)
+            
+            logger.info(f"[Heatmap] Final heatmap shape: {heatmap_2d.shape}, Range: [{np.min(heatmap_2d):.3f}, {np.max(heatmap_2d):.3f}]")
+            
+            return {
+                'heatmap': heatmap_2d.tolist(),
+                'shape': heatmap_2d.shape,
+                'min_val': float(min_val),
+                'max_val': float(max_val)
+            }
+            
+        except Exception as read_error:
+            logger.error(f"[Heatmap] Error reading data slice: {str(read_error)}")
+            return {'error': f'Error reading data slice: {str(read_error)}'}
+            
+    except Exception as e:
+        logger.error(f"[Heatmap] Unexpected Error: {e}", exc_info=True)
+        return {'error': f'Unexpected error during heatmap calculation: {e}'}
+
+# Helper function for normalization
+def normalize_array(arr):
+    """Normalizes a numpy array to the range [0, 1]."""
+    min_val = np.min(arr)
+    max_val = np.max(arr)
+    if max_val == min_val:
+        # Handle constant array case (avoid division by zero)
+        # Return array of zeros or maybe scaled based on the constant value?
+        # Returning zeros is common for visualization range mapping.
+        return np.zeros_like(arr, dtype=np.float32)
+    else:
+        return (arr - min_val) / (max_val - min_val)
+
+def calculate_rgb_interaction_heatmap_py(zarr_array, roi_z, roi_y, roi_x, projection_type='sum'):
+    if zarr_array is None:
+        return {'error': 'Zarr array is None.'}
+    valid_projection_types = ['sum', 'mean', 'max']
+    if projection_type not in valid_projection_types:
+        return {'error': f"Invalid projection_type '{projection_type}'. Must be one of {valid_projection_types}"}
+    try:
+        if zarr_array.ndim != 5:
+            logger.warning(f"[Interaction Heatmap] Expected 5D array (t,c,z,y,x), but got {zarr_array.ndim}D. Proceeding cautiously.")
+        
+        # Define channel groups and their ranges
+        channel_groups = {
+            1: [0, 1],       # group 1: CD31 + CD11b
+            2: [1, 2],       # group 2: CD11b + Catalase
+            3: [0, 3, 4],    # group 3: CD31 + CD4 + CD20
+            4: [3, 4]        # group 4: CD4 + CD20
+        }
+        
+        # Define channel ranges
+        channel_ranges = {
+            0: [300, 20000],     # CD31
+            4: [1000, 7000],     # CD20
+            1: [700, 6000],      # CD11b
+            3: [1638, 10000],    # CD4
+            2: [1638, 7000]      # Catalase
+        }
+        
+        logger.info(f"Processing channel groups: {channel_groups}")
+        
+        channel_axis = 1
+        for group_val, channels in channel_groups.items():
+            for ch_idx in channels:
+                if not (0 <= ch_idx < zarr_array.shape[channel_axis]):
+                    return {'error': f'Invalid channel_index {ch_idx} in group {group_val}. Must be between 0 and {zarr_array.shape[channel_axis] - 1}.'}
+        
+        max_z_arr, max_y_arr, max_x_arr = zarr_array.shape[2:]
+        if not (0 <= roi_z[0] < roi_z[1] <= max_z_arr and 0 <= roi_y[0] < roi_y[1] <= max_y_arr and 0 <= roi_x[0] < roi_x[1] <= max_x_arr):
+            return {'error': f'ROI Z{roi_z}, Y{roi_y}, X{roi_x} is out of bounds for array shape Z{max_z_arr}, Y{max_y_arr}, X{max_x_arr}.'}
+        
+        total_y_height_in_zarr = zarr_array.shape[3]
+        zarr_slice_y_start = total_y_height_in_zarr - roi_y[1]
+        zarr_slice_y_end = total_y_height_in_zarr - roi_y[0]
+        zarr_slice_y_start = max(0, zarr_slice_y_start)
+        zarr_slice_y_end = min(total_y_height_in_zarr, zarr_slice_y_end)
+        
+        if zarr_slice_y_start >= zarr_slice_y_end and not (roi_y[0] == 0 and roi_y[1] == total_y_height_in_zarr):
+            return {'error': f'Transformed Y ROI resulted in invalid slice: [{zarr_slice_y_start}, {zarr_slice_y_end}). Original roi_y: {roi_y}, Zarr Y height: {total_y_height_in_zarr}'}
+        
+        group_maps = {}
+        for group_val, channels in channel_groups.items():
+            logger.info(f"\nProcessing group {group_val} with channels {channels}")
+            channel_heatmaps = []
+            channel_stats = []
+            
+            for ch_idx in channels:
+                logger.info(f"\n  Processing channel {ch_idx}")
+                
+                # Step 1: Get the maximum value for this channel from the whole image
+                whole_channel_slice = (
+                    slice(0, 1),
+                    slice(ch_idx, ch_idx + 1),
+                    slice(0, max_z_arr),  # Use full Z range
+                    slice(0, max_y_arr),  # Use full Y range
+                    slice(0, max_x_arr)   # Use full X range
+                )
+                whole_channel_data = zarr_array[whole_channel_slice]
+                
+                # Apply channel-specific range filtering to whole image data
+                if ch_idx in channel_ranges:
+                    min_range, max_range = channel_ranges[ch_idx]
+                    whole_channel_data = np.clip(whole_channel_data, min_range, max_range)
+                
+                # Get the maximum value from the whole image for this channel
+                global_max_val = np.max(whole_channel_data)
+                logger.info(f"  Channel {ch_idx} global max value: {global_max_val:.3f}")
+                
+                # Now get ROI data for this channel
+                roi_slice = (
+                    slice(0, 1),
+                    slice(ch_idx, ch_idx + 1),
+                    slice(0, max_z_arr),  # Use full Z range (0-193)
+                    slice(zarr_slice_y_start, zarr_slice_y_end),
+                    slice(roi_x[0], roi_x[1])
+                )
+                data_roi = zarr_array[roi_slice]
+                
+                # Apply channel-specific range filtering to ROI data
+                if ch_idx in channel_ranges:
+                    min_range, max_range = channel_ranges[ch_idx]
+                    data_roi = np.clip(data_roi, min_range, max_range)
+                
+                # Step 2: Normalize ROI data using the global maximum for this channel
+                data_roi = data_roi / global_max_val
+                
+                # Step 3: Calculate summation over Z for each x,y position
+                if projection_type == 'sum':
+                    heatmap_2d = np.sum(data_roi, axis=2)
+                elif projection_type == 'mean':
+                    heatmap_2d = np.mean(data_roi, axis=2)
+                elif projection_type == 'max':
+                    heatmap_2d = np.max(data_roi, axis=2)
+                heatmap_2d = np.squeeze(heatmap_2d, axis=(0, 1))
+                
+                # Apply threshold - set values below 0.1 to 0
+                min_threshold = 0.1
+                heatmap_2d[heatmap_2d < min_threshold] = 0
+                
+                # Log stats after processing
+                logger.info(f"  After processing:")
+                logger.info(f"    Range: [{np.min(heatmap_2d):.3f}, {np.max(heatmap_2d):.3f}]")
+                logger.info(f"    Mean: {np.mean(heatmap_2d):.3f}")
+                logger.info(f"    Values near 1 (>0.9): {np.sum(heatmap_2d > 0.9)}")
+                logger.info(f"    Non-zero values: {np.sum(heatmap_2d > 0)}")
+                
+                channel_heatmaps.append(heatmap_2d)
+                channel_stats.append({
+                    'max': np.max(heatmap_2d),
+                    'mean': np.mean(heatmap_2d),
+                    'non_zero': np.sum(heatmap_2d > 0)
+                })
+            
+            # Step 4: Calculate interaction as summation of normalized channels for each x,y
+            # Stack all channel heatmaps
+            stacked_heatmaps = np.stack(channel_heatmaps)
+            
+            # Calculate summation along channel axis (axis=0) for each x,y position
+            interaction = np.sum(stacked_heatmaps, axis=0)
+            
+            # Step 5: Final normalization of interaction values to [0, 1] range
+            min_val = np.min(interaction)
+            max_val = np.max(interaction)
+            logger.info(f"\nGroup {group_val} interaction before normalization:")
+            logger.info(f"  Min value: {min_val:.6f}")
+            logger.info(f"  Max value: {max_val:.6f}")
+            logger.info(f"  Range: {max_val - min_val:.6f}")
+            
+            if max_val > min_val:
+                # Simple min-max normalization to scale values between 0 and 1
+                # This ensures the minimum value becomes 0 and maximum value becomes 1
+                interaction = (interaction - min_val) / (max_val - min_val)
+                
+                logger.info(f"  After min-max normalization:")
+                logger.info(f"    Min value: {np.min(interaction):.6f} (was {min_val:.8f})")
+                logger.info(f"    Max value: {np.max(interaction):.6f} (was {max_val:.8f})")
+                logger.info(f"    Mean value: {np.mean(interaction):.6f}")
+            else:
+                interaction = np.zeros_like(interaction)
+                logger.info(f"  All values are the same, setting to zero")
+            
+            # Log statistics about the interaction values
+            non_zero_mask = interaction > 0
+            if np.any(non_zero_mask):
+                non_zero_values = interaction[non_zero_mask]
+                logger.info(f"\nGroup {group_val} interaction statistics:")
+                logger.info(f"  Channel stats:")
+                for i, stats in enumerate(channel_stats):
+                    logger.info(f"    Channel {channels[i]}:")
+                    logger.info(f"      Max: {stats['max']:.6f}")
+                    logger.info(f"      Mean: {stats['mean']:.6f}")
+                    logger.info(f"      Non-zero: {stats['non_zero']}")
+                logger.info(f"  Interaction stats:")
+                logger.info(f"    Total pixels: {interaction.size}")
+                logger.info(f"    Non-zero pixels: {np.sum(non_zero_mask)}")
+                logger.info(f"    Values near 1 (>0.9): {np.sum(non_zero_values > 0.9)}")
+                logger.info(f"    Values near 0 (<0.1): {np.sum(non_zero_values < 0.1)}")
+                logger.info(f"    Mean value: {np.mean(non_zero_values):.6f}")
+                logger.info(f"    Median value: {np.median(non_zero_values):.6f}")
+                logger.info(f"    Max value: {np.max(non_zero_values):.6f}")
+                logger.info(f"    Min value: {np.min(non_zero_values):.6f}")
+                
+                # Print to terminal for debugging
+                print(f"\n=== INTERACTION GROUP {group_val} DEBUG ===")
+                print(f"Max value: {np.max(interaction):.8f}")
+                print(f"Min value: {np.min(interaction):.8f}")
+                print(f"Mean value: {np.mean(interaction):.8f}")
+                print(f"95th percentile: {np.percentile(interaction, 95):.8f}")
+                print(f"99th percentile: {np.percentile(interaction, 99):.8f}")
+                print(f"Non-zero pixels: {np.sum(non_zero_mask)} / {interaction.size}")
+                print(f"==========================================\n")
+            
+            group_maps[f'group_{group_val}'] = interaction.tolist()
+        
+        height, width = next(iter(group_maps.values())).__len__(), next(iter(group_maps.values()))[0].__len__()
+        logger.info(f"\nAll groups processed. Final heatmap dimensions: {height}x{width}")
+        
+        return {
+            'heatmaps': group_maps,
+            'shape': [height, width]
+        }
+    except Exception as e:
+        logger.error(f"[Interaction Heatmap] Error: {e}", exc_info=True)
+        return {'error': f'Error calculating interaction heatmap: {e}'}
+
+@app.route('/api/top_roi_scores_<interaction_type>', methods=['GET'])
+def serve_top_roi_scores(interaction_type):
+    """Serve top ROI scores for a specific interaction type"""
+    try:
+        # Convert interaction type to filename format
+        filename = f"top_roi_scores_{interaction_type}.json"
+        roi_path = Path(__file__).parent / "output" / filename
+        
+        if not roi_path.exists():
+            logger.warning(f"Top ROI scores file not found: {filename}")
+            return jsonify({"error": f"Top ROI scores file not found: {filename}"}), 404
+
+        with open(roi_path, 'r') as f:
+            roi_data = json.load(f)
+            
+        return jsonify(roi_data)
+    except Exception as e:
+        logger.error(f"Error serving top ROI scores for {interaction_type}: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve top ROI scores for {interaction_type}: {e}"}), 500
+
+@app.route('/api/analyze_heatmaps', methods=['POST'])
+def analyze_heatmaps():
+    """API endpoint to analyze heatmaps for specific channels in a given ROI."""
+    try:
+        data = request.get_json()
+        if not data:
+            logger.error("No data provided in request")
+            return jsonify({'error': 'No data provided'}), 400
+        
+        roi = data.get('roi')
+        if not roi or not all(k in roi for k in ['xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax']):
+            logger.error(f"Invalid ROI format: {roi}")
+            return jsonify({'error': 'Invalid ROI format'}), 400
+
+        channels = data.get('channels', ['CD31', 'CD11b', 'Catalase', 'CD4', 'CD20', 'CD11c'])
+        if not channels:
+            logger.error("No channels specified")
+            return jsonify({'error': 'No channels specified'}), 400
+        
+        roi_info = data.get('roiInfo', {})
+        
+        # Get the Zarr array
+        zarr_array = open_target_zarr_array()
+        if zarr_array is None:
+            logger.error("Failed to open Zarr array")
+            return jsonify({'error': 'Failed to open Zarr array'}), 500
+        
+        logger.info(f"Processing ROI: {roi}")
+        logger.info(f"Processing channels: {channels}")
+        logger.info(f"Zarr array shape: {zarr_array.shape}")
+        
+        # Validate ROI values
+        try:
+            roi_values = {
+                'zMin': int(roi['zMin']),
+                'zMax': int(roi['zMax']),
+                'yMin': int(roi['yMin']),
+                'yMax': int(roi['yMax']),
+                'xMin': int(roi['xMin']),
+                'xMax': int(roi['xMax'])
+            }
+        except ValueError as ve:
+            logger.error(f"Invalid ROI values: {ve}")
+            return jsonify({'error': 'Invalid ROI values - all values must be integers'}), 400
+        
+        # Define channel mapping
+        channel_mapping = {
+            'CD31': 0,
+            'CD11b': 1,
+            'Catalase': 2,
+            'CD4': 3,
+            'CD20': 4,
+            'CD11c': 5
+        }
+        
+        # Process only specified channels
+        heatmaps = {}
+        for channel_name in channels:
+            if channel_name not in channel_mapping:
+                logger.warning(f"Skipping unknown channel: {channel_name}")
+                continue
+                
+            channel_index = channel_mapping[channel_name]
+            logger.info(f"Processing channel {channel_name} (index: {channel_index})")
+            
+            try:
+                heatmap_result = calculate_z_projection_heatmap(
+                    zarr_array=zarr_array,
+                    channel_index=channel_index,
+                    roi_z=(roi_values['zMin'], roi_values['zMax']),
+                    roi_y=(roi_values['yMin'], roi_values['yMax']),
+                    roi_x=(roi_values['xMin'], roi_values['xMax']),
+                    projection_type='sum'
+                )
+                
+                if 'error' not in heatmap_result:
+                    heatmaps[channel_name] = {
+                        "data": heatmap_result.get('heatmap', []),
+                        "shape": heatmap_result.get('shape'),
+                        "range": {
+                            "min": heatmap_result.get('min_val', 0),
+                            "max": heatmap_result.get('max_val', 1),
+                            "mean": np.mean(heatmap_result.get('heatmap', [])) if heatmap_result.get('heatmap') else 0
+                        }
+                    }
+                    logger.info(f"Successfully processed channel {channel_name}")
+                else:
+                    logger.error(f"Error processing channel {channel_name}: {heatmap_result['error']}")
+            except Exception as channel_error:
+                logger.error(f"Error processing channel {channel_name}: {str(channel_error)}", exc_info=True)
+                continue
+        
+        if not heatmaps:
+            logger.error("No results were generated for any channel")
+            return jsonify({'error': 'Failed to generate heatmaps for any channel'}), 500
+        
+        # Calculate overall statistics
+        all_values = []
+        for channel_data in heatmaps.values():
+            if isinstance(channel_data['data'], list):
+                all_values.extend([val for row in channel_data['data'] for val in row])
+        # what happend here why we have hardcode for value
+        statistics = {
+            "mean_intensity": np.mean(all_values) if all_values else 0.5,
+            "max_intensity": np.max(all_values) if all_values else 1.0,
+            "min_intensity": np.min(all_values) if all_values else 0.1,
+            "total_channels": len(heatmaps),
+            "available_channels": list(heatmaps.keys())
+        }
+            
+        logger.info(f"Returning results for {len(heatmaps)} channels")
+        
+        heatmap_data = {
+            "roi_info": roi_info,
+            "roi_bounds": roi,
+            "channels": channels,
+            "heatmaps": heatmaps,
+            "statistics": statistics
+        }
+        
+        return jsonify(heatmap_data)
+        
+    except Exception as e:
+        logger.error(f"Error in analyze_heatmaps: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analyze_interaction_heatmap', methods=['POST'])
+def analyze_interaction_heatmap():
+    """API endpoint to analyze interaction heatmaps for defined groups in a given ROI."""
+    try:
+        data = request.get_json()
+        if not data:
+            logger.error("No data provided in request")
+            return jsonify({'error': 'No data provided'}), 400
+        
+        roi = data.get('roi')
+        if not roi or not all(k in roi for k in ['xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax']):
+            logger.error(f"Invalid ROI format: {roi}")
+            return jsonify({'error': 'Invalid ROI format'}), 400
+        
+        # Get the Zarr array
+        zarr_array = open_target_zarr_array()
+        if zarr_array is None:
+            logger.error("Failed to open Zarr array")
+            return jsonify({'error': 'Failed to open Zarr array'}), 500
+        
+        logger.info(f"Processing ROI for interaction analysis: {roi}")
+        
+        # Convert ROI format to match the expected format
+        roi_formatted = {
+            'z': [int(roi['zMin']), int(roi['zMax'])],
+            'y': [int(roi['yMin']), int(roi['yMax'])],
+            'x': [int(roi['xMin']), int(roi['xMax'])]
+        }
+        
+        # Calculate interaction heatmap
+        result = calculate_rgb_interaction_heatmap_py(
+            zarr_array,
+            roi_formatted['z'],
+            roi_formatted['y'],
+            roi_formatted['x'],
+            'sum'
+        )
+        
+        if 'error' in result:
+            logger.error(f"Error in interaction heatmap calculation: {result['error']}")
+            return jsonify(result), 400
+            
+        logger.info("Successfully calculated interaction heatmaps")
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error in analyze_interaction_heatmap: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 
 @app.route('/api/roi_segmentation.json', methods=['GET'])
 def get_roi_segmentation():

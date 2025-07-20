@@ -11,80 +11,60 @@ const HeatmapResults = ({
   onHeatmapClick,
   onGroupToggle
 }) => {
+  console.log('HeatmapResults render:', { heatmapResults, interactionHeatmapResult, activeGroups });
   if (!heatmapResults && !interactionHeatmapResult) return null;
 
   return (
-    <div style={{ 
-      position: 'fixed',
-      bottom: '20px',
-      left: '20px',
-      right: '20px',
-      backgroundColor: 'transparent',
-      padding: '20px',
-      borderRadius: '8px',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '20px'
-    }}>
+    <div className="heatmap-results-container">
       <button 
         onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          background: 'none',
-          border: 'none',
-          color: 'white',
-          fontSize: '20px',
-          cursor: 'pointer',
-          zIndex: 10
-        }}
+        className="btn-close"
       >
         ×
       </button>
 
-      {/* Regular Heatmaps */}
-      {Object.keys(heatmapResults).length > 0 && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '20px',
-          padding: '10px',
-          background: 'transparent'
-        }}>
-          {Object.entries(heatmapResults).map(([channelIndex, result]) => (
-            <div key={channelIndex} style={{ 
+      {/* Regular Heatmaps - Horizontal Layout */}
+      {heatmapResults && heatmapResults.heatmaps && Object.keys(heatmapResults.heatmaps).length > 0 && (
+        <div className="heatmap-grid">
+
+          
+          {Object.entries(heatmapResults.heatmaps).map(([channelName, channelData]) => (
+            <div key={channelName} style={{ 
               position: 'relative',
+              minWidth: '280px',
+              flexShrink: 0,
               background: 'transparent'
             }}>
-              <div style={{
-                position: 'absolute',
-                top: '-25px',
-                left: '0',
-                color: '#ffffff',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)',
-                zIndex: 2,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                padding: '2px 8px',
-                borderRadius: '4px'
-              }}>
-                {channelIndex}
-              </div>
+
               <Plot
                 data={[{
-                  z: result.data,
+                  z: channelData.data,
                   type: 'heatmap',
-                  colorscale: 'Viridis'
+                  colorscale: 'Viridis',
+                  hoverongaps: false,
+                  hovertemplate: 'X: %{x}<br>Y: %{y}<br>Intensity: %{z:.3f}<extra></extra>'
                 }]}
                 layout={{
-                  width: 300,
-                  height: 300,
-                  margin: { t: 20, b: 20, l: 20, r: 20 },
-                  paper_bgcolor: 'rgba(0,0,0,0)',
-                  plot_bgcolor: 'rgba(0,0,0,0)'
+                  width: 280,
+                  height: 200,
+                  margin: { t: 25, b: 25, l: 25, r: 25 },
+                  paper_bgcolor: 'rgba(0, 0, 0, 0.1)',
+                                    plot_bgcolor: 'rgba(0, 0, 0, 0.1)',
+                  title: {
+                    text: channelName,
+                    font: { color: 'white', size: 16 },
+                    x: 0.5
+                  },
+                  xaxis: {
+                    title: 'X',
+                    titlefont: { color: 'white', size: 12 },
+                    tickfont: { color: 'white', size: 10 }
+                  },
+                  yaxis: {
+                    title: 'Y',
+                    titlefont: { color: 'white', size: 12 },
+                    tickfont: { color: 'white', size: 10 }
+                  }
                 }}
                 config={{ 
                   displayModeBar: false,
@@ -100,53 +80,107 @@ const HeatmapResults = ({
         </div>
       )}
 
-      {/* Interaction Heatmap */}
+      {/* Interaction Heatmap - Simple Checkboxes */}
       {interactionHeatmapResult && (
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '20px',
-          background: 'transparent'
-        }}>
+        <div className="interaction-heatmap-container">
+          {/* Interaction Checkboxes */}
           <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '20px',
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '4px',
             background: 'transparent'
           }}>
-            {Object.entries(interactionHeatmapResult.heatmaps).map(([group, data]) => (
-              <div key={group} style={{ 
-                position: 'relative',
-                background: 'transparent'
+            {Object.entries(groupNames).map(([group, name]) => (
+              <label key={group} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                color: 'white',
+                background: 'transparent',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '-25px',
-                  left: '0',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)',
-                  zIndex: 2,
-                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                  padding: '2px 8px',
-                  borderRadius: '4px'
-                }}>
-                  {groupNames[group.split('_')[1]]}
-                </div>
-                <Plot
-                  data={[{
-                    z: data,
-                    type: 'heatmap',
-                    colorscale: [[0, 'black'], [1, groupColors[group.split('_')[1]]]]
-                  }]}
-                  layout={{
-                    width: 300,
-                    height: 300,
-                    margin: { t: 0, b: 20, l: 20, r: 20 },
-                    paper_bgcolor: 'rgba(0,0,0,0)',
-                    plot_bgcolor: 'rgba(0,0,0,0)'
-                  }}
+                <input
+                  type="checkbox"
+                  checked={activeGroups[group]}
+                  onChange={() => onGroupToggle(group)}
+                  style={{ margin: 0, transform: 'scale(1.2)' }}
+                />
+                <span style={{ color: groupColors[group], fontWeight: 'bold', fontSize: '14px' }}>{name}</span>
+              </label>
+            ))}
+          </div>
+
+          {/* Selected Interaction Heatmaps Overlay */}
+          {(() => {
+            const activeGroupsList = Object.entries(activeGroups).filter(([group, isActive]) => isActive);
+            if (activeGroupsList.length === 0) return null;
+            
+            // Create overlay data for all active groups with normalization
+            const overlayData = activeGroupsList.map(([groupId]) => {
+              const groupKey = `group_${groupId}`;
+              const groupData = interactionHeatmapResult.heatmaps[groupKey];
+              if (!groupData) return null;
+              
+              // Normalize the data to 0-1 range
+              const flatData = groupData.flat();
+              const minVal = Math.min(...flatData);
+              const maxVal = Math.max(...flatData);
+              const range = maxVal - minVal;
+              
+              const normalizedData = groupData.map(row => 
+                row.map(val => range > 0 ? (val - minVal) / range : 0)
+              );
+              
+              return {
+                z: normalizedData,
+                type: 'heatmap',
+                colorscale: [[0, 'rgba(0,0,0,0)'], [1, groupColors[groupId]]],
+                showscale: false,
+                opacity: 0.7,
+                name: groupNames[groupId]
+              };
+            }).filter(Boolean);
+            
+            if (overlayData.length === 0) return null;
+            
+            return (
+              <div style={{ 
+                position: 'relative',
+                background: 'transparent',
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
+                
+                
+                                 <Plot
+                   data={overlayData}
+                   layout={{
+                     width: 300,
+                     height: 150,
+                     margin: { t: 20, b: 20, l: 20, r: 20 },
+                     paper_bgcolor: 'rgba(0, 0, 0, 0.1)',
+                     plot_bgcolor: 'rgba(0, 0, 0, 0.1)',
+                     xaxis: {
+                       title: 'X',
+                       titlefont: { color: 'white', size: 8 },
+                       tickfont: { color: 'white', size: 6 },
+                       showgrid: false,
+                       showticklabels: false,
+                       zeroline: false
+                     },
+                     yaxis: {
+                       title: 'Y',
+                       titlefont: { color: 'black', size: 8 },
+                       tickfont: { color: 'black', size: 6 },
+                       showgrid: false,
+                       showticklabels: false,
+                       zeroline: false
+                     }
+                   }}
                   config={{ 
                     displayModeBar: false,
                     responsive: true
@@ -157,35 +191,8 @@ const HeatmapResults = ({
                   }}
                 />
               </div>
-            ))}
-          </div>
-
-          {/* Group Toggles */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '10px', 
-            flexWrap: 'wrap',
-            background: 'transparent'
-          }}>
-            {Object.entries(activeGroups).map(([group, isActive]) => (
-              <label key={group} style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '5px',
-                color: 'white',
-                background: 'rgba(0, 0, 0, 0.5)',
-                padding: '5px 10px',
-                borderRadius: '4px'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={isActive}
-                  onChange={() => onGroupToggle(group)}
-                />
-                {groupNames[group]}
-              </label>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       )}
     </div>

@@ -7,7 +7,7 @@ function InteractionHeatmaps({ currentROI, onInteractionResults }) {
     setIsAnalyzingInteractionHeatmap(true);
     try {
       const factor = 8;
-      const roiSize = 800;
+      const roiSize = 400;
 
       const x = Number(currentROI.x) || 0;
       const y = Number(currentROI.y) || 0;
@@ -65,14 +65,14 @@ function InteractionHeatmaps({ currentROI, onInteractionResults }) {
           backgroundColor: '#6f42c1',
           color: 'white',
           border: 'none',
-          borderRadius: '5px',
-          padding: '12px 24px',
-          fontSize: '16px',
-          marginRight: '10px',
+          borderRadius: '4px',
+          padding: '6px 12px',
+          fontSize: '12px',
+          marginRight: '4px',
           cursor: isAnalyzingInteractionHeatmap ? 'not-allowed' : 'pointer'
         }}
       >
-        {isAnalyzingInteractionHeatmap ? 'Analyzing...' : 'Analyze Interactions'}
+        {isAnalyzingInteractionHeatmap ? 'Analyzing...' : 'Interactions'}
       </button>
     </div>
   );

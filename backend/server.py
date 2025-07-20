@@ -289,12 +289,11 @@ def update_config():
     try:
         data = request.get_json()
         selected_groups = data.get('selectedGroups', [])
-        show_circles = data.get('showCircles', False)
         
-        logger.info(f"Updating config with selected groups: {selected_groups}, show circles: {show_circles}")
+        logger.info(f"Updating config with selected groups: {selected_groups}")
         
-        # Generate dynamic config based on selected groups
-        config = generate_dynamic_vitessce_config(selected_groups, show_circles)
+        # Generate config based on selected groups
+        config = generate_vitessce_config()
         return jsonify(config)
         
     except Exception as e:
