@@ -9,12 +9,10 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [interactionGroups, setInteractionGroups] = useState([]);
-  const [showCircles, setShowCircles] = useState(false);
 
   // Notify parent component when selectedGroups changes
   useEffect(() => {
     console.log('ROISelector: selectedGroups changed to:', selectedGroups);
-    console.log('ROISelector: showCircles:', showCircles);
     
     // Notify parent component about group selection
     if (onGroupSelection) {
@@ -22,7 +20,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     }
     
     // Config is now generated directly in frontend - no need to send to backend
-  }, [selectedGroups, showCircles, onGroupSelection]);
+  }, [selectedGroups, onGroupSelection]);
 
   const computeCentroid = (allCoords) => {
     const flatCoords = allCoords.flat();
@@ -127,9 +125,9 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
 
   const handleSetView = () => {
     if (currentROI && currentROI.x !== undefined && currentROI.y !== undefined) {
-      // Transform coordinates: X = x*8, Y = 5508-y*8
-      const roiX = currentROI.x * 8;
-      const roiY = 5508 - (currentROI.y * 8);
+      // Transform coordinates: X = x*8, Y = y*8 (flipped)
+      const roiX = (currentROI.x+100) * 8;
+      const roiY = (currentROI.y-100) * 8 ;
       
       // Find the interaction group for the current ROI
       const currentROIGroup = currentROI.interactions && currentROI.interactions.length > 0 
@@ -139,7 +137,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       const viewConfig = {
         spatialTargetX: roiX,
         spatialTargetY: roiY,
-        spatialZoom: -2.0,  // Moderate zoom to show ROI with range x±200, y±200
+        spatialZoom: -1.0,  // Moderate zoom to show ROI with range x±200, y±200
         refreshConfig: true,
         currentROIGroup: currentROIGroup // Pass the current ROI group
       };
@@ -153,14 +151,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     }
   };
 
-  const handleShowCirclesToggle = () => {
-    const newShowCircles = !showCircles;
-    setShowCircles(newShowCircles);
-    
-    onSetView({
-      showCircles: newShowCircles
-    });
-  };
+
 
   const toggleGroup = (group) => {
     let newSelectedGroups;
@@ -221,10 +212,10 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
 
   return (
     <div className="roi-selector-container">
-      <h4 style={{ fontSize: '13px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
-      <p style={{ fontSize: '10px', marginBottom: '2px', color: '#000' }}>Select Interaction Type (only one at a time):</p>
+      <h4 style={{ fontSize: '14px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
+      <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type (only one at a time):</p>
       {interactionGroups.map(group => (
-        <label key={group} className="checkbox-item" style={{ fontSize: '10px', marginBottom: '1px', color: '#000' }}>
+        <label key={group} className="checkbox-item" style={{ fontSize: '11px', marginBottom: '1px', color: '#000' }}>
           <input
             type="radio"
             name="interactionType"
@@ -237,7 +228,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       ))}
       
       {selectedGroups.length === 0 && (
-        <div style={{ marginTop: "10px", padding: "8px", backgroundColor: "rgba(255, 243, 205, 0.8)", border: "1px solid rgba(255, 193, 7, 0.3)", borderRadius: "4px", color: "#856404" }}>
+        <div style={{ marginTop: "5px", padding: "5px", backgroundColor: "rgba(255, 243, 205, 0.8)", border: "1px solid rgba(255, 193, 7, 0.3)", borderRadius: "4px", color: "#856404", fontSize: "8px" }}>
           <strong>Note:</strong> Please select one interaction type above to view ROIs.
         </div>
       )}
@@ -246,46 +237,36 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       {selectedGroups.length > 0 ? (
         <>
           <div className="text-center" style={{ marginBottom: "3px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "12px", fontWeight: "600", color: "#000" }}>ROI #{currentIndex + 1}</span>
-            <span style={{ fontSize: "11px", fontWeight: "bold", color: "#000" }}>
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#000" }}>ROI #{currentIndex + 1}</span>
+            <span style={{ fontSize: "12px", fontWeight: "bold", color: "#000" }}>
               Score: {currentROI.score?.toFixed(3) || "0.000"}
             </span>
-            <span style={{ fontSize: "9px", color: "#666" }}>
+            <span style={{ fontSize: "10px", color: "#666" }}>
               {currentROI.interactions?.join(", ") || "None"}
             </span>
           </div>
 
-          <div className="text-center" style={{ marginBottom: "3px" }}>
-            <label className="checkbox-item" style={{ justifyContent: "center", fontSize: "10px", color: "#000" }}>
-              <input
-                type="checkbox"
-                checked={showCircles}
-                onChange={handleShowCirclesToggle}
-                style={{ transform: "scale(1.0)", marginRight: "4px" }}
-              />
-              <span>Show interactive ROI circles</span>
-            </label>
-          </div>
+
 
           <div className="text-center" style={{ marginBottom: "1px" }}>
             <button 
               onClick={prev}
               className="btn"
-              style={{ marginRight: "3px", padding: "3px 6px", fontSize: "10px" }}
+              style={{ marginRight: "3px", padding: "3px 6px", fontSize: "11px" }}
             >
               ←
             </button>
             <button 
               onClick={() => handleSetView()}
               className="btn"
-              style={{ marginRight: "3px", padding: "4px 10px", fontSize: "10px" }}
+              style={{ marginRight: "3px", padding: "4px 10px", fontSize: "11px" }}
             >
               Set View
             </button>
             <button 
               onClick={next}
               className="btn"
-              style={{ padding: "3px 6px", fontSize: "10px" }}
+              style={{ padding: "3px 6px", fontSize: "11px" }}
             >
               →
             </button>
@@ -304,12 +285,8 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
               onInteractionResults={onInteractionResults}
             />
           </div>
-        </>
-      ) : (
-        <div className="text-center" style={{ padding: "2px", fontStyle: "italic", color: "#666" }}>
-          Select one interaction type above to view ROIs
-        </div>
-      )}
+                </>
+      ) : null}
     </div>
   );
 }

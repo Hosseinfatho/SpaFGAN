@@ -8,11 +8,11 @@ function Heatmaps({ currentROI, onHeatmapResults }) {
   const analyzeHeatmaps = async () => {
     setIsAnalyzingHeatmaps(true);
     try {
-      const factor = 8;
-      const roiSize = 400;
+      const factor = 1;
+      const roiSize = 200;
 
       const x = Number(currentROI.x) || 0;
-      const y = Number(currentROI.y) || 0;
+      const y = 688-Number(currentROI.y) || 0;
 
       const roi = {
         xMin: Math.max(0, Math.floor((x - roiSize/2) / factor)),

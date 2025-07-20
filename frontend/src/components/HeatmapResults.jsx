@@ -38,7 +38,7 @@ const HeatmapResults = ({
 
               <Plot
                 data={[{
-                  z: channelData.data,
+                  z: channelData.data.slice().reverse(),
                   type: 'heatmap',
                   colorscale: 'Viridis',
                   hoverongaps: false,
@@ -131,7 +131,7 @@ const HeatmapResults = ({
               const maxVal = Math.max(...flatData);
               const range = maxVal - minVal;
               
-              const normalizedData = groupData.map(row => 
+              const normalizedData = groupData.slice().reverse().map(row => 
                 row.map(val => range > 0 ? (val - minVal) / range : 0)
               );
               

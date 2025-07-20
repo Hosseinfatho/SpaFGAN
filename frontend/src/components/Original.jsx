@@ -336,7 +336,7 @@ const MainView = ({ onSetView }) => {
 
             const [cx, cy] = allCoords.flat().reduce((acc, [x, y]) => [acc[0] + x, acc[1] + y], [0, 0]);
             const count = allCoords.flat().length;
-            const centroid = [cx / count, cy / count];
+            const centroid = [cx / count, 688 - (cy / count)]; // Flip Y coordinate
 
             return {
               id: feature.properties.name || `ROI_${index}`,
