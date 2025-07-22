@@ -1,12 +1,23 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
 
+// Function to convert RGB color to Plotly colorscale
+const rgbToColorscale = (rgbColor) => {
+  const [r, g, b] = rgbColor;
+  return [
+    [0, `rgb(0, 0, 0)`],
+    [0.5, `rgb(${r/2}, ${g/2}, ${b/2})`],
+    [1, `rgb(${r}, ${g}, ${b})`]
+  ];
+};
+
 const HeatmapResults = ({ 
   heatmapResults, 
   interactionHeatmapResult, 
   activeGroups, 
   groupColors, 
   groupNames,
+  imageChannels,
   onClose,
   onHeatmapClick,
   onGroupToggle
@@ -40,7 +51,8 @@ const HeatmapResults = ({
                 data={[{
                   z: channelData.data.slice().reverse(),
                   type: 'heatmap',
-                  colorscale: 'Viridis',
+                  colorscale: imageChannels && imageChannels[channelName] ? 
+                    rgbToColorscale(imageChannels[channelName].color) : 'Viridis',
                   hoverongaps: false,
                   hovertemplate: 'X: %{x}<br>Y: %{y}<br>Intensity: %{z:.3f}<extra></extra>'
                 }]}
@@ -82,7 +94,18 @@ const HeatmapResults = ({
 
       {/* Interaction Heatmap - Simple Checkboxes */}
       {interactionHeatmapResult && (
-        <div className="interaction-heatmap-container">
+        <div className="interaction-heatmap-container" style={{ marginLeft: '20px' }}>
+          {/* Title */}
+          <h3 style={{ 
+            color: 'white', 
+            margin: '0 0 10px 0', 
+            fontSize: '16px',
+            textAlign: 'center',
+            fontWeight: 'bold'
+          }}>
+            Interaction Heatmap
+          </h3>
+          
           {/* Interaction Checkboxes */}
           <div style={{ 
             display: 'flex', 
@@ -107,7 +130,7 @@ const HeatmapResults = ({
                   type="checkbox"
                   checked={activeGroups[group]}
                   onChange={() => onGroupToggle(group)}
-                  style={{ margin: 0, transform: 'scale(1.2)' }}
+                  style={{ margin: 0, transform: 'scale(1.1)' }}
                 />
                 <span style={{ color: groupColors[group], fontWeight: 'bold', fontSize: '14px' }}>{name}</span>
               </label>
@@ -120,27 +143,41 @@ const HeatmapResults = ({
             if (activeGroupsList.length === 0) return null;
             
             // Create overlay data for all active groups with normalization
-            const overlayData = activeGroupsList.map(([groupId]) => {
+            const overlayData = activeGroupsList.map(([groupId], index) => {
               const groupKey = `group_${groupId}`;
               const groupData = interactionHeatmapResult.heatmaps[groupKey];
               if (!groupData) return null;
               
-              // Normalize the data to 0-1 range
+              // Normalize the data to 0-1 range with better visibility for small values
               const flatData = groupData.flat();
               const minVal = Math.min(...flatData);
               const maxVal = Math.max(...flatData);
               const range = maxVal - minVal;
               
+              // Apply square root transformation to enhance small values
               const normalizedData = groupData.slice().reverse().map(row => 
-                row.map(val => range > 0 ? (val - minVal) / range : 0)
+                row.map(val => {
+                  if (range <= 0) return 0;
+                  const normalized = (val - minVal) / range;
+                  // Apply square root transformation to make small values more visible
+                  return Math.sqrt(normalized);
+                })
               );
               
               return {
                 z: normalizedData,
                 type: 'heatmap',
-                colorscale: [[0, 'rgba(0,0,0,0)'], [1, groupColors[groupId]]],
+                colorscale: [
+                  [0, 'rgba(0,0,0,0)'],
+                  [0.1, groupColors[groupId] + '20'], // 12% opacity
+                  [0.2, groupColors[groupId] + '40'], // 25% opacity
+                  [0.4, groupColors[groupId] + '60'], // 37% opacity
+                  [0.6, groupColors[groupId] + '80'], // 50% opacity
+                  [0.8, groupColors[groupId] + 'B0'], // 69% opacity
+                  [1, groupColors[groupId]]
+                ],
                 showscale: false,
-                opacity: 0.7,
+                opacity: 1.0,
                 name: groupNames[groupId]
               };
             }).filter(Boolean);
@@ -169,15 +206,15 @@ const HeatmapResults = ({
                        titlefont: { color: 'white', size: 8 },
                        tickfont: { color: 'white', size: 6 },
                        showgrid: false,
-                       showticklabels: false,
+                       showticklabels: true,
                        zeroline: false
                      },
                      yaxis: {
                        title: 'Y',
-                       titlefont: { color: 'black', size: 8 },
-                       tickfont: { color: 'black', size: 6 },
+                       titlefont: { color: 'white', size: 8 },
+                       tickfont: { color: 'white', size: 6 },
                        showgrid: false,
-                       showticklabels: false,
+                       showticklabels: true,
                        zeroline: false
                      }
                    }}

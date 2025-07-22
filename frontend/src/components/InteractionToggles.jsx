@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { INTERACTION_TYPES } from '../utils/configGenerator';
 import './InteractionToggles.css';
+
+// Import INTERACTION_TYPES from Original.jsx
+const INTERACTION_TYPES = {
+  'B-cell_infiltration': 'B-cell infiltration',
+  'T-cell_maturation': 'T-cell maturation', 
+  'Inflammatory_zone': 'Inflammatory zone',
+  'Oxidative_stress_regulation': 'Oxidative stress regulation'
+};
 
 const InteractionToggles = ({ onConfigChange }) => {
     const [activeInteractions, setActiveInteractions] = useState(['B-cell_infiltration']);

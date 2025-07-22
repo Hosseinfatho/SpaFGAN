@@ -18,23 +18,23 @@ def create_vitessce_segmentation():
     # Shape: (4, height, width) - 4 channels for 4 interaction types
     segmentation_array = np.zeros((4, height, width), dtype=np.uint16)
     
-    # Define interaction types
+    # Define interaction types - updated
     interaction_types = [
         "B-cell_infiltration",
-        "Inflammatory_zone", 
-        "T-cell_entry_site",
-        "Oxidative_stress_niche"
+        "T-cell_maturation", 
+        "Inflammatory_zone",
+        "Oxidative_stress_regulation"
     ]
     
     print(f"Creating segmentation array with shape: {segmentation_array.shape}")
     print(f"Interaction types: {interaction_types}")
     
-    # Load existing ROI data and create masks
+    # Load existing ROI data and create masks - updated
     roi_files = {
         'B-cell_infiltration': 'output/roi_segmentation_B-cell_infiltration.json',
+        'T-cell_maturation': 'output/roi_segmentation_T-cell_maturation.json',
         'Inflammatory_zone': 'output/roi_segmentation_Inflammatory_zone.json',
-        'T-cell_entry_site': 'output/roi_segmentation_T-cell_entry_site.json',
-        'Oxidative_stress_niche': 'output/roi_segmentation_Oxidative_stress_niche.json'
+        'Oxidative_stress_regulation': 'output/roi_segmentation_Oxidative_stress_regulation.json'
     }
     
     # Process each interaction type

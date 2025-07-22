@@ -259,12 +259,12 @@ def calculate_rgb_interaction_heatmap_py(zarr_array, roi_z, roi_y, roi_x, projec
         if zarr_array.ndim != 5:
             logger.warning(f"[Interaction Heatmap] Expected 5D array (t,c,z,y,x), but got {zarr_array.ndim}D. Proceeding cautiously.")
         
-        # Define channel groups and their ranges
+        # Define channel groups and their ranges - updated for new interactions
         channel_groups = {
-            1: [0, 1],       # group 1: CD31 + CD11b
-            2: [1, 2],       # group 2: CD11b + Catalase
-            3: [0, 3, 4],    # group 3: CD31 + CD4 + CD20
-            4: [3, 4]        # group 4: CD4 + CD20
+            1: [4, 0],       # group 1: CD20 + CD31 (B-cell infiltration)
+            2: [3, 0],       # group 2: CD4 + CD31 (T-cell maturation)
+            3: [1, 5],       # group 3: CD11b + CD11c (Inflammatory zone)
+            4: [1, 2]        # group 4: CD11b + Catalase (Oxidative stress regulation)
         }
         
         # Define channel ranges
@@ -273,7 +273,8 @@ def calculate_rgb_interaction_heatmap_py(zarr_array, roi_z, roi_y, roi_x, projec
             4: [1000, 7000],     # CD20
             1: [700, 6000],      # CD11b
             3: [1638, 10000],    # CD4
-            2: [1638, 7000]      # Catalase
+            2: [1638, 7000],     # Catalase
+            5: [370, 1432]       # CD11c
         }
         
         logger.info(f"Processing channel groups: {channel_groups}")
@@ -445,9 +446,13 @@ def calculate_rgb_interaction_heatmap_py(zarr_array, roi_z, roi_y, roi_x, projec
 @app.route('/api/top_roi_scores_<interaction_type>', methods=['GET'])
 def serve_top_roi_scores(interaction_type):
     """Serve top ROI scores for a specific interaction type"""
+    logger.info(f"Request received for top ROI scores with interaction_type: '{interaction_type}'")
     try:
-        # Convert interaction type to filename format
-        filename = f"top_roi_scores_{interaction_type}.json"
+        # Decode the interaction type and convert to filename format
+        from urllib.parse import unquote
+        decoded_interaction_type = unquote(interaction_type)
+        filename = f"top_roi_scores_{decoded_interaction_type}.json"
+        logger.info(f"Looking for file: {filename}")
         roi_path = Path(__file__).parent / "output" / filename
         
         if not roi_path.exists():
@@ -702,17 +707,17 @@ def get_roi_segmentation_inflammatory():
         logger.error(f"Error serving roi_segmentation_Inflammatory_zone.json: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve roi_segmentation_Inflammatory_zone.json: {e}"}), 500
 
-@app.route('/api/roi_segmentation_T-cell_entry_site.json', methods=['GET'])
+@app.route('/api/roi_segmentation_T-cell_maturation.json', methods=['GET'])
 def get_roi_segmentation_t_cell():
-    """Serve the roi_segmentation_T-cell_entry_site.json file"""
-    logger.info("Request received for /api/roi_segmentation_T-cell_entry_site.json [GET]")
+    """Serve the roi_segmentation_T-cell_maturation.json file"""
+    logger.info("Request received for /api/roi_segmentation_T-cell_maturation.json [GET]")
     
     try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_entry_site.json'
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_maturation.json'
         
         if not roi_file_path.exists():
-            logger.error(f"roi_segmentation_T-cell_entry_site.json file not found: {roi_file_path}")
-            return jsonify({"error": "roi_segmentation_T-cell_entry_site.json file not found"}), 404
+            logger.error(f"roi_segmentation_T-cell_maturation.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_T-cell_maturation.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -720,20 +725,20 @@ def get_roi_segmentation_t_cell():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving roi_segmentation_T-cell_entry_site.json: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve roi_segmentation_T-cell_entry_site.json: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_T-cell_maturation.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_T-cell_maturation.json: {e}"}), 500
 
-@app.route('/api/roi_segmentation_Oxidative_stress_niche.json', methods=['GET'])
+@app.route('/api/roi_segmentation_Oxidative_stress_regulation.json', methods=['GET'])
 def get_roi_segmentation_oxidative():
-    """Serve the roi_segmentation_Oxidative_stress_niche.json file"""
-    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_niche.json [GET]")
+    """Serve the roi_segmentation_Oxidative_stress_regulation.json file"""
+    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_regulation.json [GET]")
     
     try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_niche.json'
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_regulation.json'
         
         if not roi_file_path.exists():
-            logger.error(f"roi_segmentation_Oxidative_stress_niche.json file not found: {roi_file_path}")
-            return jsonify({"error": "roi_segmentation_Oxidative_stress_niche.json file not found"}), 404
+            logger.error(f"roi_segmentation_Oxidative_stress_regulation.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_Oxidative_stress_regulation.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -741,8 +746,8 @@ def get_roi_segmentation_oxidative():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving roi_segmentation_Oxidative_stress_niche.json: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve roi_segmentation_Oxidative_stress_niche.json: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_Oxidative_stress_regulation.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_Oxidative_stress_regulation.json: {e}"}), 500
 
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
@@ -767,6 +772,13 @@ def serve_roi_shapes():
                     # Ensure 'name' field exists
                     if 'name' not in feature['properties'] and 'id' in feature['properties']:
                         feature['properties']['name'] = feature['properties']['id']
+                    
+                    # Add tooltip_name for better tooltip display
+                    if 'interaction' in feature['properties'] and 'score' in feature['properties']:
+                        interaction = feature['properties']['interaction']
+                        roi_id = feature['properties'].get('id', 'Unknown')
+                        score = feature['properties']['score']
+                        feature['properties']['tooltip_name'] = f"{interaction}_{roi_id}_Score:{score:.3f}"
             
         return jsonify(roi_data)
     except Exception as e:

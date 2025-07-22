@@ -2,77 +2,45 @@
   "version": "0.1.0",
   "type": "obsFeatureMatrix",
   "data": {
-    "ROI_00": {
-      "score": 0.39121250808238983,
+    "B-cell infiltration_1_Score:0.736": {
+      "score": 0.7355500012636185,
       "interaction": "B-cell infiltration",
-      "intensity_score": 0.28242501616477966,
+      "intensity_score": 0.47110000252723694,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "B-cell infiltration_2_Score:0.666": {
+      "score": 0.6657499969005585,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.33149999380111694,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "B-cell infiltration_3_Score:0.651": {
+      "score": 0.6508499979972839,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.30169999599456787,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "B-cell infiltration_4_Score:0.432": {
+      "score": 0.4324750006198883,
+      "interaction": "B-cell infiltration",
+      "intensity_score": 0.3649500012397766,
       "attention_score": 0.5,
       "num_nodes": 2,
       "num_edges": 2
     },
-    "ROI_01": {
-      "score": 0.36726875603199005,
+    "B-cell infiltration_5_Score:0.421": {
+      "score": 0.420912504196167,
       "interaction": "B-cell infiltration",
-      "intensity_score": 0.3345375061035156,
-      "attention_score": 0.4000000059604645,
-      "num_nodes": 4,
-      "num_edges": 6
-    },
-    "ROI_02": {
-      "score": 0.35745833814144135,
-      "interaction": "B-cell infiltration",
-      "intensity_score": 0.3815833330154419,
-      "attention_score": 0.3333333432674408,
-      "num_nodes": 3,
-      "num_edges": 6
-    },
-    "ROI_03": {
-      "score": 0.34858573973178864,
-      "interaction": "B-cell infiltration",
-      "intensity_score": 0.2686000168323517,
-      "attention_score": 0.4285714626312256,
-      "num_nodes": 3,
-      "num_edges": 4
-    },
-    "ROI_04": {
-      "score": 0.3459440618753433,
-      "interaction": "B-cell infiltration",
-      "intensity_score": 0.26331666111946106,
-      "attention_score": 0.4285714626312256,
-      "num_nodes": 3,
-      "num_edges": 4
-    },
-    "ROI_05": {
-      "score": 0.3453940749168396,
-      "interaction": "B-cell infiltration",
-      "intensity_score": 0.2622166872024536,
-      "attention_score": 0.4285714626312256,
-      "num_nodes": 3,
-      "num_edges": 4
-    },
-    "ROI_06": {
-      "score": 0.3440440595149994,
-      "interaction": "B-cell infiltration",
-      "intensity_score": 0.2595166563987732,
-      "attention_score": 0.4285714626312256,
-      "num_nodes": 3,
-      "num_edges": 4
-    },
-    "ROI_07": {
-      "score": 0.33593573421239853,
-      "interaction": "B-cell infiltration",
-      "intensity_score": 0.24330000579357147,
-      "attention_score": 0.4285714626312256,
-      "num_nodes": 3,
-      "num_edges": 4
-    },
-    "ROI_08": {
-      "score": 0.3332524001598358,
-      "interaction": "B-cell infiltration",
-      "intensity_score": 0.23793333768844604,
-      "attention_score": 0.4285714626312256,
-      "num_nodes": 3,
-      "num_edges": 4
+      "intensity_score": 0.341825008392334,
+      "attention_score": 0.5,
+      "num_nodes": 2,
+      "num_edges": 2
     }
   }
 }

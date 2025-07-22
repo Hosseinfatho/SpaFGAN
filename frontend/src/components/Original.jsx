@@ -4,21 +4,36 @@ import ROISelector from './ROISelector';
 import Plot from 'react-plotly.js';
 import HeatmapResults from './HeatmapResults';
 
-// Constants for Image Channels
-const IMAGE_CHANNELS = {
-  'CD31': { 'id': 'cd31', 'color': [0, 255, 0], 'window': [300, 20000], 'targetC': 19 },
-  'CD20': { 'id': 'cd20', 'color': [255, 255, 0], 'window': [1000, 7000], 'targetC': 27 },
-  'CD11b': { 'id': 'cd11b', 'color': [255, 0, 255], 'window': [700, 6000], 'targetC': 37 },
-  'CD4': { 'id': 'cd4', 'color': [0, 255, 255], 'window': [1638, 10000], 'targetC': 25 },
-  'CD11c': { 'id': 'cd11c', 'color': [128, 0, 128], 'window': [370, 1432], 'targetC': 42 }
+// Interaction types configuration
+const INTERACTION_TYPES = {
+  'B-cell_infiltration': 'B-cell infiltration',
+  'T-cell_maturation': 'T-cell maturation', 
+  'Inflammatory_zone': 'Inflammatory zone',
+  'Oxidative_stress_regulation': 'Oxidative stress regulation'
 };
 
-// Constants for Interaction Type to ROI Mapping
+// Constants for Image Channels
+const IMAGE_CHANNELS = {
+  'CD31': { 'id': 'cd31', 'color': [0, 255, 0], 'window': [300, 20000], 'targetC': 19 },      // Green
+  'CD20': { 'id': 'cd20', 'color': [255, 255, 0], 'window': [1000, 7000], 'targetC': 27 },    // Yellow
+  'CD11b': { 'id': 'cd11b', 'color': [148, 0, 211], 'window': [700, 6000], 'targetC': 37 },   // Violet
+  'CD4': { 'id': 'cd4', 'color': [135, 206, 235], 'window': [1638, 10000], 'targetC': 25 },   // Sky Blue
+  'CD11c': { 'id': 'cd11c', 'color': [255, 165, 0], 'window': [370, 1432], 'targetC': 42 },   // Orange
+  'Catalase': { 'id': 'catalase', 'color': [255, 0, 0], 'window': [1000, 6000], 'targetC': 59 } // Red
+};
+
+// Constants for Interaction Type to ROI Mapping - updated
 const INTERACTION_TO_ROI = {
   'B-cell infiltration': {
     'file': 'roi_segmentation_B-cell_infiltration.json',
     'obsType': 'ROI_B-cell',
     'color': [255, 180, 180],  // Light Red
+    'strokeWidth': 16
+  },
+  'T-cell maturation': {
+    'file': 'roi_segmentation_T-cell_maturation.json',
+    'obsType': 'ROI_T-cell',
+    'color': [180, 180, 255],  // Light Blue
     'strokeWidth': 16
   },
   'Inflammatory zone': {
@@ -27,22 +42,16 @@ const INTERACTION_TO_ROI = {
     'color': [180, 255, 180],  // Light Green
     'strokeWidth': 16
   },
-  'T-cell entry site': {
-    'file': 'roi_segmentation_T-cell_entry_site.json',
-    'obsType': 'ROI_T-cell',
-    'color': [180, 180, 255],  // Light Blue
-    'strokeWidth': 16
-  },
-  'Oxidative stress niche': {
-    'file': 'roi_segmentation_Oxidative_stress_niche.json',
+  'Oxidative stress regulation': {
+    'file': 'roi_segmentation_Oxidative_stress_regulation.json',
     'obsType': 'ROI_Oxidative',
     'color': [255, 255, 180],  // Light Yellow
-    'strokeWidth':16
+    'strokeWidth': 16
   }
 };
 
 // Simple config generation function
-const generateVitessceConfig = (selectedGroups = []) => { 
+const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) => { 
   // Build coordination space
   const coordination_space = {
     'dataset': { "A": "bv" },
@@ -83,7 +92,7 @@ const generateVitessceConfig = (selectedGroups = []) => {
     'metaCoordinationScopesBy': {
       "metaA": {
         "imageLayer": {
-          "imageChannel": { "image": ["CD31", "CD20", "CD11b", "CD4", "CD11c"] },
+          "imageChannel": { "image": ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"] },
           "spatialLayerVisible": { "image": "image" },
           "spatialLayerOpacity": { "image": "image" },
           "spatialRenderingMode": { "image": "3D" },
@@ -198,7 +207,7 @@ const generateVitessceConfig = (selectedGroups = []) => {
           'spatialSegmentationStrokeWidth': Object.keys(coordination_space['spatialSegmentationStrokeWidth']),
           [CoordinationType.TOOLTIPS_VISIBLE]: Object.keys(coordination_space[CoordinationType.TOOLTIPS_VISIBLE])
         },
-        'x': 2, 'y': 0, 'w': 10, 'h': 12
+        'x': 2, 'y': 0, 'w': 10, 'h': 8
       },
       {
         'component': 'layerControllerBeta',
@@ -249,22 +258,22 @@ const MainView = ({ onSetView }) => {
   const vitessceRef = useRef(null);
 
   const groupColors = {
-    1: '#e41a1c',  // Red
-    2: '#377eb8',  // Blue
-    3: '#4daf4a',  // Green
-    4: '#984ea3'   // Purple
+    1: '#d7191c',  // Dark Red - B-cell infiltration
+    2: '#fdae61',  // Orange - T-cell maturation
+    3: '#abdda4',  // Light Green - Inflammatory zone
+    4: '#2b83ba'   // Blue - Oxidative stress regulation
   };
 
   const groupNames = {
-    1: 'Endothelial-immune interface',
-    2: 'ROS detox, immune stress',
-    3: 'T/B cell recruitment',
-    4: 'T-B collaboration'
+    1: 'B-cell infiltration',
+    2: 'T-cell maturation',
+    3: 'Inflammatory zone',
+    4: 'Oxidative stress regulation'
   };
 
   // Generate config locally
-  const generateConfig = (groups = []) => {
-    const newConfig = generateVitessceConfig(groups);
+  const generateConfig = (groups = [], hasHeatmapResults = false) => {
+    const newConfig = generateVitessceConfig(groups, hasHeatmapResults);
     setConfig(newConfig);
     setConfigKey(prev => prev + 1); // Force re-render
     
@@ -272,33 +281,25 @@ const MainView = ({ onSetView }) => {
     window.lastConfig = newConfig;
     console.log('Generated config and stored in window.lastConfig:', newConfig);
     
-    // Send config to backend
-    fetch('http://localhost:5000/api/updateconfig', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newConfig)
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Config sent to backend:', data);
-    })
-    .catch(error => {
-      console.error('Error sending config to backend:', error);
-    });
+    // Note: Config is NOT sent to backend here - only sent when Set View is pressed
   };
 
   // Generate initial config on component mount
   useEffect(() => {
-    generateConfig([]);
+    generateConfig([], Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
   }, []);
 
   // Regenerate config when selectedGroups changes
   useEffect(() => {
     console.log('selectedGroups changed, regenerating config:', selectedGroups);
-    generateConfig(selectedGroups);
+    generateConfig(selectedGroups, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
   }, [selectedGroups]);
+
+  // Regenerate config when heatmap results change
+  useEffect(() => {
+    console.log('Heatmap results changed, regenerating config');
+    generateConfig(selectedGroups, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
+  }, [heatmapResults, interactionHeatmapResult]);
 
   // Handle group selection updates from ROISelector
 
@@ -344,6 +345,7 @@ const MainView = ({ onSetView }) => {
               y: centroid[1],
               score: feature.properties.score || 0,
               interactions: feature.properties.interactions || [],
+              tooltip_name: feature.properties.tooltip_name || `${feature.properties.interaction || 'Unknown'}_${feature.properties.id || index}_Score:${(feature.properties.score || 0).toFixed(3)}`,
               raw: feature.properties
             };
           }).filter(Boolean);
@@ -363,7 +365,7 @@ const MainView = ({ onSetView }) => {
     
     if (roiView.refreshConfig) {
       // Generate new config with NO segmentation files - only image
-      const newConfig = generateVitessceConfig([]); // Empty array = no segmentation files
+      const newConfig = generateVitessceConfig([], Object.keys(heatmapResults).length > 0 || interactionHeatmapResult); // Empty array = no segmentation files
       
       // Update spatial coordinates if provided
       if (roiView.spatialTargetX !== undefined) {
@@ -480,6 +482,7 @@ const MainView = ({ onSetView }) => {
           activeGroups={activeGroups}
           groupColors={groupColors}
           groupNames={groupNames}
+          imageChannels={IMAGE_CHANNELS}
           onClose={() => {
             setHeatmapResults({});
             setInteractionHeatmapResult(null);

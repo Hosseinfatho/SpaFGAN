@@ -1,0 +1,54 @@
+{
+  "version": "0.1.0",
+  "type": "obsFeatureMatrix",
+  "data": {
+    "T-cell maturation_1_Score:0.661": {
+      "score": 0.6608999967575073,
+      "interaction": "T-cell maturation",
+      "intensity_score": 0.32179999351501465,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "T-cell maturation_2_Score:0.640": {
+      "score": 0.6403499990701675,
+      "interaction": "T-cell maturation",
+      "intensity_score": 0.2806999981403351,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "T-cell maturation_3_Score:0.622": {
+      "score": 0.6221249997615814,
+      "interaction": "T-cell maturation",
+      "intensity_score": 0.24424999952316284,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "T-cell maturation_4_Score:0.562": {
+      "score": 0.5622749999165535,
+      "interaction": "T-cell maturation",
+      "intensity_score": 0.124549999833107,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "T-cell maturation_5_Score:0.560": {
+      "score": 0.5595999993383884,
+      "interaction": "T-cell maturation",
+      "intensity_score": 0.11919999867677689,
+      "attention_score": 1.0,
+      "num_nodes": 1,
+      "num_edges": 0
+    },
+    "T-cell maturation_6_Score:0.422": {
+      "score": 0.42179998755455017,
+      "interaction": "T-cell maturation",
+      "intensity_score": 0.34360000491142273,
+      "attention_score": 0.4999999701976776,
+      "num_nodes": 2,
+      "num_edges": 2
+    }
+  }
+}

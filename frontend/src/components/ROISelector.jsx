@@ -31,12 +31,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   useEffect(() => {
     console.log('ROISelector: Starting to fetch ROI data...');
     
-    // Define available interaction types and their corresponding files
+    // Define available interaction types and their corresponding files - updated
     const interactionTypes = [
       'B-cell infiltration',
+      'T-cell maturation',
       'Inflammatory zone', 
-      'T-cell entry site',
-      'Oxidative stress niche'
+      'Oxidative stress regulation'
     ];
     
     setInteractionGroups(interactionTypes);
@@ -50,9 +50,11 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   const loadROIData = (interactionType) => {
     console.log('ROISelector: Loading ROI data for:', interactionType);
     
-    // Convert interaction type to filename format
-    const filename = interactionType.replace(/\s+/g, '_').toLowerCase();
+    // Convert interaction type to filename format and encode for URL
+    const filename = encodeURIComponent(interactionType);
     const url = `http://localhost:5000/api/top_roi_scores_${filename}`;
+    
+    console.log('ROISelector: Generated URL:', url);
     
     fetch(url)
       .then((res) => {
@@ -73,12 +75,13 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
 
         const extracted = data.top_rois.map((roi, index) => {
           return {
-            id: `ROI_${roi.roi_id}`,
+            id: `${roi.interaction}_${index + 1}_Score:${roi.scores.combined_score.toFixed(3)}`,
             x: roi.position.x,
             y: roi.position.y,
             z: roi.position.z,
             score: roi.scores.combined_score,
             interactions: [roi.interaction],
+            tooltip_name: roi.tooltip_name || `${roi.interaction}_${roi.roi_id}_Score:${roi.scores.combined_score.toFixed(3)}`,
             raw: roi
           };
         });
@@ -122,12 +125,17 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   });
 
   const currentROI = filteredRois[currentIndex] || {};
+  
+  // Debug: Log currentROI to see what data we have
+  console.log('ROISelector Debug - currentROI:', currentROI);
+  console.log('ROISelector Debug - filteredRois length:', filteredRois.length);
+  console.log('ROISelector Debug - currentIndex:', currentIndex);
 
   const handleSetView = () => {
     if (currentROI && currentROI.x !== undefined && currentROI.y !== undefined) {
-      // Transform coordinates: X = x*8, Y = y*8 (flipped)
-      const roiX = (currentROI.x+100) * 8;
-      const roiY = (currentROI.y-100) * 8 ;
+      // Transform coordinates: X = x*8, Y = (5508 - y*8) (flipped)
+      const roiX = (currentROI.x+25) * 8;
+      const roiY = 5508 - (currentROI.y+25) * 8;
       
       // Find the interaction group for the current ROI
       const currentROIGroup = currentROI.interactions && currentROI.interactions.length > 0 
@@ -237,12 +245,9 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       {selectedGroups.length > 0 ? (
         <>
           <div className="text-center" style={{ marginBottom: "3px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#000" }}>ROI #{currentIndex + 1}</span>
-            <span style={{ fontSize: "12px", fontWeight: "bold", color: "#000" }}>
+            <span style={{ fontSize: "11px", fontWeight: "600", color: "#000" }}>{currentROI.id || `ROI ${currentIndex + 1}`}</span>
+            <span style={{ fontSize: "10px", fontWeight: "bold", color: "#000" }}>
               Score: {currentROI.score?.toFixed(3) || "0.000"}
-            </span>
-            <span style={{ fontSize: "10px", color: "#666" }}>
-              {currentROI.interactions?.join(", ") || "None"}
             </span>
           </div>
 

@@ -367,8 +367,8 @@ def save_interaction_results(interaction_name, roi_scores, output_dir):
     
     logger.info(f"Saved {len(serializable_rois)} ROIs for {interaction_name} to {output_file}")
     
-    # Save top ROIs (top 10 or top 20%)
-    top_count = min(10, max(1, len(serializable_rois) // 5))
+    # Save top ROIs (top 7)
+    top_count = min(7, len(serializable_rois))
     top_rois = serializable_rois[:top_count]
     
     top_output_file = os.path.join(output_dir, f"top_roi_scores_{interaction_name}.json")
@@ -407,8 +407,8 @@ def compute_intensity_score_cd11c(graph):
         return 0.0
 
 def process_cd11c_rois(device):
-    """Process CD11c ROIs with special intensity scoring"""
-    logger.info(f"\nProcessing CD11c (Dendritic signal) with special scoring")
+    """Process CD11c ROIs as part of Inflammatory zone interaction"""
+    logger.info(f"\nProcessing CD11c as part of Inflammatory zone interaction")
     
     # Load CD11c graphs
     cd11c_graphs = load_graphs("CD11c")
@@ -419,13 +419,13 @@ def process_cd11c_rois(device):
     
     logger.info(f"Total CD11c graphs loaded: {len(cd11c_graphs)}")
     
-    # Compute scores for all ROIs
+    # Compute scores for all ROIs using Inflammatory zone interaction
     roi_scores = []
     for i, graph in enumerate(cd11c_graphs):
         logger.info(f"Processing CD11c ROI {i+1}/{len(cd11c_graphs)}")
         
-        # Compute CD11c-specific intensity score
-        intensity_score = compute_intensity_score_cd11c(graph)
+        # Compute intensity score for Inflammatory zone interaction (CD11b + CD11c)
+        intensity_score = compute_intensity_score(graph, "Inflammatory zone")
         
         # Extract position
         position = extract_roi_positions(graph)
@@ -433,7 +433,7 @@ def process_cd11c_rois(device):
         # Create ROI data
         roi_data = {
             'roi_id': i,
-            'interaction': 'Dendritic signal',
+            'interaction': 'Inflammatory zone',  # Updated interaction name
             'position': position,
             'scores': {
                 'intensity_score': intensity_score,
@@ -451,10 +451,10 @@ def process_cd11c_rois(device):
                               key=lambda x: x['scores']['intensity_score'], 
                               reverse=True)
     
-    # Take only top 5
-    top_5_rois = roi_scores_sorted[:5]
+    # Take only top 7
+    top_5_rois = roi_scores_sorted[:7]
     
-    logger.info(f"\nTop 5 CD11c ROIs (Dendritic signal):")
+    logger.info(f"\nTop 5 CD11c ROIs (Inflammatory zone):")
     for i, roi in enumerate(top_5_rois):
         logger.info(f"ROI {i+1}: Intensity Score = {roi['scores']['intensity_score']:.4f}, "
                    f"Num Nodes = {roi['scores']['num_nodes']}, "
@@ -463,7 +463,7 @@ def process_cd11c_rois(device):
     return top_5_rois
 
 def save_cd11c_results(roi_scores, output_dir):
-    """Save CD11c results"""
+    """Save CD11c results as part of Inflammatory zone"""
     if not roi_scores:
         logger.error(f"No CD11c ROI scores to save")
         return
@@ -502,11 +502,11 @@ def save_cd11c_results(roi_scores, output_dir):
     output_file = os.path.join(output_dir, f"top_5_cd11c_rois.json")
     with open(output_file, 'w') as f:
         json.dump({
-            'interaction_name': 'Dendritic signal',
+            'interaction_name': 'Inflammatory zone',  # Updated interaction name
             'top_5_rois': serializable_rois,
             'total_rois': len(roi_scores),
             'statistics': stats,
-            'method': 'cd11c_intensity_nodes_multiplied'
+            'method': 'cd11c_inflammatory_zone_intensity'
         }, f, indent=2)
     
     logger.info(f"Saved top 5 CD11c ROIs to {output_file}")

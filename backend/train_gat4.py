@@ -14,14 +14,13 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Define markers and their biological interactions
+# Define markers and their biological interactions - updated
 MARKERS = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]
 INTERACTIONS = {
-    "T-cell entry site": ["CD31", "CD4"],
-    "Inflammatory zone": ["CD11b", "CD20"],
-    "Oxidative stress niche": ["CD11b", "Catalase"],
-    "B-cell infiltration": ["CD20", "CD31"],
-    "Dendritic signal": ["CD11c"]  # Single marker interaction
+    "B-cell infiltration": ["CD20", "CD31"],      # CD20⁺ CD31⁺
+    "T-cell maturation": ["CD4", "CD31"],         # CD4⁺ CD31⁺
+    "Inflammatory zone": ["CD11b", "CD11c"],      # CD11b⁺ CD11c⁺
+    "Oxidative stress regulation": ["CD11b", "Catalase"]  # CD11b⁺ Catalase⁺
 }
 
 class MarkerGAT(nn.Module):

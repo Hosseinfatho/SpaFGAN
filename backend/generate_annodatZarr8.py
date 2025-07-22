@@ -41,13 +41,12 @@ def load_roi_data_by_interaction(output_dir):
     return interaction_data
 
 def create_interaction_coarse_mapping():
-    """Create mapping from interaction to coarse category"""
+    """Create mapping from interaction to coarse category - updated"""
     mapping = {
         'B-cell infiltration': 'B-cell',
-        'T-cell entry site': 'T-cell',
+        'T-cell maturation': 'T-cell',
         'Inflammatory zone': 'Inflammatory',
-        'Oxidative stress niche': 'Oxidative',
-        'Dendritic signal': 'Dendritic'
+        'Oxidative stress regulation': 'Oxidative'
     }
     return mapping
 

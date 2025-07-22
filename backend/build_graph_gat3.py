@@ -20,27 +20,20 @@ OUTPUT_DIR = "output"
 # Define markers
 MARKERS = ["CD31", "CD20", "CD11b", "CD4", "CD11c", "Catalase"]
 
-# Define biological interactions - simplified to just list of marker pairs
+# Define biological interactions - updated interaction names and pairs
 INTERACTIONS = {
-    "T-cell entry site": ["CD31", "CD4"],
-    "Inflammatory zone": ["CD11b", "CD20"],
-    "Oxidative stress niche": ["CD11b", "Catalase"],
-    "B-cell infiltration": ["CD20", "CD31"],
-    "Dendritic signal": ["CD11c"]  # Single marker interaction
+    "B-cell infiltration": ["CD20", "CD31"],      # CD20⁺ CD31⁺
+    "T-cell maturation": ["CD4", "CD31"],         # CD4⁺ CD31⁺
+    "Inflammatory zone": ["CD11b", "CD11c"],      # CD11b⁺ CD11c⁺
+    "Oxidative stress regulation": ["CD11b", "Catalase"]  # CD11b⁺ Catalase⁺
 }
 
-# Define meaningful marker pairs for inter-connections
+# Define meaningful marker pairs for inter-connections - updated for new interactions
 MEANINGFUL_PAIRS = [
-    ("CD31", "CD4"),   # T-cell entry site
-    ("CD31", "CD20"),  # B-cell infiltration
-    ("CD11b", "CD20"), # Inflammatory zone
-    ("CD11b", "Catalase"), # Oxidative stress niche
-    ("CD4", "CD20"),   # T-B cell interaction
-    ("CD4", "CD11b"),  # T cell - immune cell interaction
-    ("CD20", "CD11b"), # B cell - immune cell interaction
-    ("CD31", "CD11b"), # Blood vessel - immune cell interaction
-    ("CD4", "Catalase"), # T cell - oxidative stress interaction
-    ("CD20", "Catalase"), # B cell - oxidative stress interaction
+    ("CD20", "CD31"),  # B-cell infiltration
+    ("CD4", "CD31"),   # T-cell maturation
+    ("CD11b", "CD11c"), # Inflammatory zone
+    ("CD11b", "Catalase"), # Oxidative stress regulation
 ]
 
 # Define base radius range

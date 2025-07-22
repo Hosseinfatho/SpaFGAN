@@ -16,12 +16,12 @@ MARKER_INDICES = {"CD31": 0, "CD20": 1, "CD11b": 2, "CD4": 3, "CD11c": 4, "Catal
 
 # Define thresholds for each marker (same as in create_segmentation1.py)
 MARKER_THRESHOLDS = {
-    "CD31": 0.1,
-    "CD20": 0.1,
+    "CD31": 0.08,
+    "CD20": 0.08,
     "CD11b": 0.08,
     "CD4": 0.08,
     "CD11c": 0.08,
-    "Catalase": 0.1
+    "Catalase": 0.08
 }
 
 def load_original_data():

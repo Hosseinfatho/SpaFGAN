@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 
 # Define markers for segmentation with their thresholds
 MARKERS = {
-    "CD31": {"index": 0, "threshold": 0.1},    # Blood vessel cells
+    "CD31": {"index": 0, "threshold": 0.08},    # Blood vessel cells
     "CD11b": {"index": 2, "threshold": 0.08},   # Immune cells
     "CD11c": {"index": 4, "threshold": 0.08},   # Dendritic cells
     "CD4": {"index": 1, "threshold": 0.08},     # T cells
-    "CD20": {"index": 3, "threshold": 0.1},    # B cells
-    "Catalase": {"index": 5, "threshold": 0.1} # Oxidative stress marker
+    "CD20": {"index": 3, "threshold": 0.08},    # B cells
+    "Catalase": {"index": 5, "threshold": 0.08} # Oxidative stress marker
 }
 
 def load_channels():
