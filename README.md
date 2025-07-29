@@ -16,10 +16,8 @@ SpaFGAN/
 │   ├── evaluate_gat5.py       # Model evaluation and performance metrics
 │   ├── Extract_ROI6.py        # ROI extraction and scoring system
 │   ├── generate_vitnesse_config_sdk7.py # Vitnesse visualization config
-│   ├── surrogate_labeling.py  # Surrogate labeling for training
 │   ├── models/                # Trained model files (*.pt)
 │   ├── output/                # Generated outputs and results
-│   └── graph_analysis/        # Graph statistics and visualizations
 ├── frontend/                  # React frontend for visualization
 │   ├── src/
 │   │   ├── components/        # React components (Mainview, ROISelector, etc.)
@@ -71,15 +69,6 @@ SpaFGAN/
     *   The application will display spatial data visualization with ROI overlays
     *   Use the ROI selector to filter and view different cellular interactions
 
-## Evaluation and Results
-
-### Model Performance
-- **CD4 (T-cell entry site)**: GAT model trained for T-cell interaction analysis
-- **CD11b (Inflammatory zone)**: GAT model for inflammatory response detection
-- **Catalase (Oxidative stress niche)**: GAT model for oxidative stress analysis
-- **CD20 (B-cell infiltration)**: GAT model for B-cell infiltration patterns
-- **CD11c (Dendritic signal)**: MLP model for dendritic cell signaling
-
 ### ROI Scoring System
 - **Intensity Score**: Based on marker expression levels (nodes × average intensity)
 - **Attention Score**: Based on graph attention weights from trained models
@@ -99,8 +88,3 @@ SpaFGAN/
 - Score-based filtering and highlighting
 - Multi-marker overlay capabilities
 - Real-time ROI selection and analysis
-
-### 1-surrogate_labeling.py
-- Implements surrogate labeling for training data generation
-- Creates synthetic labels for unsupervised learning scenarios
-- Supports the training pipeline for GAT models
