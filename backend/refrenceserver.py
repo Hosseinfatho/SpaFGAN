@@ -176,11 +176,11 @@ def calculate_z_projection_heatmap(zarr_array, channel_index, roi_z, roi_y, roi_
         logger.info(f"[Heatmap] Original roi_y (bottom-up): {roi_y}")
         logger.info(f"[Heatmap] Transformed Zarr Y slice (top-down): [{zarr_slice_y_start}, {zarr_slice_y_end})")
         
-        # Use full Z range (0-193) for projection instead of roi_z
+        # Use ROI Z range for projection instead of full Z range
         roi_slice = (
             slice(0, 1),
             slice(channel_index, channel_index + 1),
-            slice(0, max_z_arr),  # Use full Z range (0-193)
+            slice(roi_z[0], roi_z[1]),  # Use ROI Z range instead of full Z range
             slice(zarr_slice_y_start, zarr_slice_y_end),
             slice(roi_x[0], roi_x[1])
         )
@@ -307,42 +307,30 @@ def calculate_rgb_interaction_heatmap_py(zarr_array, roi_z, roi_y, roi_x, projec
             for ch_idx in channels:
                 logger.info(f"\n  Processing channel {ch_idx}")
                 
-                # Step 1: Get the maximum value for this channel from the whole image
-                whole_channel_slice = (
+                # Step 1: Get the maximum value for this channel from the ROI only
+                roi_channel_slice = (
                     slice(0, 1),
                     slice(ch_idx, ch_idx + 1),
-                    slice(0, max_z_arr),  # Use full Z range
-                    slice(0, max_y_arr),  # Use full Y range
-                    slice(0, max_x_arr)   # Use full X range
-                )
-                whole_channel_data = zarr_array[whole_channel_slice]
-                
-                # Apply channel-specific range filtering to whole image data
-                if ch_idx in channel_ranges:
-                    min_range, max_range = channel_ranges[ch_idx]
-                    whole_channel_data = np.clip(whole_channel_data, min_range, max_range)
-                
-                # Get the maximum value from the whole image for this channel
-                global_max_val = np.max(whole_channel_data)
-                logger.info(f"  Channel {ch_idx} global max value: {global_max_val:.3f}")
-                
-                # Now get ROI data for this channel
-                roi_slice = (
-                    slice(0, 1),
-                    slice(ch_idx, ch_idx + 1),
-                    slice(0, max_z_arr),  # Use full Z range (0-193)
+                    slice(roi_z[0], roi_z[1]),  # Use ROI Z range
                     slice(zarr_slice_y_start, zarr_slice_y_end),
                     slice(roi_x[0], roi_x[1])
                 )
-                data_roi = zarr_array[roi_slice]
+                roi_channel_data = zarr_array[roi_channel_slice]
                 
                 # Apply channel-specific range filtering to ROI data
                 if ch_idx in channel_ranges:
                     min_range, max_range = channel_ranges[ch_idx]
-                    data_roi = np.clip(data_roi, min_range, max_range)
+                    roi_channel_data = np.clip(roi_channel_data, min_range, max_range)
                 
-                # Step 2: Normalize ROI data using the global maximum for this channel
-                data_roi = data_roi / global_max_val
+                # Get the maximum value from the ROI for this channel
+                roi_max_val = np.max(roi_channel_data)
+                logger.info(f"  Channel {ch_idx} ROI max value: {roi_max_val:.3f}")
+                
+                # Use the same ROI data for processing
+                data_roi = roi_channel_data
+                
+                # Step 2: Normalize ROI data using the ROI maximum for this channel
+                data_roi = data_roi / roi_max_val
                 
                 # Step 3: Calculate summation over Z for each x,y position
                 if projection_type == 'sum':

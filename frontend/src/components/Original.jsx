@@ -271,9 +271,31 @@ const MainView = ({ onSetView }) => {
     4: 'Oxidative stress regulation'
   };
 
-  // Generate config locally
-  const generateConfig = (groups = [], hasHeatmapResults = false) => {
+  // Helper function to preserve current view coordinates
+  const preserveViewAndGenerateConfig = (groups = [], hasHeatmapResults = false) => {
+    // Store current view coordinates before regenerating config
+    const currentConfig = config;
+    let currentView = null;
+    
+    if (currentConfig && currentConfig.coordinationSpace) {
+      currentView = {
+        spatialTargetX: currentConfig.coordinationSpace.spatialTargetX?.A,
+        spatialTargetY: currentConfig.coordinationSpace.spatialTargetY?.A,
+        spatialZoom: currentConfig.coordinationSpace.spatialZoom?.A
+      };
+    }
+    
+    // Generate new config
     const newConfig = generateVitessceConfig(groups, hasHeatmapResults);
+    
+    // Restore current view if it exists
+    if (currentView && currentView.spatialTargetX !== undefined) {
+      newConfig.coordinationSpace.spatialTargetX.A = currentView.spatialTargetX;
+      newConfig.coordinationSpace.spatialTargetY.A = currentView.spatialTargetY;
+      newConfig.coordinationSpace.spatialZoom.A = currentView.spatialZoom;
+      console.log('Restored view coordinates:', currentView);
+    }
+    
     setConfig(newConfig);
     setConfigKey(prev => prev + 1); // Force re-render
     
@@ -284,21 +306,32 @@ const MainView = ({ onSetView }) => {
     // Note: Config is NOT sent to backend here - only sent when Set View is pressed
   };
 
+  // Generate config locally (legacy function - now uses preserveViewAndGenerateConfig)
+  const generateConfig = (groups = [], hasHeatmapResults = false) => {
+    preserveViewAndGenerateConfig(groups, hasHeatmapResults);
+  };
+
   // Generate initial config on component mount
   useEffect(() => {
-    generateConfig([], Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
+    const initialConfig = generateVitessceConfig([], Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
+    setConfig(initialConfig);
+    setConfigKey(prev => prev + 1);
+    
+    // Store config globally for debugging
+    window.lastConfig = initialConfig;
+    console.log('Generated initial config:', initialConfig);
   }, []);
 
-  // Regenerate config when selectedGroups changes
+  // Regenerate config when selectedGroups changes - but preserve current view
   useEffect(() => {
     console.log('selectedGroups changed, regenerating config:', selectedGroups);
-    generateConfig(selectedGroups, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
+    preserveViewAndGenerateConfig(selectedGroups, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
   }, [selectedGroups]);
 
-  // Regenerate config when heatmap results change
+  // Regenerate config when heatmap results change - but preserve current view
   useEffect(() => {
     console.log('Heatmap results changed, regenerating config');
-    generateConfig(selectedGroups, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
+    preserveViewAndGenerateConfig(selectedGroups, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
   }, [heatmapResults, interactionHeatmapResult]);
 
   // Handle group selection updates from ROISelector
@@ -361,8 +394,6 @@ const MainView = ({ onSetView }) => {
   const handleSetView = (roiView) => {
     console.log('Mainview handleSetView:', roiView);
     
-
-    
     if (roiView.refreshConfig) {
       // Generate new config with NO segmentation files - only image
       const newConfig = generateVitessceConfig([], Object.keys(heatmapResults).length > 0 || interactionHeatmapResult); // Empty array = no segmentation files
@@ -385,6 +416,11 @@ const MainView = ({ onSetView }) => {
       window.lastConfig = newConfig;
       console.log('Generated new config for Set View - NO segmentation files:', newConfig);
       console.log('Config files:', newConfig.datasets[0].files);
+      console.log('New view coordinates:', {
+        spatialTargetX: newConfig.coordinationSpace.spatialTargetX.A,
+        spatialTargetY: newConfig.coordinationSpace.spatialTargetY.A,
+        spatialZoom: newConfig.coordinationSpace.spatialZoom.A
+      });
       
       // Send config to backend
       fetch('http://localhost:5000/api/updateconfig', {
