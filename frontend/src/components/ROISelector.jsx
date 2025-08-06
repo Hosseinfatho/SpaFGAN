@@ -73,19 +73,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
 
         console.log("ROISelector: Processing", data.rois.length, "ROI features");
 
-        // Filter out ROIs with invalid coordinates (0,0,0) and sort by score
-        const validRois = data.rois.filter(roi => 
-          roi.position.x !== 0 || roi.position.y !== 0 || roi.position.z !== 0
-        );
-        
-        console.log("ROISelector: Valid ROIs after filtering:", validRois.length);
-        
         // Sort ROIs by score in descending order (highest score first)
-        const sortedRois = validRois.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
+        const sortedRois = data.rois.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
         
         const extracted = sortedRois.map((roi, index) => {
           const roiId = index + 1; // Start from 1
-          const newTooltipName = `ROI_${roiId}`;
+          const newTooltipName = `ROI_${roiId}_Score:${roi.scores.combined_score.toFixed(3)}`;
           
           return {
             id: newTooltipName,
