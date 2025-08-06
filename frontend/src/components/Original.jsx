@@ -164,9 +164,20 @@ const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) 
         coordination_space['metaCoordinationScopes']['metaA'][CoordinationType.TOOLTIPS_VISIBLE].push(obs_type);
         coordination_space['metaCoordinationScopes']['metaA']['spatialChannelColor'].push(obs_type);
       
+      // Use local JSON files for GitHub Pages, API for local development
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      let roiUrl;
+      if (isLocalhost) {
+        // Use API for local development
+        roiUrl = `http://localhost:5000/api/${roi_info["file"]}`;
+      } else {
+        // Use local JSON files for GitHub Pages
+        roiUrl = `/data/${roi_info["file"]}`;
+      }
+      
       files.push({
         'fileType': 'obsSegmentations.json',
-        'url': `http://localhost:5000/api/${roi_info["file"]}`,
+        'url': roiUrl,
         'coordinationValues': {
           'obsType': roi_info['obsType']
         }
