@@ -50,12 +50,21 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   const loadROIData = (interactionType) => {
     console.log('ROISelector: Loading ROI data for:', interactionType);
     
-    // Convert interaction type to filename format and encode for URL
-    const filename = encodeURIComponent(interactionType);
+    // Convert interaction type to filename format
+    const filename = interactionType.replace(/\s+/g, '_');
     
-    // Use environment variable for API base URL, fallback to localhost for development
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    const url = `${apiBaseUrl}/api/top_roi_scores_${filename}`;
+    // Use local JSON files for GitHub Pages, API for local development
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    let url;
+    if (isLocalhost) {
+      // Use API for local development
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      url = `${apiBaseUrl}/api/top_roi_scores_${encodeURIComponent(interactionType)}`;
+    } else {
+      // Use local JSON files for GitHub Pages
+      url = `/data/top5_roi_${filename}.json`;
+    }
     
     console.log('ROISelector: Generated URL:', url);
     
