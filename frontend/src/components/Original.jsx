@@ -355,51 +355,58 @@ const MainView = ({ onSetView }) => {
   }, [config]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/roi_shapes")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.features && Array.isArray(data.features)) {
-          const extracted = data.features.map((feature, index) => {
-            const geometry = feature.geometry;
-            if (!geometry || !geometry.coordinates) {
-              return null;
-            }
+    // Only fetch ROI shapes for local development
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocalhost) {
+      fetch("http://localhost:5000/api/roi_shapes")
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (data.features && Array.isArray(data.features)) {
+            const extracted = data.features.map((feature, index) => {
+              const geometry = feature.geometry;
+              if (!geometry || !geometry.coordinates) {
+                return null;
+              }
 
-            let allCoords = [];
-            if (geometry.type === "Polygon") {
-              allCoords = geometry.coordinates;
-            } else if (geometry.type === "MultiPolygon") {
-              allCoords = geometry.coordinates.flat();
-            } else {
-              return null;
-            }
+              let allCoords = [];
+              if (geometry.type === "Polygon") {
+                allCoords = geometry.coordinates;
+              } else if (geometry.type === "MultiPolygon") {
+                allCoords = geometry.coordinates.flat();
+              } else {
+                return null;
+              }
 
-            const [cx, cy] = allCoords.flat().reduce((acc, [x, y]) => [acc[0] + x, acc[1] + y], [0, 0]);
-            const count = allCoords.flat().length;
-            const centroid = [cx / count, 688 - (cy / count)]; // Flip Y coordinate
+              const [cx, cy] = allCoords.flat().reduce((acc, [x, y]) => [acc[0] + x, acc[1] + y], [0, 0]);
+              const count = allCoords.flat().length;
+              const centroid = [cx / count, 688 - (cy / count)]; // Flip Y coordinate
 
-            return {
-              id: feature.properties.name || `ROI_${index}`,
-              x: centroid[0],
-              y: centroid[1],
-              score: feature.properties.score || 0,
-              interactions: feature.properties.interactions || [],
-              tooltip_name: feature.properties.tooltip_name || `${feature.properties.interaction || 'Unknown'}_${feature.properties.id || index}_Score:${(feature.properties.score || 0).toFixed(3)}`,
-              raw: feature.properties
-            };
-          }).filter(Boolean);
-          setRois(extracted);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load ROI shapes:", err);
-        setRois([]);
-      });
+              return {
+                id: feature.properties.name || `ROI_${index}`,
+                x: centroid[0],
+                y: centroid[1],
+                score: feature.properties.score || 0,
+                interactions: feature.properties.interactions || [],
+                tooltip_name: feature.properties.tooltip_name || `${feature.properties.interaction || 'Unknown'}_${feature.properties.id || index}_Score:${(feature.properties.score || 0).toFixed(3)}`,
+                raw: feature.properties
+              };
+            }).filter(Boolean);
+            setRois(extracted);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load ROI shapes:", err);
+          setRois([]);
+        });
+    } else {
+      console.log('Skipping ROI shapes fetch on GitHub Pages');
+      setRois([]);
+    }
   }, []);
 
   const handleSetView = (roiView) => {
@@ -451,21 +458,26 @@ const MainView = ({ onSetView }) => {
         spatialZoom: newConfig.coordinationSpace.spatialZoom.A
       });
       
-      // Send config to backend
-      fetch('http://localhost:5000/api/updateconfig', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newConfig)
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Config sent to backend:', data);
-      })
-      .catch(error => {
-        console.error('Error sending config to backend:', error);
-      });
+             // Send config to backend only for local development
+       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+       if (isLocalhost) {
+         fetch('http://localhost:5000/api/updateconfig', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+           },
+           body: JSON.stringify(newConfig)
+         })
+         .then(response => response.json())
+         .then(data => {
+           console.log('Config sent to backend:', data);
+         })
+         .catch(error => {
+           console.error('Error sending config to backend:', error);
+         });
+       } else {
+         console.log('Skipping backend config update on GitHub Pages');
+       }
     }
 
     if (roiView.selectedGroups && JSON.stringify(roiView.selectedGroups) !== JSON.stringify(selectedGroups)) {
