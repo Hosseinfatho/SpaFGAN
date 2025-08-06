@@ -75,18 +75,21 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
         }
         return res.json();
       })
-      .then((data) => {
-        console.log("ROISelector: Received ROI data for", interactionType, ":", data);
-        
-        if (!data.rois || !Array.isArray(data.rois)) {
-          console.error("ROISelector: Invalid ROI data structure:", data);
-          return;
-        }
+             .then((data) => {
+         console.log("ROISelector: Received ROI data for", interactionType, ":", data);
+         
+         // Handle both API format (rois) and local JSON format (top_rois)
+         const roisArray = data.rois || data.top_rois || [];
+         
+         if (!Array.isArray(roisArray)) {
+           console.error("ROISelector: Invalid ROI data structure:", data);
+           return;
+         }
 
-        console.log("ROISelector: Processing", data.rois.length, "ROI features");
+         console.log("ROISelector: Processing", roisArray.length, "ROI features");
 
-        // Sort ROIs by score in descending order (highest score first)
-        const sortedRois = data.rois.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
+         // Sort ROIs by score in descending order (highest score first)
+         const sortedRois = roisArray.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
         
         const extracted = sortedRois.map((roi, index) => {
           const roiId = index + 1; // Start from 1
