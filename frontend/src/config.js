@@ -6,7 +6,7 @@ const config = {
   },
   // Production environment - replace with your actual backend URL
   production: {
-    apiBaseUrl: 'https://your-railway-app-url.railway.app' // TODO: Replace with actual Railway URL after deployment
+    apiBaseUrl: 'https://spafgan-backend-production.up.railway.app' // TODO: Replace with actual Railway URL after deployment
   }
 };
 
@@ -21,5 +21,5 @@ export const buildApiUrl = (endpoint) => {
   return `${apiBaseUrl}/api/${endpoint}`;
 };
 
-// TODO: After Railway deployment, replace 'your-railway-app-url.railway.app' 
-// with your actual Railway URL (e.g., 'spafgan-backend-production.up.railway.app') 
+// TODO: After Railway deployment, replace the URL above with your actual Railway URL
+// Example: 'https://your-app-name.up.railway.app' 
