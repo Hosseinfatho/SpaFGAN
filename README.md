@@ -4,9 +4,9 @@ This project implements a Graph Attention Network (GAT) based approach for analy
 
 ## 🌐 Online Demo
 
-The application is available online at: [https://your-username.github.io/SpaFGAN/](https://your-username.github.io/SpaFGAN/)
+The application is available online at: [https://hosseinfatho.github.io/SpaFGAN/](https://hosseinfatho.github.io/SpaFGAN/)
 
-**Note**: Replace `your-username` with your actual GitHub username.
+**Status**: Deploying... (GitHub Actions in progress)
 
 ## Project Structure
 
