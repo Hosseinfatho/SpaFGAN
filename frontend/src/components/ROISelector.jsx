@@ -48,13 +48,17 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   }, []);
   
   const loadROIData = (interactionType) => {
+    console.log('ROISelector: ===== loadROIData START =====');
     console.log('ROISelector: Loading ROI data for:', interactionType);
+    console.log('ROISelector: Current hostname:', window.location.hostname);
     
     // Convert interaction type to filename format
     const filename = interactionType.replace(/\s+/g, '_');
+    console.log('ROISelector: Generated filename:', filename);
     
     // Use local JSON files for GitHub Pages, API for local development
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    console.log('ROISelector: isLocalhost:', isLocalhost);
     
     let url;
     if (isLocalhost) {
@@ -191,16 +195,20 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
 
 
   const toggleGroup = (group) => {
+    console.log('ROISelector: toggleGroup called with:', group);
     let newSelectedGroups;
     
     if (selectedGroups.includes(group)) {
       // If the group is already selected, unselect it
       newSelectedGroups = selectedGroups.filter(g => g !== group);
+      console.log('ROISelector: Unselecting group, newSelectedGroups:', newSelectedGroups);
     } else {
       // If selecting a new group, unselect all others and select only this one
       newSelectedGroups = [group];
+      console.log('ROISelector: Selecting new group, newSelectedGroups:', newSelectedGroups);
       
       // Load ROI data for the selected interaction type
+      console.log('ROISelector: About to call loadROIData with:', group);
       loadROIData(group);
     }
     
