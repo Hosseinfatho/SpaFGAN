@@ -101,6 +101,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
         
         const extracted = sortedRois.map((roi, index) => {
           const roiId = index + 1; // Start from 1
+          console.log("ROISelector: Processing ROI", roiId, "with score:", roi.scores.combined_score);
           const newTooltipName = `ROI_${roiId}_Score:${roi.scores.combined_score.toFixed(3)}`;
           
           const extractedRoi = {
@@ -161,8 +162,10 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   
   // Debug: Log currentROI to see what data we have
   console.log('ROISelector Debug - currentROI:', currentROI);
+  console.log('ROISelector Debug - currentROI.score:', currentROI.score);
   console.log('ROISelector Debug - filteredRois length:', filteredRois.length);
   console.log('ROISelector Debug - currentIndex:', currentIndex);
+  console.log('ROISelector Debug - all filteredRois:', filteredRois);
 
   const handleSetView = () => {
     if (currentROI && currentROI.x !== undefined && currentROI.y !== undefined) {
