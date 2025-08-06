@@ -222,7 +222,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     return <p>Loading ROIs or no interactions found...</p>;
   }
 
-  if (filteredRois.length === 0) {
+  if (selectedGroups.length === 0) {
     return (
       <div className="roi-selector-container">
         <h4 style={{ fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
