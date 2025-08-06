@@ -52,7 +52,10 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     // Convert interaction type to filename format and encode for URL
     const filename = encodeURIComponent(interactionType);
-    const url = `http://localhost:5000/api/top_roi_scores_${filename}`;
+    
+    // Use environment variable for API base URL, fallback to localhost for development
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const url = `${apiBaseUrl}/api/top_roi_scores_${filename}`;
     
     console.log('ROISelector: Generated URL:', url);
     
