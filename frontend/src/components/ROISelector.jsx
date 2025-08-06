@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Heatmaps from './Heatmaps';
 import InteractionHeatmaps from './InteractionHeatmaps';
-import { buildApiUrl } from '../config';
 
 
 
@@ -53,7 +52,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     // Convert interaction type to filename format and encode for URL
     const filename = encodeURIComponent(interactionType);
-    const url = buildApiUrl(`top_roi_scores_${filename}`);
+    const url = `http://localhost:5000/api/top_roi_scores_${filename}`;
     
     console.log('ROISelector: Generated URL:', url);
     

@@ -2,12 +2,6 @@
 
 This project implements a Graph Attention Network (GAT) based approach for analyzing spatial biological data with multiple cellular markers. The system processes OME-Zarr data, performs segmentation, extracts features, builds local ROI graphs, and generates Vitnesse configurations for visualization.
 
-## 🌐 Online Demo
-
-The application is available online at: [https://hosseinfatho.github.io/SpaFGAN/](https://hosseinfatho.github.io/SpaFGAN/)
-
-**Status**: Deploying... (GitHub Actions in progress)
-
 ## Project Structure
 
 ```
@@ -94,60 +88,3 @@ SpaFGAN/
 - Score-based filtering and highlighting
 - Multi-marker overlay capabilities
 - Real-time ROI selection and analysis
-
-## 🚀 Deployment Instructions
-
-### Frontend Deployment (GitHub Pages)
-
-1. **Enable GitHub Pages**:
-   - Go to your repository settings
-   - Navigate to "Pages" section
-   - Select "GitHub Actions" as source
-   - The workflow will automatically deploy on push to main branch
-
-2. **Update Repository Name**:
-   - In `frontend/vite.config.js`, update the base path to match your repository name
-   - In `frontend/src/config.js`, update the production backend URL
-
-### Backend Deployment (Heroku)
-
-1. **Create Heroku App**:
-   ```bash
-   heroku create your-spafgan-backend
-   ```
-
-2. **Deploy Backend**:
-   ```bash
-   cd backend
-   git add .
-   git commit -m "Deploy backend"
-   git push heroku main
-   ```
-
-3. **Update Frontend Config**:
-   - Update the production backend URL in `frontend/src/config.js`
-   - Replace `https://your-backend-url.herokuapp.com` with your actual Heroku URL
-
-### Alternative Backend Deployment (Railway/Render)
-
-You can also deploy the backend to Railway or Render:
-
-1. **Railway**: Connect your GitHub repository and select the backend folder
-2. **Render**: Create a new Web Service and point to the backend directory
-
-### Environment Variables
-
-For production deployment, you may need to set environment variables:
-
-```bash
-# For Heroku
-heroku config:set NODE_ENV=production
-heroku config:set FLASK_ENV=production
-```
-
-## 🔧 Development vs Production
-
-- **Development**: Uses `localhost:5000` for backend API calls
-- **Production**: Uses the deployed backend URL (Heroku/Railway/Render)
-
-The configuration automatically switches based on `NODE_ENV` environment variable.

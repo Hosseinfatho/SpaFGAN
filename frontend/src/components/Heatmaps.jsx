@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { buildApiUrl } from '../config';
 
 function Heatmaps({ currentROI, onHeatmapResults }) {
   const [isAnalyzingHeatmaps, setIsAnalyzingHeatmaps] = useState(false);
@@ -36,7 +35,7 @@ function Heatmaps({ currentROI, onHeatmapResults }) {
       roi.yMin = Math.max(0, Math.floor(centerY - maxRange/2));
       roi.yMax = Math.min(688, Math.floor(centerY + maxRange/2));
 
-      const response = await fetch(buildApiUrl('analyze_heatmaps'), {
+      const response = await fetch('http://localhost:5000/api/analyze_heatmaps', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

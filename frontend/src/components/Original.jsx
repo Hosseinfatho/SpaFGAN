@@ -3,7 +3,6 @@ import { Vitessce, CoordinationType } from 'vitessce';
 import ROISelector from './ROISelector';
 import Plot from 'react-plotly.js';
 import HeatmapResults from './HeatmapResults';
-import { buildApiUrl } from '../config';
 
 // Interaction types configuration
 const INTERACTION_TYPES = {
@@ -167,7 +166,7 @@ const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) 
       
       files.push({
         'fileType': 'obsSegmentations.json',
-        'url': buildApiUrl(roi_info["file"]),
+        'url': `http://localhost:5000/api/${roi_info["file"]}`,
         'coordinationValues': {
           'obsType': roi_info['obsType']
         }
@@ -345,7 +344,7 @@ const MainView = ({ onSetView }) => {
   }, [config]);
 
   useEffect(() => {
-    fetch(buildApiUrl("roi_shapes"))
+    fetch("http://localhost:5000/api/roi_shapes")
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -442,7 +441,7 @@ const MainView = ({ onSetView }) => {
       });
       
       // Send config to backend
-      fetch(buildApiUrl('updateconfig'), {
+      fetch('http://localhost:5000/api/updateconfig', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
