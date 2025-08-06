@@ -77,9 +77,11 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       })
              .then((data) => {
          console.log("ROISelector: Received ROI data for", interactionType, ":", data);
+         console.log("ROISelector: Data keys:", Object.keys(data));
          
          // Handle both API format (rois) and local JSON format (top_rois)
          const roisArray = data.rois || data.top_rois || [];
+         console.log("ROISelector: roisArray:", roisArray);
          
          if (!Array.isArray(roisArray)) {
            console.error("ROISelector: Invalid ROI data structure:", data);
@@ -87,15 +89,17 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
          }
 
          console.log("ROISelector: Processing", roisArray.length, "ROI features");
+         console.log("ROISelector: First ROI sample:", roisArray[0]);
 
          // Sort ROIs by score in descending order (highest score first)
          const sortedRois = roisArray.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
+         console.log("ROISelector: Sorted ROIs:", sortedRois);
         
         const extracted = sortedRois.map((roi, index) => {
           const roiId = index + 1; // Start from 1
           const newTooltipName = `ROI_${roiId}_Score:${roi.scores.combined_score.toFixed(3)}`;
           
-          return {
+          const extractedRoi = {
             id: newTooltipName,
             x: roi.position.x,
             y: roi.position.y,
@@ -106,9 +110,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
             roi_id: roiId,
             raw: roi
           };
+          
+          console.log("ROISelector: Extracted ROI", roiId, ":", extractedRoi);
+          return extractedRoi;
         });
 
-        console.log("ROISelector: Extracted ROIs:", extracted);
+        console.log("ROISelector: Final extracted ROIs:", extracted);
         setRois(extracted);
       })
       .catch((err) => {
