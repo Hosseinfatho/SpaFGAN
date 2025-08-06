@@ -55,23 +55,6 @@
     {
       "roi_id": 4,
       "position": {
-        "x": 1132.0,
-        "y": 266.0,
-        "z": 76.0
-      },
-      "scores": {
-        "combined_score": 0.4324750006198883,
-        "intensity_score": 0.3649500012397766,
-        "attention_score": 0.5
-      },
-      "num_nodes": 2,
-      "num_edges": 2,
-      "interaction": "B-cell infiltration",
-      "tooltip_name": "B-cell infiltration_4_Score:0.432"
-    },
-    {
-      "roi_id": 5,
-      "position": {
         "x": 616.0,
         "y": 82.0,
         "z": 153.0
@@ -84,7 +67,7 @@
       "num_nodes": 2,
       "num_edges": 2,
       "interaction": "B-cell infiltration",
-      "tooltip_name": "B-cell infiltration_5_Score:0.421"
+      "tooltip_name": "B-cell infiltration_4_Score:0.421"
     }
   ]
 }

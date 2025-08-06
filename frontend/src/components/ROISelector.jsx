@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Heatmaps from './Heatmaps';
 import InteractionHeatmaps from './InteractionHeatmaps';
+import { buildApiUrl } from '../config';
 
 
 
@@ -52,7 +53,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     // Convert interaction type to filename format and encode for URL
     const filename = encodeURIComponent(interactionType);
-    const url = `http://localhost:5000/api/top_roi_scores_${filename}`;
+    const url = buildApiUrl(`top_roi_scores_${filename}`);
     
     console.log('ROISelector: Generated URL:', url);
     
@@ -66,22 +67,36 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       .then((data) => {
         console.log("ROISelector: Received ROI data for", interactionType, ":", data);
         
-        if (!data.top_rois || !Array.isArray(data.top_rois)) {
+        if (!data.rois || !Array.isArray(data.rois)) {
           console.error("ROISelector: Invalid ROI data structure:", data);
           return;
         }
 
-        console.log("ROISelector: Processing", data.top_rois.length, "ROI features");
+        console.log("ROISelector: Processing", data.rois.length, "ROI features");
 
-        const extracted = data.top_rois.map((roi, index) => {
+        // Filter out ROIs with invalid coordinates (0,0,0) and sort by score
+        const validRois = data.rois.filter(roi => 
+          roi.position.x !== 0 || roi.position.y !== 0 || roi.position.z !== 0
+        );
+        
+        console.log("ROISelector: Valid ROIs after filtering:", validRois.length);
+        
+        // Sort ROIs by score in descending order (highest score first)
+        const sortedRois = validRois.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
+        
+        const extracted = sortedRois.map((roi, index) => {
+          const roiId = index + 1; // Start from 1
+          const newTooltipName = `ROI_${roiId}`;
+          
           return {
-            id: `${roi.interaction}_${index + 1}_Score:${roi.scores.combined_score.toFixed(3)}`,
+            id: newTooltipName,
             x: roi.position.x,
             y: roi.position.y,
             z: roi.position.z,
             score: roi.scores.combined_score,
-            interactions: [roi.interaction],
-            tooltip_name: roi.tooltip_name || `${roi.interaction}_${roi.roi_id}_Score:${roi.scores.combined_score.toFixed(3)}`,
+            interactions: [interactionType], // Use the current interaction type
+            tooltip_name: newTooltipName,
+            roi_id: roiId,
             raw: roi
           };
         });
@@ -178,9 +193,13 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     setSelectedGroups(newSelectedGroups);
     setCurrentIndex(0);
     
-    // Notify parent component about the change
+    // Notify parent component about the change with refreshConfig to update view
     onSetView({
-      selectedGroups: newSelectedGroups
+      selectedGroups: newSelectedGroups,
+      refreshConfig: true,
+      spatialTargetX: 5454,  // Default center X
+      spatialTargetY: 2600,  // Default center Y
+      spatialZoom: -3.0      // Default zoom
     });
   };
 
@@ -221,7 +240,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   return (
     <div className="roi-selector-container">
       <h4 style={{ fontSize: '14px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
-      <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type (only one at a time):</p>
+      <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type </p>
       {interactionGroups.map(group => (
         <label key={group} className="checkbox-item" style={{ fontSize: '11px', marginBottom: '1px', color: '#000' }}>
           <input

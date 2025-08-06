@@ -1,9 +1,7 @@
 {
-  "interaction_name": "T-cell maturation",
   "rois": [
     {
       "roi_id": 117,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 820.0,
         "y": 286.0,
@@ -19,7 +17,6 @@
     },
     {
       "roi_id": 3,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1250.0,
         "y": 203.0,
@@ -35,7 +32,6 @@
     },
     {
       "roi_id": 19,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 513.0,
         "y": 520.0,
@@ -51,7 +47,6 @@
     },
     {
       "roi_id": 0,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1060.0,
         "y": 260.0,
@@ -67,7 +62,6 @@
     },
     {
       "roi_id": 15,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 324.0,
         "y": 554.0,
@@ -83,7 +77,6 @@
     },
     {
       "roi_id": 116,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1132.0,
         "y": 266.0,
@@ -99,7 +92,6 @@
     },
     {
       "roi_id": 115,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 835.0,
         "y": 246.0,
@@ -115,7 +107,6 @@
     },
     {
       "roi_id": 7,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 592.0,
         "y": 123.0,
@@ -131,7 +122,6 @@
     },
     {
       "roi_id": 5,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 362.0,
         "y": 464.0,
@@ -147,7 +137,6 @@
     },
     {
       "roi_id": 14,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 616.0,
         "y": 82.0,
@@ -163,7 +152,6 @@
     },
     {
       "roi_id": 13,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 7.0,
         "y": 494.0,
@@ -179,7 +167,6 @@
     },
     {
       "roi_id": 6,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1130.0,
         "y": 164.0,
@@ -195,7 +182,6 @@
     },
     {
       "roi_id": 18,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 159.0,
         "y": 403.0,
@@ -211,7 +197,6 @@
     },
     {
       "roi_id": 63,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 822.0,
         "y": 277.0,
@@ -227,7 +212,6 @@
     },
     {
       "roi_id": 69,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 157.0,
         "y": 611.0,
@@ -243,7 +227,6 @@
     },
     {
       "roi_id": 147,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 294.0,
         "y": 579.0,
@@ -259,7 +242,6 @@
     },
     {
       "roi_id": 151,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 432.0,
         "y": 428.0,
@@ -275,7 +257,6 @@
     },
     {
       "roi_id": 112,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 941.0,
         "y": 228.0,
@@ -291,7 +272,6 @@
     },
     {
       "roi_id": 87,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 865.0,
         "y": 214.0,
@@ -307,7 +287,6 @@
     },
     {
       "roi_id": 133,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 604.0,
         "y": 456.0,
@@ -323,7 +302,6 @@
     },
     {
       "roi_id": 1,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1220.0,
         "y": 111.0,
@@ -339,7 +317,6 @@
     },
     {
       "roi_id": 17,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 782.0,
         "y": 360.0,
@@ -355,7 +332,6 @@
     },
     {
       "roi_id": 11,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 990.0,
         "y": 322.0,
@@ -371,7 +347,6 @@
     },
     {
       "roi_id": 21,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 580.0,
         "y": 400.0,
@@ -387,7 +362,6 @@
     },
     {
       "roi_id": 70,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 425.0,
         "y": 432.0,
@@ -403,7 +377,6 @@
     },
     {
       "roi_id": 16,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1315.0,
         "y": 102.0,
@@ -419,7 +392,6 @@
     },
     {
       "roi_id": 20,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1306.0,
         "y": 98.0,
@@ -435,7 +407,6 @@
     },
     {
       "roi_id": 42,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 177.0,
         "y": 657.0,
@@ -451,7 +422,6 @@
     },
     {
       "roi_id": 22,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1319.0,
         "y": 106.0,
@@ -467,7 +437,6 @@
     },
     {
       "roi_id": 91,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1225.0,
         "y": 96.0,
@@ -483,7 +452,6 @@
     },
     {
       "roi_id": 94,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1209.0,
         "y": 103.0,
@@ -499,7 +467,6 @@
     },
     {
       "roi_id": 159,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 121.0,
         "y": 673.0,
@@ -515,7 +482,6 @@
     },
     {
       "roi_id": 110,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 854.0,
         "y": 250.0,
@@ -531,7 +497,6 @@
     },
     {
       "roi_id": 31,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 267.0,
         "y": 480.0,
@@ -547,7 +512,6 @@
     },
     {
       "roi_id": 32,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 273.0,
         "y": 481.0,
@@ -563,7 +527,6 @@
     },
     {
       "roi_id": 126,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1173.0,
         "y": 207.0,
@@ -579,7 +542,6 @@
     },
     {
       "roi_id": 66,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 415.0,
         "y": 677.0,
@@ -595,7 +557,6 @@
     },
     {
       "roi_id": 62,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 747.0,
         "y": 294.0,
@@ -611,7 +572,6 @@
     },
     {
       "roi_id": 2,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1132.0,
         "y": 258.0,
@@ -627,7 +587,6 @@
     },
     {
       "roi_id": 86,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1136.0,
         "y": 265.0,
@@ -643,7 +602,6 @@
     },
     {
       "roi_id": 43,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 274.0,
         "y": 567.0,
@@ -659,7 +617,6 @@
     },
     {
       "roi_id": 129,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1178.0,
         "y": 209.0,
@@ -675,7 +632,6 @@
     },
     {
       "roi_id": 145,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 717.0,
         "y": 352.0,
@@ -691,7 +647,6 @@
     },
     {
       "roi_id": 100,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1039.0,
         "y": 148.0,
@@ -707,7 +662,6 @@
     },
     {
       "roi_id": 114,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1230.0,
         "y": 237.0,
@@ -723,7 +677,6 @@
     },
     {
       "roi_id": 141,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 906.0,
         "y": 291.0,
@@ -739,7 +692,6 @@
     },
     {
       "roi_id": 113,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 938.0,
         "y": 235.0,
@@ -755,7 +707,6 @@
     },
     {
       "roi_id": 24,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 164.0,
         "y": 540.0,
@@ -771,7 +722,6 @@
     },
     {
       "roi_id": 37,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 144.0,
         "y": 546.0,
@@ -787,7 +737,6 @@
     },
     {
       "roi_id": 150,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 163.0,
         "y": 534.0,
@@ -803,7 +752,6 @@
     },
     {
       "roi_id": 111,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 600.0,
         "y": 459.0,
@@ -819,7 +767,6 @@
     },
     {
       "roi_id": 125,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 985.0,
         "y": 159.0,
@@ -835,7 +782,6 @@
     },
     {
       "roi_id": 68,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 605.0,
         "y": 461.0,
@@ -851,7 +797,6 @@
     },
     {
       "roi_id": 148,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 900.0,
         "y": 209.0,
@@ -867,7 +812,6 @@
     },
     {
       "roi_id": 58,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1307.0,
         "y": 226.0,
@@ -883,7 +827,6 @@
     },
     {
       "roi_id": 52,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 426.0,
         "y": 428.0,
@@ -899,7 +842,6 @@
     },
     {
       "roi_id": 74,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1235.0,
         "y": 101.0,
@@ -915,7 +857,6 @@
     },
     {
       "roi_id": 155,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 336.0,
         "y": 555.0,
@@ -931,7 +872,6 @@
     },
     {
       "roi_id": 9,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1129.0,
         "y": 250.0,
@@ -947,7 +887,6 @@
     },
     {
       "roi_id": 140,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1029.0,
         "y": 230.0,
@@ -963,7 +902,6 @@
     },
     {
       "roi_id": 60,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1063.0,
         "y": 294.0,
@@ -979,7 +917,6 @@
     },
     {
       "roi_id": 134,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 345.0,
         "y": 543.0,
@@ -995,7 +932,6 @@
     },
     {
       "roi_id": 47,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 655.0,
         "y": 312.0,
@@ -1011,7 +947,6 @@
     },
     {
       "roi_id": 79,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 654.0,
         "y": 315.0,
@@ -1027,7 +962,6 @@
     },
     {
       "roi_id": 103,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 648.0,
         "y": 322.0,
@@ -1043,7 +977,6 @@
     },
     {
       "roi_id": 152,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 132.0,
         "y": 641.0,
@@ -1059,7 +992,6 @@
     },
     {
       "roi_id": 158,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 369.0,
         "y": 516.0,
@@ -1075,7 +1007,6 @@
     },
     {
       "roi_id": 25,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 94.0,
         "y": 589.0,
@@ -1091,7 +1022,6 @@
     },
     {
       "roi_id": 33,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 89.0,
         "y": 594.0,
@@ -1107,7 +1037,6 @@
     },
     {
       "roi_id": 55,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 71.0,
         "y": 599.0,
@@ -1123,7 +1052,6 @@
     },
     {
       "roi_id": 157,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 72.0,
         "y": 596.0,
@@ -1139,7 +1067,6 @@
     },
     {
       "roi_id": 139,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 164.0,
         "y": 603.0,
@@ -1155,7 +1082,6 @@
     },
     {
       "roi_id": 75,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1159.0,
         "y": 130.0,
@@ -1171,7 +1097,6 @@
     },
     {
       "roi_id": 135,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1128.0,
         "y": 142.0,
@@ -1187,7 +1112,6 @@
     },
     {
       "roi_id": 122,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 742.0,
         "y": 319.0,
@@ -1203,7 +1127,6 @@
     },
     {
       "roi_id": 64,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 358.0,
         "y": 501.0,
@@ -1219,7 +1142,6 @@
     },
     {
       "roi_id": 65,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 363.0,
         "y": 527.0,
@@ -1235,7 +1157,6 @@
     },
     {
       "roi_id": 4,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1130.0,
         "y": 257.0,
@@ -1251,7 +1172,6 @@
     },
     {
       "roi_id": 41,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1332.0,
         "y": 138.0,
@@ -1267,7 +1187,6 @@
     },
     {
       "roi_id": 29,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 333.0,
         "y": 546.0,
@@ -1283,7 +1202,6 @@
     },
     {
       "roi_id": 72,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1291.0,
         "y": 143.0,
@@ -1299,7 +1217,6 @@
     },
     {
       "roi_id": 131,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1294.0,
         "y": 156.0,
@@ -1315,7 +1232,6 @@
     },
     {
       "roi_id": 51,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1248.0,
         "y": 137.0,
@@ -1331,7 +1247,6 @@
     },
     {
       "roi_id": 57,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1320.0,
         "y": 103.0,
@@ -1347,7 +1262,6 @@
     },
     {
       "roi_id": 35,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 155.0,
         "y": 648.0,
@@ -1363,7 +1277,6 @@
     },
     {
       "roi_id": 10,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1137.0,
         "y": 236.0,
@@ -1379,7 +1292,6 @@
     },
     {
       "roi_id": 12,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1131.0,
         "y": 243.0,
@@ -1395,7 +1307,6 @@
     },
     {
       "roi_id": 144,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 642.0,
         "y": 326.0,
@@ -1411,7 +1322,6 @@
     },
     {
       "roi_id": 38,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 126.0,
         "y": 649.0,
@@ -1427,7 +1337,6 @@
     },
     {
       "roi_id": 95,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1242.0,
         "y": 138.0,
@@ -1443,7 +1352,6 @@
     },
     {
       "roi_id": 121,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1234.0,
         "y": 149.0,
@@ -1459,7 +1367,6 @@
     },
     {
       "roi_id": 26,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 176.0,
         "y": 604.0,
@@ -1475,7 +1382,6 @@
     },
     {
       "roi_id": 108,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1132.0,
         "y": 139.0,
@@ -1491,7 +1397,6 @@
     },
     {
       "roi_id": 163,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1159.0,
         "y": 132.0,
@@ -1507,7 +1412,6 @@
     },
     {
       "roi_id": 99,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1159.0,
         "y": 123.0,
@@ -1523,7 +1427,6 @@
     },
     {
       "roi_id": 89,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1220.0,
         "y": 161.0,
@@ -1539,7 +1442,6 @@
     },
     {
       "roi_id": 90,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1224.0,
         "y": 168.0,
@@ -1555,7 +1457,6 @@
     },
     {
       "roi_id": 59,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 772.0,
         "y": 324.0,
@@ -1571,7 +1472,6 @@
     },
     {
       "roi_id": 76,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1307.0,
         "y": 163.0,
@@ -1587,7 +1487,6 @@
     },
     {
       "roi_id": 83,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 998.0,
         "y": 315.0,
@@ -1603,7 +1502,6 @@
     },
     {
       "roi_id": 120,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1300.0,
         "y": 138.0,
@@ -1619,7 +1517,6 @@
     },
     {
       "roi_id": 49,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1333.0,
         "y": 128.0,
@@ -1635,7 +1532,6 @@
     },
     {
       "roi_id": 61,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1336.0,
         "y": 133.0,
@@ -1651,7 +1547,6 @@
     },
     {
       "roi_id": 54,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 359.0,
         "y": 523.0,
@@ -1667,7 +1562,6 @@
     },
     {
       "roi_id": 8,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1122.0,
         "y": 246.0,
@@ -1683,7 +1577,6 @@
     },
     {
       "roi_id": 82,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 544.0,
         "y": 396.0,
@@ -1699,7 +1592,6 @@
     },
     {
       "roi_id": 127,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 698.0,
         "y": 283.0,
@@ -1715,7 +1607,6 @@
     },
     {
       "roi_id": 132,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 701.0,
         "y": 278.0,
@@ -1731,7 +1622,6 @@
     },
     {
       "roi_id": 96,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 700.0,
         "y": 263.0,
@@ -1747,7 +1637,6 @@
     },
     {
       "roi_id": 119,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1242.0,
         "y": 148.0,
@@ -1763,7 +1652,6 @@
     },
     {
       "roi_id": 149,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 742.0,
         "y": 321.0,
@@ -1779,7 +1667,6 @@
     },
     {
       "roi_id": 46,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 179.0,
         "y": 610.0,
@@ -1795,7 +1682,6 @@
     },
     {
       "roi_id": 53,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 342.0,
         "y": 549.0,
@@ -1811,7 +1697,6 @@
     },
     {
       "roi_id": 44,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1018.0,
         "y": 316.0,
@@ -1827,7 +1712,6 @@
     },
     {
       "roi_id": 45,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1067.0,
         "y": 289.0,
@@ -1843,7 +1727,6 @@
     },
     {
       "roi_id": 80,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 892.0,
         "y": 344.0,
@@ -1859,7 +1742,6 @@
     },
     {
       "roi_id": 84,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 896.0,
         "y": 356.0,
@@ -1875,7 +1757,6 @@
     },
     {
       "roi_id": 162,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 167.0,
         "y": 613.0,
@@ -1891,7 +1772,6 @@
     },
     {
       "roi_id": 50,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 742.0,
         "y": 324.0,
@@ -1907,7 +1787,6 @@
     },
     {
       "roi_id": 143,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 768.0,
         "y": 327.0,
@@ -1923,7 +1802,6 @@
     },
     {
       "roi_id": 28,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 471.0,
         "y": 427.0,
@@ -1939,7 +1817,6 @@
     },
     {
       "roi_id": 67,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 473.0,
         "y": 428.0,
@@ -1955,7 +1832,6 @@
     },
     {
       "roi_id": 85,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 714.0,
         "y": 264.0,
@@ -1971,7 +1847,6 @@
     },
     {
       "roi_id": 101,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 708.0,
         "y": 267.0,
@@ -1987,7 +1862,6 @@
     },
     {
       "roi_id": 130,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 692.0,
         "y": 269.0,
@@ -2003,7 +1877,6 @@
     },
     {
       "roi_id": 136,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 702.0,
         "y": 284.0,
@@ -2019,7 +1892,6 @@
     },
     {
       "roi_id": 30,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1319.0,
         "y": 143.0,
@@ -2035,7 +1907,6 @@
     },
     {
       "roi_id": 98,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1042.0,
         "y": 304.0,
@@ -2051,7 +1922,6 @@
     },
     {
       "roi_id": 36,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 761.0,
         "y": 352.0,
@@ -2067,7 +1937,6 @@
     },
     {
       "roi_id": 106,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 892.0,
         "y": 363.0,
@@ -2083,7 +1952,6 @@
     },
     {
       "roi_id": 160,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 779.0,
         "y": 330.0,
@@ -2099,7 +1967,6 @@
     },
     {
       "roi_id": 138,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 885.0,
         "y": 346.0,
@@ -2115,7 +1982,6 @@
     },
     {
       "roi_id": 142,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 814.0,
         "y": 357.0,
@@ -2131,7 +1997,6 @@
     },
     {
       "roi_id": 56,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 490.0,
         "y": 412.0,
@@ -2147,7 +2012,6 @@
     },
     {
       "roi_id": 71,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 501.0,
         "y": 416.0,
@@ -2163,7 +2027,6 @@
     },
     {
       "roi_id": 153,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 793.0,
         "y": 373.0,
@@ -2179,7 +2042,6 @@
     },
     {
       "roi_id": 109,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 865.0,
         "y": 354.0,
@@ -2195,7 +2057,6 @@
     },
     {
       "roi_id": 88,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1053.0,
         "y": 294.0,
@@ -2211,7 +2072,6 @@
     },
     {
       "roi_id": 48,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1021.0,
         "y": 312.0,
@@ -2227,7 +2087,6 @@
     },
     {
       "roi_id": 105,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 850.0,
         "y": 348.0,
@@ -2243,7 +2102,6 @@
     },
     {
       "roi_id": 77,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 879.0,
         "y": 363.0,
@@ -2259,7 +2117,6 @@
     },
     {
       "roi_id": 128,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 785.0,
         "y": 361.0,
@@ -2275,7 +2132,6 @@
     },
     {
       "roi_id": 123,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 801.0,
         "y": 355.0,
@@ -2291,7 +2147,6 @@
     },
     {
       "roi_id": 137,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1056.0,
         "y": 293.0,
@@ -2307,7 +2162,6 @@
     },
     {
       "roi_id": 146,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 811.0,
         "y": 369.0,
@@ -2323,7 +2177,6 @@
     },
     {
       "roi_id": 81,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 820.0,
         "y": 368.0,
@@ -2339,7 +2192,6 @@
     },
     {
       "roi_id": 73,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1026.0,
         "y": 309.0,
@@ -2355,7 +2207,6 @@
     },
     {
       "roi_id": 102,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1031.0,
         "y": 313.0,
@@ -2371,7 +2222,6 @@
     },
     {
       "roi_id": 78,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 528.0,
         "y": 415.0,
@@ -2387,7 +2237,6 @@
     },
     {
       "roi_id": 156,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 824.0,
         "y": 366.0,
@@ -2403,7 +2252,6 @@
     },
     {
       "roi_id": 93,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1055.0,
         "y": 306.0,
@@ -2419,7 +2267,6 @@
     },
     {
       "roi_id": 97,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1063.0,
         "y": 300.0,
@@ -2435,7 +2282,6 @@
     },
     {
       "roi_id": 39,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 1033.0,
         "y": 307.0,
@@ -2451,7 +2297,6 @@
     },
     {
       "roi_id": 161,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 807.0,
         "y": 370.0,
@@ -2467,7 +2312,6 @@
     },
     {
       "roi_id": 40,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 841.0,
         "y": 353.0,
@@ -2483,7 +2327,6 @@
     },
     {
       "roi_id": 27,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 812.0,
         "y": 369.0,
@@ -2499,7 +2342,6 @@
     },
     {
       "roi_id": 104,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 836.0,
         "y": 347.0,
@@ -2515,7 +2357,6 @@
     },
     {
       "roi_id": 154,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 830.0,
         "y": 351.0,
@@ -2531,7 +2372,6 @@
     },
     {
       "roi_id": 23,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 517.0,
         "y": 411.0,
@@ -2547,7 +2387,6 @@
     },
     {
       "roi_id": 92,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 528.0,
         "y": 419.0,
@@ -2563,7 +2402,6 @@
     },
     {
       "roi_id": 107,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 516.0,
         "y": 418.0,
@@ -2579,7 +2417,6 @@
     },
     {
       "roi_id": 118,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 521.0,
         "y": 418.0,
@@ -2595,7 +2432,6 @@
     },
     {
       "roi_id": 34,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 502.0,
         "y": 406.0,
@@ -2611,7 +2447,6 @@
     },
     {
       "roi_id": 124,
-      "interaction": "T-cell maturation",
       "position": {
         "x": 507.0,
         "y": 409.0,

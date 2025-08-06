@@ -439,7 +439,7 @@ def serve_top_roi_scores(interaction_type):
         # Decode the interaction type and convert to filename format
         from urllib.parse import unquote
         decoded_interaction_type = unquote(interaction_type)
-        filename = f"top_roi_scores_{decoded_interaction_type}.json"
+        filename = f"all_roi_scores_{decoded_interaction_type}.json"
         logger.info(f"Looking for file: {filename}")
         roi_path = Path(__file__).parent / "output" / filename
         

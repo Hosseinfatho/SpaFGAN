@@ -1,12 +1,12 @@
-import pandas as pd
+# import pandas as pd
 import json
 from pathlib import Path
 import logging
-import numpy as np
+# import numpy as np
 import glob
 import re
 
-import yaml
+# import yaml
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,7 +29,6 @@ def load_roi_data_by_interaction(output_dir):
                     'y': roi['position']['y'],
                     'z': roi['position'].get('z', 0),
                     'score': roi['scores']['combined_score'],
-                    'interaction': interaction_name,
                     'roi_id': roi['roi_id'],
                     'intensity_score': roi['scores']['intensity_score'],
                     'attention_score': roi['scores']['attention_score'],
@@ -144,6 +143,12 @@ def generate_vitessce_config():
         filtered_rois = filter_nearby_rois(corner_filtered_rois, radius=50)
         logger.info(f"Nearby filtered: {len(corner_filtered_rois)} ROIs to {len(filtered_rois)} ROIs for {interaction_name}")
         
+        # Sort filtered ROIs by score in descending order (highest score first)
+        filtered_rois.sort(key=lambda x: x['score'], reverse=True)
+        
+        # Limit to top 4 ROIs
+        filtered_rois = filtered_rois[:4]
+        
         # Create safe filename
         safe_interaction_name = re.sub(r'[^a-zA-Z0-9_-]', '_', interaction_name)
         
@@ -160,10 +165,12 @@ def generate_vitessce_config():
             polygon = create_circle_polygon(x, y, radius, num_points=32)
             polygon = [[max(0, round(coord[0])), max(0, round(coord[1]))] for coord in polygon]
             
-            # Create ROI name with format: interaction_name_ID_score (ID starts from 1)
+            # Create ROI name with format: ROI_ID_score (ID starts from 1)
             roi_id = idx + 1  # Start from 1, not 0
             score = roi.get('score', 0)
-            roi_name = f"{interaction_name}_{roi_id}_Score:{score:.3f}"
+            roi_name = f"ROI_{roi_id}_Score:{score:.3f}"
+            
+            # Store polygon data directly (Vitessce format)
             segmentations[roi_name] = [polygon]
         
         roi_seg_path = output_dir / f"roi_segmentation_{safe_interaction_name}.json"
@@ -176,7 +183,7 @@ def generate_vitessce_config():
         for idx, roi in enumerate(filtered_rois):
             roi_id = idx + 1  # Start from 1, not 0
             score = roi.get('score', 0)
-            roi_name = f"{interaction_name}_{roi_id}_Score:{score:.3f}"
+            roi_name = f"ROI_{roi_id}_Score:{score:.3f}"
             feature_data.append({
                 'roi_id': roi_name,
                 'score': roi['score'],
@@ -199,13 +206,10 @@ def generate_vitessce_config():
         for idx, roi in enumerate(filtered_rois):
             roi_id = idx + 1  # Start from 1, not 0
             score = roi.get('score', 0)
-            roi_name = f"{interaction_name}_{roi_id}_Score:{score:.3f}"
+            roi_name = f"ROI_{roi_id}_Score:{score:.3f}"
             sets_data.append({
                 'roi_id': roi_name,
-                'interaction': interaction_name,
-                'interaction_coarse': interaction_coarse.get(interaction_name, 'Unknown'),
                 'score_category': categorize_score(roi['score']),
-                'pred_interaction': interaction_name,
                 'pred_score': roi['score']
             })
         
@@ -224,10 +228,9 @@ def generate_vitessce_config():
         for idx, roi in enumerate(filtered_rois):
             roi_id = idx + 1  # Start from 1, not 0
             score = roi.get('score', 0)
-            roi_name = f"{interaction_name}_{roi_id}_Score:{score:.3f}"
+            roi_name = f"ROI_{roi_id}_Score:{score:.3f}"
             feature_matrix["data"][roi_name] = {
                 "score": float(roi['score']),
-                "interaction": roi['interaction'],
                 "intensity_score": float(roi['intensity_score']),
                 "attention_score": float(roi['attention_score']),
                 "num_nodes": int(roi['num_nodes']),
@@ -255,8 +258,8 @@ def generate_vitessce_config():
     y_max = 5508
     radius = 25 * 8  # Convert radius to pixel coordinates
     
-    # Create counters for each interaction to start from 1
-    interaction_counters = {}
+    # Create counter for ROI IDs to start from 1
+    roi_counter = 0
     
     for idx, row in roi_df.iterrows():
         x = max(0, round(float(row['x']) * 8))
@@ -266,14 +269,10 @@ def generate_vitessce_config():
         polygon = create_circle_polygon(x, y, radius, num_points=32)
         polygon = [[max(0, round(coord[0])), max(0, round(coord[1]))] for coord in polygon]
         
-        # Create ROI name with format: interaction_name_ID_score (ID starts from 1)
-        interaction_name = row['interaction']
-        if interaction_name not in interaction_counters:
-            interaction_counters[interaction_name] = 0
-        interaction_counters[interaction_name] += 1
-        roi_id = interaction_counters[interaction_name]
+        # Create ROI name with format: ROI_ID_score (ID starts from 1)
+        roi_counter += 1
         score = row.get('score', 0)
-        roi_name = f"{interaction_name}_{roi_id}_Score:{score:.3f}"
+        roi_name = f"ROI_{roi_counter}_Score:{score:.3f}"
         segmentations[roi_name] = [polygon]
 
     obs_seg_path = output_dir / "roi_rectangles_annotation.json"
@@ -288,20 +287,15 @@ def generate_vitessce_config():
         "data": {}
     }
 
-    # Create counters for each interaction to start from 1
-    interaction_counters = {}
+    # Create counter for ROI IDs to start from 1
+    roi_counter = 0
     
     for idx, row in roi_df.iterrows():
-        interaction_name = row['interaction']
-        if interaction_name not in interaction_counters:
-            interaction_counters[interaction_name] = 0
-        interaction_counters[interaction_name] += 1
-        roi_id = interaction_counters[interaction_name]
+        roi_counter += 1
         score = row.get('score', 0)
-        roi_name = f"{interaction_name}_{roi_id}_Score:{score:.3f}"
+        roi_name = f"ROI_{roi_counter}_Score:{score:.3f}"
         feature_matrix["data"][roi_name] = {
             "score": float(row['score']),
-            "interaction": row['interaction'],
             "intensity_score": float(row['intensity_score']),
             "attention_score": float(row['attention_score']),
             "num_nodes": int(row['num_nodes']),
@@ -333,68 +327,148 @@ def generate_vitessce_config():
     print("\n" + "="*60)
 
 def update_roi_json_format():
-    """Update ROI JSON files to new format with only top 7 ROIs and tooltip-friendly format"""
+    """Update existing JSON files to remove interaction names and change ROI naming format"""
     
     output_dir = Path(__file__).parent / 'output'
     
-    # List of interaction names
-    interaction_names = [
-        'B-cell infiltration',
-        'T-cell maturation', 
-        'Inflammatory zone',
-        'Oxidative stress regulation'
-    ]
+    # Update top_roi_scores files
+    top_roi_files = glob.glob(str(output_dir / "top_roi_scores_*.json"))
     
-    for interaction_name in interaction_names:
-        input_file = output_dir / f'top_roi_scores_{interaction_name}.json'
+    for file_path in top_roi_files:
+        logger.info(f"Processing: {file_path}")
         
-        if not input_file.exists():
-            logger.info(f"File not found: {input_file}")
-            continue
-            
-        logger.info(f"Processing: {input_file}")
-        
-        # Read the original file
-        with open(input_file, 'r') as f:
+        with open(file_path, 'r') as f:
             data = json.load(f)
         
-        # Get top 7 ROIs
-        top_rois = data.get('top_rois', [])[:7]
+        # Remove interaction_name from root level
+        if 'interaction_name' in data:
+            del data['interaction_name']
         
-        # Create new format
+        # Update each ROI
+        for roi in data.get('top_rois', []):
+            # Remove interaction field
+            if 'interaction' in roi:
+                del roi['interaction']
+            
+            # Update tooltip_name to new format
+            if 'tooltip_name' in roi:
+                roi_id = roi.get('roi_id', 0)
+                score = roi.get('scores', {}).get('combined_score', 0)
+                roi['tooltip_name'] = f"ROI_{roi_id}_Score:{score:.3f}"
+        
+        # Write updated file
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        
+        logger.info(f"Updated: {file_path}")
+    
+    # Update obsFeatureMatrix.json
+    obs_feat_file = output_dir / "obsFeatureMatrix.json"
+    if obs_feat_file.exists():
+        logger.info(f"Processing: {obs_feat_file}")
+        
+        with open(obs_feat_file, 'r') as f:
+            data = json.load(f)
+        
+        # Create new data structure with updated ROI names
         new_data = {
-            "interaction_name": interaction_name,
-            "top_rois": []
+            "version": data.get("version", "0.1.0"),
+            "type": data.get("type", "obsFeatureMatrix"),
+            "data": {}
         }
         
-        for roi in top_rois:
-            roi_id = roi.get('roi_id', 0)
-            score = roi.get('scores', {}).get('combined_score', 0)
+        roi_counter = 0
+        for old_name, roi_data in data.get("data", {}).items():
+            roi_counter += 1
+            score = roi_data.get("score", 0)
+            new_name = f"ROI_{roi_counter}_Score:{score:.3f}"
             
-            # Create tooltip-friendly name
-            tooltip_name = f"{interaction_name}_{roi_id}_Score:{score:.3f}"
-            
-            new_roi = {
-                "roi_id": roi_id,
-                "interaction": interaction_name,
-                "tooltip_name": tooltip_name,
-                "position": roi.get('position', {}),
-                "scores": roi.get('scores', {}),
-                "num_nodes": roi.get('num_nodes', 0),
-                "num_edges": roi.get('num_edges', 0)
-            }
-            
-            new_data["top_rois"].append(new_roi)
+            # Remove interaction field
+            new_roi_data = {k: v for k, v in roi_data.items() if k != "interaction"}
+            new_data["data"][new_name] = new_roi_data
         
-        # Write the updated file
-        with open(input_file, 'w') as f:
+        # Write updated file
+        with open(obs_feat_file, 'w') as f:
             json.dump(new_data, f, indent=2)
         
-        logger.info(f"Updated {input_file} with {len(new_data['top_rois'])} ROIs")
+        logger.info(f"Updated: {obs_feat_file}")
+    
+    # Update individual obsFeatureMatrix files
+    individual_files = glob.glob(str(output_dir / "obsFeatureMatrix_*.json"))
+    
+    for file_path in individual_files:
+        if "obsFeatureMatrix.json" in file_path:  # Skip the main file
+            continue
+            
+        logger.info(f"Processing: {file_path}")
+        
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        # Create new data structure with updated ROI names
+        new_data = {
+            "version": data.get("version", "0.1.0"),
+            "type": data.get("type", "obsFeatureMatrix"),
+            "data": {}
+        }
+        
+        roi_counter = 0
+        for old_name, roi_data in data.get("data", {}).items():
+            roi_counter += 1
+            score = roi_data.get("score", 0)
+            new_name = f"ROI_{roi_counter}_Score:{score:.3f}"
+            
+            # Remove interaction field
+            new_roi_data = {k: v for k, v in roi_data.items() if k != "interaction"}
+            new_data["data"][new_name] = new_roi_data
+        
+        # Write updated file
+        with open(file_path, 'w') as f:
+            json.dump(new_data, f, indent=2)
+        
+        logger.info(f"Updated: {file_path}")
+    
+    # Update roi_segmentation files to limit to top 5 ROIs
+    roi_seg_files = glob.glob(str(output_dir / "roi_segmentation_*.json"))
+    
+    for file_path in roi_seg_files:
+        logger.info(f"Processing roi_segmentation: {file_path}")
+        
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        # Get all ROI names and sort by score (extract score from name)
+        roi_items = list(data.items())
+        roi_items.sort(key=lambda x: float(x[0].split('Score:')[1]), reverse=True)
+        
+        # Keep only top 4 ROIs
+        top_4_rois = roi_items[:4]
+        
+        # Create new data with sequential IDs
+        new_data = {}
+        for idx, (old_name, roi_data) in enumerate(top_4_rois):
+            score = float(old_name.split('Score:')[1])
+            new_name = f"ROI_{idx + 1}_Score:{score:.3f}"
+            
+            # Keep the polygon data in Vitessce format
+            if isinstance(roi_data, list):
+                new_data[new_name] = roi_data
+            elif isinstance(roi_data, dict) and "polygon" in roi_data:
+                new_data[new_name] = roi_data["polygon"]
+            else:
+                new_data[new_name] = roi_data
+        
+        # Write updated file
+        with open(file_path, 'w') as f:
+            json.dump(new_data, f, indent=2)
+        
+        logger.info(f"Updated roi_segmentation: {file_path} - kept top 4 ROIs")
+    
+    logger.info("All JSON files updated successfully!")
 
 if __name__ == "__main__":
     # Update ROI JSON format first
     update_roi_json_format()
     
-    # Then generate Vitessce config
-    generate_vitessce_config()
+    # Comment out the main function for now due to pandas issues
+    # generate_vitessce_config()

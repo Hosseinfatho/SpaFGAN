@@ -38,23 +38,6 @@
     {
       "roi_id": 3,
       "position": {
-        "x": 1065.0,
-        "y": 242.0,
-        "z": 144.0
-      },
-      "scores": {
-        "combined_score": 0.3443104177713394,
-        "intensity_score": 0.35528749227523804,
-        "attention_score": 0.3333333432674408
-      },
-      "num_nodes": 4,
-      "num_edges": 8,
-      "interaction": "Inflammatory zone",
-      "tooltip_name": "Inflammatory zone_3_Score:0.344"
-    },
-    {
-      "roi_id": 4,
-      "position": {
         "x": 653.0,
         "y": 310.0,
         "z": 73.0
@@ -67,7 +50,24 @@
       "num_nodes": 3,
       "num_edges": 4,
       "interaction": "Inflammatory zone",
-      "tooltip_name": "Inflammatory zone_4_Score:0.343"
+      "tooltip_name": "Inflammatory zone_3_Score:0.343"
+    },
+    {
+      "roi_id": 4,
+      "position": {
+        "x": 950.0,
+        "y": 450.0,
+        "z": 90.0
+      },
+      "scores": {
+        "combined_score": 0.3200000000000000,
+        "intensity_score": 0.2500000000000000,
+        "attention_score": 0.3900000000000000
+      },
+      "num_nodes": 2,
+      "num_edges": 3,
+      "interaction": "Inflammatory zone",
+      "tooltip_name": "Inflammatory zone_4_Score:0.320"
     }
   ]
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { buildApiUrl } from '../config';
 
 function InteractionHeatmaps({ currentROI, onInteractionResults }) {
   const [isAnalyzingInteractionHeatmap, setIsAnalyzingInteractionHeatmap] = useState(false);
@@ -33,7 +34,7 @@ function InteractionHeatmaps({ currentROI, onInteractionResults }) {
       roi.yMin = Math.max(0, Math.floor(centerY - maxRange/2));
       roi.yMax = Math.min(688, Math.floor(centerY + maxRange/2));
 
-      const response = await fetch('http://localhost:5000/api/analyze_interaction_heatmap', {
+      const response = await fetch(buildApiUrl('analyze_interaction_heatmap'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

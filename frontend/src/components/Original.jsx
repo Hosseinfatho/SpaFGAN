@@ -3,6 +3,7 @@ import { Vitessce, CoordinationType } from 'vitessce';
 import ROISelector from './ROISelector';
 import Plot from 'react-plotly.js';
 import HeatmapResults from './HeatmapResults';
+import { buildApiUrl } from '../config';
 
 // Interaction types configuration
 const INTERACTION_TYPES = {
@@ -14,12 +15,12 @@ const INTERACTION_TYPES = {
 
 // Constants for Image Channels
 const IMAGE_CHANNELS = {
-  'CD31': { 'id': 'cd31', 'color': [0, 255, 0], 'window': [300, 20000], 'targetC': 19 },      // Green
-  'CD20': { 'id': 'cd20', 'color': [255, 255, 0], 'window': [1000, 7000], 'targetC': 27 },    // Yellow
-  'CD11b': { 'id': 'cd11b', 'color': [148, 0, 211], 'window': [700, 6000], 'targetC': 37 },   // Violet
-  'CD4': { 'id': 'cd4', 'color': [135, 206, 235], 'window': [1638, 10000], 'targetC': 25 },   // Sky Blue
-  'CD11c': { 'id': 'cd11c', 'color': [255, 165, 0], 'window': [370, 1432], 'targetC': 42 },   // Orange
-  'Catalase': { 'id': 'catalase', 'color': [255, 0, 0], 'window': [1000, 6000], 'targetC': 59 } // Red
+  'CD31': { 'id': 'cd31', 'color': [0, 255, 0], 'window': [300, 10000], 'targetC': 19 },      // Green
+  'CD20': { 'id': 'cd20', 'color': [255, 255, 0], 'window': [1000, 5000], 'targetC': 27 },    // Yellow
+  'CD11b': { 'id': 'cd11b', 'color': [148, 0, 211], 'window': [700, 4000], 'targetC': 37 },   // Violet
+  'CD4': { 'id': 'cd4', 'color': [135, 206, 235], 'window': [1638, 5000], 'targetC': 25 },   // Sky Blue
+  'CD11c': { 'id': 'cd11c', 'color': [255, 165, 0], 'window': [370, 1000], 'targetC': 42 },   // Orange
+  'Catalase': { 'id': 'catalase', 'color': [255, 0, 0], 'window': [1000, 4000], 'targetC': 59 } // Red
 };
 
 // Constants for Interaction Type to ROI Mapping - updated
@@ -67,9 +68,9 @@ const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) 
     'spatialLayerVisible': { "image": true },
     'spatialRenderingMode': { "image": "3D" },
     'spatialTargetX': { "A": 5454 },
-    'spatialTargetY': { "A": 1600 },
+    'spatialTargetY': { "A": 2600 },
     'spatialTargetZ': { "A": 0 },
-    'spatialZoom': { "A": -3.0 },
+    'spatialZoom': { "A": -2.7 },
     'spatialTargetResolution': { "image": 3 },
     'spatialTargetT': { "image": 0 },
     'photometricInterpretation': { "image": "BlackIsZero" },
@@ -149,7 +150,7 @@ const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) 
               // Simple coordination settings
         coordination_space['spatialSegmentationFilled'][obs_type] = false; // ROIs are hollow
         coordination_space['spatialSegmentationStrokeWidth'][obs_type] = roi_info['strokeWidth'];
-        coordination_space['spatialLayerOpacity'][obs_type] = 0.5; // Set opacity to 0.5 for ROIs
+        coordination_space['spatialLayerOpacity'][obs_type] = 1; // Set opacity to 0.5 for ROIs
         coordination_space['spatialLayerVisible'][obs_type] = true; // Make ROIs visible in layer controller
         coordination_space[CoordinationType.TOOLTIPS_VISIBLE][obs_type] = true; // Enable tooltips for ROIs
         
@@ -166,7 +167,7 @@ const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) 
       
       files.push({
         'fileType': 'obsSegmentations.json',
-        'url': `http://localhost:5000/api/${roi_info["file"]}`,
+        'url': buildApiUrl(roi_info["file"]),
         'coordinationValues': {
           'obsType': roi_info['obsType']
         }
@@ -344,7 +345,7 @@ const MainView = ({ onSetView }) => {
   }, [config]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/roi_shapes")
+    fetch(buildApiUrl("roi_shapes"))
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -393,10 +394,28 @@ const MainView = ({ onSetView }) => {
 
   const handleSetView = (roiView) => {
     console.log('Mainview handleSetView:', roiView);
+    console.log('roiView.currentROIGroup:', roiView.currentROIGroup);
+    console.log('roiView.selectedGroups:', roiView.selectedGroups);
+    console.log('roiView.refreshConfig:', roiView.refreshConfig);
+    console.log('roiView.spatialTargetX:', roiView.spatialTargetX);
+    console.log('roiView.spatialTargetY:', roiView.spatialTargetY);
+    console.log('roiView.spatialZoom:', roiView.spatialZoom);
+    console.log('current selectedGroups:', selectedGroups);
     
     if (roiView.refreshConfig) {
-      // Generate new config with NO segmentation files - only image
-      const newConfig = generateVitessceConfig([], Object.keys(heatmapResults).length > 0 || interactionHeatmapResult); // Empty array = no segmentation files
+      // Use roiView.currentROIGroup if available (from Set View), otherwise use selectedGroups
+      let groupsToUse;
+      if (roiView.currentROIGroup) {
+        // When Set View is pressed, use the current ROI's group
+        groupsToUse = [roiView.currentROIGroup];
+        console.log('Using currentROIGroup for config generation:', groupsToUse);
+      } else {
+        // Otherwise use selectedGroups
+        groupsToUse = roiView.selectedGroups || selectedGroups;
+        console.log('Using selectedGroups for config generation:', groupsToUse);
+      }
+      // Generate new config with selected groups to show ROI overlays
+      const newConfig = generateVitessceConfig(groupsToUse, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
       
       // Update spatial coordinates if provided
       if (roiView.spatialTargetX !== undefined) {
@@ -414,7 +433,7 @@ const MainView = ({ onSetView }) => {
       
       // Store config globally for debugging
       window.lastConfig = newConfig;
-      console.log('Generated new config for Set View - NO segmentation files:', newConfig);
+      console.log('Generated new config for Set View with ROI overlays:', newConfig);
       console.log('Config files:', newConfig.datasets[0].files);
       console.log('New view coordinates:', {
         spatialTargetX: newConfig.coordinationSpace.spatialTargetX.A,
@@ -423,7 +442,7 @@ const MainView = ({ onSetView }) => {
       });
       
       // Send config to backend
-      fetch('http://localhost:5000/api/updateconfig', {
+      fetch(buildApiUrl('updateconfig'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
