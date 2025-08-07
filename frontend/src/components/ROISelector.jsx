@@ -41,11 +41,8 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     setInteractionGroups(interactionTypes);
     
-    // Load ROI data for the first interaction type by default
-    if (interactionTypes.length > 0) {
-      console.log('ROISelector: Loading initial ROI data for:', interactionTypes[0]);
-      loadROIData(interactionTypes[0]);
-    }
+    // Don't load ROI data initially - wait for user selection
+    console.log('ROISelector: Interaction types loaded, waiting for user selection');
   }, []);
   
   const loadROIData = (interactionType) => {
@@ -210,14 +207,16 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       // If selecting a new group, unselect all others and select only this one
       newSelectedGroups = [group];
       console.log('ROISelector: Selecting new group, newSelectedGroups:', newSelectedGroups);
-      
-      // Load ROI data for the selected interaction type
-      console.log('ROISelector: About to call loadROIData with:', group);
-      loadROIData(group);
     }
     
     setSelectedGroups(newSelectedGroups);
     setCurrentIndex(0);
+    
+    // Always load ROI data when selecting a group
+    if (newSelectedGroups.length > 0) {
+      console.log('ROISelector: About to call loadROIData with:', newSelectedGroups[0]);
+      loadROIData(newSelectedGroups[0]);
+    }
     
     // Notify parent component about the change with refreshConfig to update view
     onSetView({
