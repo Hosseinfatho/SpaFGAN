@@ -282,40 +282,49 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   return (
     <div className="roi-selector-container">
       <h4 style={{ fontSize: '14px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
-      <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type </p>
+             <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type </p>
+       <button 
+         onClick={() => {
+           console.log('ROISelector: ===== TEST BUTTON CLICKED =====');
+           console.log('ROISelector: Test button works!');
+         }}
+         style={{ marginBottom: '5px', padding: '2px 5px', fontSize: '10px' }}
+       >
+         Test Button
+       </button>
              {interactionGroups.map(group => {
                console.log('ROISelector: Rendering radio button for:', group, 'checked:', selectedGroups.includes(group));
                return (
-         <label key={group} className="checkbox-item" style={{ fontSize: '11px', marginBottom: '1px', color: '#000' }}>
+         <div 
+           key={group} 
+           onClick={() => {
+             console.log('ROISelector: ===== DIV CLICK START =====');
+             console.log('ROISelector: Div clicked for:', group);
+             console.log('ROISelector: About to call toggleGroup with:', group);
+             toggleGroup(group);
+             console.log('ROISelector: ===== DIV CLICK END =====');
+           }}
+           style={{ 
+             fontSize: '11px', 
+             marginBottom: '1px', 
+             color: '#000',
+             cursor: 'pointer',
+             padding: '2px 4px',
+             backgroundColor: selectedGroups.includes(group) ? '#e0e0e0' : 'transparent',
+             border: selectedGroups.includes(group) ? '1px solid #999' : '1px solid transparent',
+             borderRadius: '3px'
+           }}
+         >
            <input
              type="radio"
              name="interactionType"
              value={group}
              checked={selectedGroups.includes(group)}
-                           onChange={(e) => {
-                console.log('ROISelector: ===== RADIO BUTTON onChange START =====');
-                console.log('ROISelector: Radio button clicked for:', group);
-                console.log('ROISelector: Event target checked:', e.target.checked);
-                console.log('ROISelector: Current selectedGroups:', selectedGroups);
-                console.log('ROISelector: About to call toggleGroup with:', group);
-                toggleGroup(group);
-                console.log('ROISelector: ===== RADIO BUTTON onChange END =====');
-              }}
-              onClick={(e) => {
-                console.log('ROISelector: ===== RADIO BUTTON onClick START =====');
-                console.log('ROISelector: Radio button onClick for:', group);
-                console.log('ROISelector: Event type:', e.type);
-                console.log('ROISelector: ===== RADIO BUTTON onClick END =====');
-              }}
-              onMouseDown={(e) => {
-                console.log('ROISelector: ===== RADIO BUTTON onMouseDown START =====');
-                console.log('ROISelector: Radio button onMouseDown for:', group);
-                console.log('ROISelector: ===== RADIO BUTTON onMouseDown END =====');
-              }}
-             style={{ marginRight: '4px' }}
+             readOnly
+             style={{ marginRight: '4px', pointerEvents: 'none' }}
            />
            {group}
-         </label>
+         </div>
        );
        })}
       
