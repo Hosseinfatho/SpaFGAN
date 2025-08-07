@@ -60,12 +60,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     let url;
     if (isLocalhost) {
-      // Use API for local development
+      // Use API for local development - load from roi_segmentation files
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      url = `${apiBaseUrl}/api/top_roi_scores_${encodeURIComponent(interactionType)}`;
+      url = `${apiBaseUrl}/api/roi_segmentation_${filename}.json`;
     } else {
       // Use local JSON files for GitHub Pages
-      url = `/SpaFGAN/data/top5_roi_${filename}.json`;
+      url = `/SpaFGAN/data/roi_segmentation_${filename}.json`;
     }
     
     console.log('ROISelector: Generated URL:', url);
@@ -77,41 +77,35 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
         }
         return res.json();
       })
-             .then((data) => {
-         console.log("ROISelector: Received ROI data for", interactionType, ":", data);
-         console.log("ROISelector: Data keys:", Object.keys(data));
-         
-         // Handle both API format (rois) and local JSON format (top_rois)
-         const roisArray = data.rois || data.top_rois || [];
-         console.log("ROISelector: roisArray:", roisArray);
-         
-         if (!Array.isArray(roisArray)) {
-           console.error("ROISelector: Invalid ROI data structure:", data);
-           return;
-         }
-
-         console.log("ROISelector: Processing", roisArray.length, "ROI features");
-         console.log("ROISelector: First ROI sample:", roisArray[0]);
-
-         // Sort ROIs by score in descending order (highest score first)
-         const sortedRois = roisArray.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
-         console.log("ROISelector: Sorted ROIs:", sortedRois);
+      .then((data) => {
+        console.log("ROISelector: Received ROI segmentation data for", interactionType, ":", data);
+        console.log("ROISelector: Data keys:", Object.keys(data));
         
-        const extracted = sortedRois.map((roi, index) => {
+        // Process ROI segmentation data - each key is "ROI 1", "ROI 2", etc.
+        const roiKeys = Object.keys(data).filter(key => key.startsWith('ROI '));
+        console.log("ROISelector: ROI keys found:", roiKeys);
+        
+        const extracted = roiKeys.map((roiKey, index) => {
           const roiId = index + 1; // Start from 1
-          console.log("ROISelector: Processing ROI", roiId, "with score:", roi.scores.combined_score);
-          const newTooltipName = `ROI_${roiId}_Score:${roi.scores.combined_score.toFixed(3)}`;
+          const polygonCoords = data[roiKey];
+          console.log("ROISelector: Processing ROI", roiId, "with polygon coordinates:", polygonCoords);
+          
+          // Calculate centroid of the polygon
+          const centroid = computeCentroid(polygonCoords);
+          console.log("ROISelector: Calculated centroid for ROI", roiId, ":", centroid);
+          
+          const newTooltipName = `ROI_${roiId}`;
           
           const extractedRoi = {
             id: newTooltipName,
-            x: roi.position.x,
-            y: roi.position.y,
-            z: roi.position.z,
-            score: roi.scores.combined_score,
+            x: centroid[0],
+            y: centroid[1],
+            z: 0, // Default Z coordinate
+            score: 0.5, // Default score since segmentation files don't have scores
             interactions: [interactionType], // Use the current interaction type
             tooltip_name: newTooltipName,
             roi_id: roiId,
-            raw: roi
+            raw: { polygon: polygonCoords, centroid: centroid }
           };
           
           console.log("ROISelector: Extracted ROI", roiId, ":", extractedRoi);
@@ -167,9 +161,10 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
 
   const handleSetView = () => {
     if (currentROI && currentROI.x !== undefined && currentROI.y !== undefined) {
-      // Transform coordinates: X = x*8, Y = (5508 - y*8) (flipped)
-      const roiX = (currentROI.x+25) * 8;
-      const roiY = 5508 - (currentROI.y+25) * 8;
+      // Use coordinates directly from ROI segmentation files
+      // These are already in the correct Vitessce coordinate system
+      const roiX = currentROI.x;
+      const roiY = currentROI.y;
       
       // Find the interaction group for the current ROI
       const currentROIGroup = currentROI.interactions && currentROI.interactions.length > 0 
@@ -185,8 +180,8 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       };
       
       console.log('Setting view to ROI:', currentROI.id, 'at position:', roiX, roiY, 'with group:', currentROIGroup);
-      console.log('Original coordinates from file:', currentROI.x, currentROI.y);
-      console.log('Transformed coordinates:', roiX, roiY);
+      console.log('Coordinates from ROI segmentation file:', currentROI.x, currentROI.y);
+      console.log('Using coordinates directly (no transformation needed):', roiX, roiY);
       onSetView(viewConfig);
     } else {
       console.warn('No valid ROI selected for Set View');
