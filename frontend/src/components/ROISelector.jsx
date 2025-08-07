@@ -312,6 +312,23 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
            Load ROI Data
          </button>
        </div>
+       <div 
+         onClick={() => {
+           console.log('ROISelector: ===== TEST DIV CLICKED =====');
+         }}
+         style={{ 
+           fontSize: '10px', 
+           marginBottom: '5px', 
+           color: '#000',
+           cursor: 'pointer',
+           padding: '2px 4px',
+           backgroundColor: '#f0f0f0',
+           border: '1px solid #ccc',
+           borderRadius: '3px'
+         }}
+       >
+         Test Div (Click Me)
+       </div>
              {interactionGroups.map(group => {
                console.log('ROISelector: Rendering radio button for:', group, 'checked:', selectedGroups.includes(group));
                return (
