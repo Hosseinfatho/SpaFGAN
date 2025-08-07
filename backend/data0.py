@@ -207,7 +207,7 @@ def get_channel_index(channel_name: str, channel_list: List[str]) -> int:
 
 if __name__ == "__main__":
     # Example usage
-    url = "s3://lsp-public-data/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0/3"
+    url = "s3://lsp-public-data/biomedvis-challenge-2025/Dataset1-LSP13626-melanoma-in-situ/0"
     #url = "D:/Research/vis2025/BestCameraPosition/backend/Input/default_channels_20250521_095553.zarr"  # Using forward slashes for Windows path
 
     print("Analyzing Zarr structure...")

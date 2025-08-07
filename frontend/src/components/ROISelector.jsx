@@ -60,12 +60,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     let url;
     if (isLocalhost) {
-      // Use API for local development
+      // Use API for local development - load from roi_segmentation files
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      url = `${apiBaseUrl}/api/top_roi_scores_${encodeURIComponent(interactionType)}`;
+      url = `${apiBaseUrl}/api/roi_segmentation_${filename}.json`;
     } else {
       // Use local JSON files for GitHub Pages
-      url = `/SpaFGAN/data/top5_roi_${filename}.json`;
+      url = `/SpaFGAN/data/roi_segmentation_${filename}.json`;
     }
     
     console.log('ROISelector: Generated URL:', url);
@@ -106,10 +106,10 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
           
           const extractedRoi = {
             id: newTooltipName,
-            x: roi.position.x,
-            y: roi.position.y,
-            z: roi.position.z,
-            score: roi.scores.combined_score,
+            x: centroid[0],
+            y: centroid[1],
+            z: 0, // Default Z coordinate
+            score: 0.5, // Default score since segmentation files don't have scores
             interactions: [interactionType], // Use the current interaction type
             tooltip_name: newTooltipName,
             roi_id: roiId, // This will be 1, 2, 3, 4
