@@ -331,6 +331,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
        </div>
              {interactionGroups.map(group => {
                console.log('ROISelector: Rendering radio button for:', group, 'checked:', selectedGroups.includes(group));
+               console.log('ROISelector: About to render div for:', group);
                return (
          <div 
            key={group} 
@@ -360,7 +361,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
              readOnly
              style={{ marginRight: '4px', pointerEvents: 'none' }}
            />
-           {group}
+           {group} [CLICKABLE]
          </div>
        );
        })}
