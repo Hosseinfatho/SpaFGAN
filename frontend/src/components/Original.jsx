@@ -51,7 +51,7 @@ const INTERACTION_TO_ROI = {
 };
 
 // Simple config generation function
-const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) => { 
+const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false, useSegmentationFiles = false) => { 
   // Build coordination space
   const coordination_space = {
     'dataset': { "A": "bv" },
@@ -174,6 +174,8 @@ const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false) 
         // Use local JSON files for GitHub Pages
         roiUrl = `/SpaFGAN/data/${roi_info["file"]}`;
       }
+      
+      console.log('Adding ROI file:', roiUrl, 'for group:', group, 'useSegmentationFiles:', useSegmentationFiles);
       
       files.push({
         'fileType': 'obsSegmentations.json',
@@ -392,7 +394,7 @@ const MainView = ({ onSetView }) => {
                 y: centroid[1],
                 score: feature.properties.score || 0,
                 interactions: feature.properties.interactions || [],
-                tooltip_name: feature.properties.tooltip_name || `${feature.properties.interaction || 'Unknown'}_${feature.properties.id || index}_Score:${(feature.properties.score || 0).toFixed(3)}`,
+                tooltip_name: feature.properties.tooltip_name || `ROI_${index + 1} Score: ${(feature.properties.score || 0).toFixed(3)}`,
                 raw: feature.properties
               };
             }).filter(Boolean);
@@ -431,8 +433,13 @@ const MainView = ({ onSetView }) => {
         groupsToUse = roiView.selectedGroups || selectedGroups;
         console.log('Using selectedGroups for config generation:', groupsToUse);
       }
+      
+      // Check if we should use top5_roi files (when Set View is pressed)
+      const useTop5RoiFiles = roiView.useTop5RoiFile || false;
+      console.log('Using top5_roi files:', useTop5RoiFiles);
+      
       // Generate new config with selected groups to show ROI overlays
-      const newConfig = generateVitessceConfig(groupsToUse, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult);
+      const newConfig = generateVitessceConfig(groupsToUse, Object.keys(heatmapResults).length > 0 || interactionHeatmapResult, useTop5RoiFiles);
       
       // Update spatial coordinates if provided
       if (roiView.spatialTargetX !== undefined) {
