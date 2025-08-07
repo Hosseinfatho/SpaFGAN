@@ -379,19 +379,21 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
             </button>
           </div>
 
-          {/* Analysis Buttons */}
-          <div className="text-center" style={{ marginTop: "1px", display: "flex", justifyContent: "center", gap: "1px" }}>
-            <Heatmaps 
-              currentROI={currentROI}
-              onHeatmapResults={onHeatmapResults}
-              selectedInteractionType={selectedGroups[0]}
-              selectedROIIndex={currentIndex}
-            />
-            <InteractionHeatmaps 
-              currentROI={currentROI}
-              onInteractionResults={onInteractionResults}
-            />
-          </div>
+          {/* Analysis Buttons - Only show in local development */}
+          {(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+            <div className="text-center" style={{ marginTop: "1px", display: "flex", justifyContent: "center", gap: "1px" }}>
+              <Heatmaps 
+                currentROI={currentROI}
+                onHeatmapResults={onHeatmapResults}
+                selectedInteractionType={selectedGroups[0]}
+                selectedROIIndex={currentIndex}
+              />
+              <InteractionHeatmaps 
+                currentROI={currentROI}
+                onInteractionResults={onInteractionResults}
+              />
+            </div>
+          )}
                 </>
       ) : null}
     </div>
