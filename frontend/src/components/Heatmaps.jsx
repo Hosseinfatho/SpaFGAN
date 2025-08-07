@@ -6,6 +6,14 @@ function Heatmaps({ currentROI, onHeatmapResults }) {
   const SPECIFIC_CHANNELS = ['CD31', 'CD11b', 'Catalase', 'CD4', 'CD20', 'CD11c'];
 
   const analyzeHeatmaps = async () => {
+    // Check if we're on GitHub Pages (no backend available)
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (!isLocalhost) {
+      alert('Heatmap analysis is only available in local development mode. Please run the application locally to use this feature.');
+      return;
+    }
+
     setIsAnalyzingHeatmaps(true);
     try {
       const factor = 1;
