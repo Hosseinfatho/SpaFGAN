@@ -196,7 +196,11 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
 
 
   const toggleGroup = (group) => {
+    console.log('ROISelector: ===== toggleGroup START =====');
     console.log('ROISelector: toggleGroup called with:', group);
+    console.log('ROISelector: Current selectedGroups:', selectedGroups);
+    console.log('ROISelector: Group already selected?', selectedGroups.includes(group));
+    
     let newSelectedGroups;
     
     if (selectedGroups.includes(group)) {
@@ -209,6 +213,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       console.log('ROISelector: Selecting new group, newSelectedGroups:', newSelectedGroups);
     }
     
+    console.log('ROISelector: Setting new selectedGroups:', newSelectedGroups);
     setSelectedGroups(newSelectedGroups);
     setCurrentIndex(0);
     
@@ -216,9 +221,19 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     if (newSelectedGroups.length > 0) {
       console.log('ROISelector: About to call loadROIData with:', newSelectedGroups[0]);
       loadROIData(newSelectedGroups[0]);
+    } else {
+      console.log('ROISelector: No groups selected, not calling loadROIData');
     }
     
     // Notify parent component about the change with refreshConfig to update view
+    console.log('ROISelector: Calling onSetView with:', {
+      selectedGroups: newSelectedGroups,
+      refreshConfig: true,
+      spatialTargetX: 5454,
+      spatialTargetY: 2600,
+      spatialZoom: -3.0
+    });
+    
     onSetView({
       selectedGroups: newSelectedGroups,
       refreshConfig: true,
@@ -226,6 +241,8 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       spatialTargetY: 2600,  // Default center Y
       spatialZoom: -3.0      // Default zoom
     });
+    
+    console.log('ROISelector: ===== toggleGroup END =====');
   };
 
   const next = () => {
@@ -272,9 +289,14 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
              type="radio"
              name="interactionType"
              checked={selectedGroups.includes(group)}
-             onChange={() => {
+             onChange={(e) => {
                console.log('ROISelector: Radio button clicked for:', group);
+               console.log('ROISelector: Event target checked:', e.target.checked);
+               console.log('ROISelector: Current selectedGroups:', selectedGroups);
                toggleGroup(group);
+             }}
+             onClick={(e) => {
+               console.log('ROISelector: Radio button onClick for:', group);
              }}
              style={{ marginRight: '4px' }}
            />
