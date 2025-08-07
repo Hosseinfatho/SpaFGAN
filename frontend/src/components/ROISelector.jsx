@@ -288,16 +288,23 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
            <input
              type="radio"
              name="interactionType"
+             value={group}
              checked={selectedGroups.includes(group)}
-             onChange={(e) => {
-               console.log('ROISelector: Radio button clicked for:', group);
-               console.log('ROISelector: Event target checked:', e.target.checked);
-               console.log('ROISelector: Current selectedGroups:', selectedGroups);
-               toggleGroup(group);
-             }}
-             onClick={(e) => {
-               console.log('ROISelector: Radio button onClick for:', group);
-             }}
+                           onChange={(e) => {
+                console.log('ROISelector: ===== RADIO BUTTON onChange START =====');
+                console.log('ROISelector: Radio button clicked for:', group);
+                console.log('ROISelector: Event target checked:', e.target.checked);
+                console.log('ROISelector: Current selectedGroups:', selectedGroups);
+                console.log('ROISelector: About to call toggleGroup with:', group);
+                toggleGroup(group);
+                console.log('ROISelector: ===== RADIO BUTTON onChange END =====');
+              }}
+              onClick={(e) => {
+                console.log('ROISelector: ===== RADIO BUTTON onClick START =====');
+                console.log('ROISelector: Radio button onClick for:', group);
+                console.log('ROISelector: Event type:', e.type);
+                console.log('ROISelector: ===== RADIO BUTTON onClick END =====');
+              }}
              style={{ marginRight: '4px' }}
            />
            {group}
