@@ -266,18 +266,21 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     <div className="roi-selector-container">
       <h4 style={{ fontSize: '14px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
       <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type </p>
-      {interactionGroups.map(group => (
-        <label key={group} className="checkbox-item" style={{ fontSize: '11px', marginBottom: '1px', color: '#000' }}>
-          <input
-            type="radio"
-            name="interactionType"
-            checked={selectedGroups.includes(group)}
-            onChange={() => toggleGroup(group)}
-            style={{ marginRight: '4px' }}
-          />
-          {group}
-        </label>
-      ))}
+             {interactionGroups.map(group => (
+         <label key={group} className="checkbox-item" style={{ fontSize: '11px', marginBottom: '1px', color: '#000' }}>
+           <input
+             type="radio"
+             name="interactionType"
+             checked={selectedGroups.includes(group)}
+             onChange={() => {
+               console.log('ROISelector: Radio button clicked for:', group);
+               toggleGroup(group);
+             }}
+             style={{ marginRight: '4px' }}
+           />
+           {group}
+         </label>
+       ))}
       
       {selectedGroups.length === 0 && (
         <div style={{ marginTop: "5px", padding: "5px", backgroundColor: "rgba(255, 243, 205, 0.8)", border: "1px solid rgba(255, 193, 7, 0.3)", borderRadius: "4px", color: "#856404", fontSize: "8px" }}>
