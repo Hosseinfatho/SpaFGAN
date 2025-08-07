@@ -282,53 +282,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   return (
     <div className="roi-selector-container">
       <h4 style={{ fontSize: '14px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
-             <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type </p>
-       <button 
-         onClick={() => {
-           console.log('ROISelector: ===== TEST BUTTON CLICKED =====');
-           console.log('ROISelector: Test button works!');
-         }}
-         style={{ marginBottom: '5px', padding: '2px 5px', fontSize: '10px' }}
-       >
-         Test Button
-       </button>
-       <div style={{ marginBottom: '5px' }}>
-         <label style={{ fontSize: '10px', marginRight: '10px' }}>
-           <input
-             type="radio"
-             name="testRadio"
-             onChange={() => console.log('ROISelector: ===== TEST RADIO CHANGED =====')}
-             onClick={() => console.log('ROISelector: ===== TEST RADIO CLICKED =====')}
-           />
-           Test Radio
-         </label>
-         <button 
-           onClick={() => {
-             console.log('ROISelector: ===== DIRECT LOAD TEST =====');
-             loadROIData('B-cell infiltration');
-           }}
-           style={{ marginLeft: '10px', padding: '2px 5px', fontSize: '10px' }}
-         >
-           Load ROI Data
-         </button>
-       </div>
-       <div 
-         onClick={() => {
-           console.log('ROISelector: ===== TEST DIV CLICKED =====');
-         }}
-         style={{ 
-           fontSize: '10px', 
-           marginBottom: '5px', 
-           color: '#000',
-           cursor: 'pointer',
-           padding: '2px 4px',
-           backgroundColor: '#f0f0f0',
-           border: '1px solid #ccc',
-           borderRadius: '3px'
-         }}
-       >
-         Test Div (Click Me)
-       </div>
+      <p style={{ fontSize: '11px', marginBottom: '8px', color: '#000' }}>Select Interaction Type:</p>
              {interactionGroups.map(group => {
                console.log('ROISelector: Rendering radio button for:', group, 'checked:', selectedGroups.includes(group));
                console.log('ROISelector: About to render div for:', group);
@@ -361,7 +315,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
              readOnly
              style={{ marginRight: '4px', pointerEvents: 'none' }}
            />
-           {group} [CLICKABLE]
+           {group}
          </div>
        );
        })}
