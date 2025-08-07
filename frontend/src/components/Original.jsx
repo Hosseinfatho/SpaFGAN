@@ -518,9 +518,9 @@ const MainView = ({ onSetView }) => {
         }
       });
       
-      // Always set regular heatmaps if they exist, even if empty
-      setHeatmapResults({ heatmaps: regularHeatmaps });
-      setInteractionHeatmapResult({ heatmaps: interactionHeatmaps });
+      // Set both regular and interaction heatmaps
+      setHeatmapResults(Object.keys(regularHeatmaps).length > 0 ? { heatmaps: regularHeatmaps } : {});
+      setInteractionHeatmapResult(Object.keys(interactionHeatmaps).length > 0 ? { heatmaps: interactionHeatmaps } : null);
     } else {
       // Only regular heatmaps
       setHeatmapResults(results);

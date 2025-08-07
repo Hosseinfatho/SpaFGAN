@@ -36,7 +36,7 @@ const HeatmapResults = ({
       </button>
 
       {/* Regular Heatmaps - Horizontal Layout */}
-      {heatmapResults && heatmapResults.heatmaps && (
+      {heatmapResults && heatmapResults.heatmaps && Object.keys(heatmapResults.heatmaps).length > 0 && (
         <div className="heatmap-grid">
 
           
