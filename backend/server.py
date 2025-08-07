@@ -61,80 +61,117 @@ RGB_INTERACTION_DEFINITIONS = [
 def get_channel_names():
     """Reads OME-Zarr metadata to get channel names."""
     logger.info("Request received for /api/channel_names")
-    channel_map = {}
-    s3_local = None
-    root_store = None # Initialize here for broader scope in logging
-    root_group = None # Initialize here
-    try:
-        logger.info("Attempting to create S3FileSystem...")
-        s3_local = s3fs.S3FileSystem(anon=True)
-        root_store = s3fs.S3Map(root=ZARR_BASE_URL, s3=s3_local, check=False)
-        logger.info("S3Map created successfully.")
-
-        logger.info("Attempting to open root Zarr group...")
-        # Open the root group, not a specific resolution array
-        root_group = zarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else zarr.open_group(store=root_store, mode='r')
-        logger.info(f"Root group opened successfully. Type: {type(root_group)}")
-
-        # Access OME metadata: Look inside the image group (e.g., '0')
-        omero_meta = None
-        image_group_key = '0' # Assuming the main image data is in group '0'
-        logger.info(f"Checking for image group '{image_group_key}'...")
-        if root_group and image_group_key in root_group:
-            image_group = root_group[image_group_key]
-            logger.info(f"Image group '{image_group_key}' found. Checking for 'omero' in its attributes...")
-            if hasattr(image_group, 'attrs') and 'omero' in image_group.attrs:
-                omero_meta = image_group.attrs['omero']
-                logger.info(f"Found 'omero' metadata in image group '{image_group_key}' attributes.")
-            else:
-                 logger.warning(f"Could not find 'omero' metadata in image group '{image_group_key}' attributes.")
-                 # Optional: Log available attributes for debugging
-                 # if hasattr(image_group, 'attrs'):
-                 #    logger.debug(f"Available image group attributes: {list(image_group.attrs.keys())}")
-        else:
-             logger.warning(f"Image group '{image_group_key}' not found in root group.")
-
-        # Now check the extracted omero_meta for channels
-        if omero_meta and 'channels' in omero_meta:
-            logger.info(f"Found {len(omero_meta['channels'])} channels in metadata.")
-            for i, channel_info in enumerate(omero_meta['channels']): 
-                # Ensure key is string for JSON compatibility
-                channel_map[str(i)] = channel_info.get('label', f'Channel {i}') 
-            logger.info(f" Successfully extracted channel names: {channel_map}")
-            return jsonify(channel_map)
-        else:
-            logger.warning("Could not find valid 'omero' metadata with 'channels'. Returning 404.")
-            # Return empty map or error?
-            return jsonify({"error": "Channel metadata ('omero' with 'channels') not found in Zarr store"}), 404
-
-    except Exception as e:
-        logger.error(f" Failed during channel name retrieval: {e}", exc_info=True)
-        # Log details about variables at the time of error
-        logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}, root_store={'Exists' if root_store else 'None'}, root_group={'Exists' if root_group else 'None'}")
-        return jsonify({"error": f"Failed to read channel names: {e}"}), 500
+    
+    # Return default channel mapping for local development
+    channel_map = {
+        '0': 'CD31',
+        '1': 'CD11b', 
+        '2': 'Catalase',
+        '3': 'CD4',
+        '4': 'CD20',
+        '5': 'CD11c'
+    }
+    
+    logger.info(f"Returning default channel names: {channel_map}")
+    return jsonify(channel_map)
 # --- End Channel Names Endpoint ---
 
 def open_target_zarr_array():
     """Opens and returns the target Zarr array from local file. Returns None on failure."""
     target_image_arr = None
     try:
-        # Use local Zarr file
-        zarr_path = LOCAL_ZARR_PATH / ZARR_IMAGE_GROUP_PATH / TARGET_RESOLUTION_PATH
+        # Use local Zarr file - open as group first
+        zarr_path = LOCAL_ZARR_PATH
         
-        logger.info(f"Attempting to open local Zarr array from: {zarr_path}")
+        logger.info(f"Attempting to open local Zarr group from: {zarr_path}")
         
         # Check if path exists
         if not zarr_path.exists():
             logger.error(f"Zarr path does not exist: {zarr_path}")
             return None
         
-        # Open the Zarr array
-        target_image_arr = zarr.open_array(str(zarr_path), mode='r')
+        # Open the Zarr group
+        zarr_group = zarr.open_group(str(zarr_path), mode='r')
+        logger.info(f"Zarr group keys: {list(zarr_group.keys())}")
         
-        logger.info(f"✅ Successfully opened target Zarr array from local file")
-        logger.info(f"Array shape: {target_image_arr.shape}")
-        logger.info(f"Array dtype: {target_image_arr.dtype}")
-        return target_image_arr
+        # Look for the data array - handle nested structure
+        if 'data' in zarr_group:
+            data_group = zarr_group['data']
+            logger.info(f"Found 'data' group. Keys: {list(data_group.keys())}")
+            
+            # Check if data is directly an array or has nested structure
+            if hasattr(data_group, 'shape'):
+                # data is directly an array
+                target_image_arr = data_group
+                logger.info(f"✅ Successfully opened target Zarr array from local file")
+                logger.info(f"Array shape: {target_image_arr.shape}")
+                logger.info(f"Array dtype: {target_image_arr.dtype}")
+                return target_image_arr
+            else:
+                # data is a group, look for the actual array
+                for key in data_group.keys():
+                    if hasattr(data_group[key], 'shape'):
+                        target_image_arr = data_group[key]
+                        logger.info(f"✅ Successfully opened target Zarr array from local file (nested)")
+                        logger.info(f"Array shape: {target_image_arr.shape}")
+                        logger.info(f"Array dtype: {target_image_arr.dtype}")
+                        return target_image_arr
+                    elif hasattr(data_group[key], 'keys'):
+                        # Check nested groups (like data/c/0)
+                        nested_group = data_group[key]
+                        logger.info(f"Found nested group '{key}'. Keys: {list(nested_group.keys())}")
+                        for nested_key in nested_group.keys():
+                            if hasattr(nested_group[nested_key], 'shape'):
+                                target_image_arr = nested_group[nested_key]
+                                logger.info(f"✅ Successfully opened target Zarr array from nested group '{key}/{nested_key}'")
+                                logger.info(f"Array shape: {target_image_arr.shape}")
+                                logger.info(f"Array dtype: {target_image_arr.dtype}")
+                                return target_image_arr
+                            elif hasattr(nested_group[nested_key], 'keys'):
+                                # Check deeper nested groups (like data/c/0/0)
+                                deep_nested_group = nested_group[nested_key]
+                                logger.info(f"Found deep nested group '{key}/{nested_key}'. Keys: {list(deep_nested_group.keys())}")
+                                for deep_key in deep_nested_group.keys():
+                                    if hasattr(deep_nested_group[deep_key], 'shape'):
+                                        target_image_arr = deep_nested_group[deep_key]
+                                        logger.info(f"✅ Successfully opened target Zarr array from deep nested group '{key}/{nested_key}/{deep_key}'")
+                                        logger.info(f"Array shape: {target_image_arr.shape}")
+                                        logger.info(f"Array dtype: {target_image_arr.dtype}")
+                                        return target_image_arr
+                                    elif hasattr(deep_nested_group[deep_key], 'keys'):
+                                        # Check even deeper nested groups (like data/c/0/0/100)
+                                        deeper_nested_group = deep_nested_group[deep_key]
+                                        logger.info(f"Found deeper nested group '{key}/{nested_key}/{deep_key}'. Keys: {list(deeper_nested_group.keys())}")
+                                        # For this level, we'll use the first available key as a sample
+                                        if deeper_nested_group.keys():
+                                            sample_key = list(deeper_nested_group.keys())[0]
+                                            sample_group = deeper_nested_group[sample_key]
+                                            if hasattr(sample_group, 'shape'):
+                                                target_image_arr = sample_group
+                                                logger.info(f"✅ Successfully opened target Zarr array from deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}'")
+                                                logger.info(f"Array shape: {target_image_arr.shape}")
+                                                logger.info(f"Array dtype: {target_image_arr.dtype}")
+                                                return target_image_arr
+                                            elif hasattr(sample_group, 'keys'):
+                                                # Check even deeper nested groups (like data/c/0/0/100/0)
+                                                even_deeper_nested_group = sample_group
+                                                logger.info(f"Found even deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}'. Keys: {list(even_deeper_nested_group.keys())}")
+                                                # For this level, we'll use the first available key as a sample
+                                                if even_deeper_nested_group.keys():
+                                                    even_sample_key = list(even_deeper_nested_group.keys())[0]
+                                                    even_sample_group = even_deeper_nested_group[even_sample_key]
+                                                    if hasattr(even_sample_group, 'shape'):
+                                                        target_image_arr = even_sample_group
+                                                        logger.info(f"✅ Successfully opened target Zarr array from even deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}/{even_sample_key}'")
+                                                        logger.info(f"Array shape: {target_image_arr.shape}")
+                                                        logger.info(f"Array dtype: {target_image_arr.dtype}")
+                                                        return target_image_arr
+                
+                logger.error(f"No array found in 'data' group. Available keys: {list(data_group.keys())}")
+                return None
+        else:
+            logger.error(f"No 'data' group found in Zarr group. Available keys: {list(zarr_group.keys())}")
+            return None
 
     except Exception as e:
         logger.error(f"Failed to open target Zarr array: {e}", exc_info=True)

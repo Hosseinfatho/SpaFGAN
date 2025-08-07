@@ -4,21 +4,17 @@ import s3fs
 import logging
 from pathlib import Path
 import os
-from ome_zarr.io import parse_url
-from ome_zarr.writer import write_multiscale
-from ome_zarr.scale import Scaler
 import dask.array as da
 from dask.diagnostics import ProgressBar
-from scipy.ndimage import label
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # S3 path settings
-ZARR_BASE_URL = "s3://lsp-public-data/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ"
+ZARR_BASE_URL = "s3://lsp-public-data/biomedvis-challenge-2025/Dataset1-LSP13626-melanoma-in-situ"
 ZARR_IMAGE_GROUP_PATH = "0"
-TARGET_RESOLUTION_PATH = "3"  # Using resolution level 3
+TARGET_RESOLUTION_PATH = ""  # Using root data directory
 
 # Define channel indices
 CHANNEL_INDICES = {
@@ -33,16 +29,55 @@ CHANNEL_INDICES = {
 def extract_channels_from_zarr():
     """Extract selected channels from Zarr using dask"""
     try:
-        # Construct the full path
-        path = f"https://lsp-public-data.s3.amazonaws.com/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ/0"
+        # Create S3 filesystem
+        logger.info("Creating S3 filesystem...")
+        s3 = s3fs.S3FileSystem(anon=True)
         
-        # Parse the URL and get the store
-        root = parse_url(path, mode="r")
-        store = root.store
+        # Construct the S3 path
+        s3_path = "lsp-public-data/biomedvis-challenge-2025/Dataset1-LSP13626-melanoma-in-situ/0"
+        logger.info(f"Accessing S3 path: {s3_path}")
         
-        # Load the data using dask
+        # List available files to understand structure
+        files = s3.ls(s3_path)
+        logger.info(f"Available files in S3 path: {files}")
+        
+        # Look for the data array in resolution levels
+        data_path = None
+        
+        # Use resolution level 3 specifically
+        resolution = '3'
+        resolution_path = f"{s3_path}/{resolution}"
+        try:
+            resolution_files = s3.ls(resolution_path)
+            logger.info(f"Resolution {resolution} files: {resolution_files}")
+            
+            # Check if this resolution level has a data array
+            for file_path in resolution_files:
+                if file_path.endswith('/data'):
+                    data_path = file_path
+                    logger.info(f"Found data array at: {data_path}")
+                    break
+                elif file_path.endswith('/.zarray'):
+                    # This indicates an array at this level
+                    data_path = file_path.replace('/.zarray', '')
+                    logger.info(f"Found array at: {data_path}")
+                    break
+            
+        except Exception as e:
+            logger.error(f"Could not access resolution {resolution}: {e}")
+            return None, None, None
+        
+        if data_path is None:
+            logger.error("Could not find data array in any resolution level")
+            return None, None, None
+        
+        logger.info(f"Using data path: {data_path}")
+        
+        # Load the data using dask with s3fs
         logger.info("Loading data using dask...")
-        dask_array = da.from_zarr(store, component=TARGET_RESOLUTION_PATH)
+        s3_url = f"s3://{data_path}"
+        logger.info(f"Loading from S3 URL: {s3_url}")
+        dask_array = da.from_zarr(s3_url, storage_options={'anon': True})
         logger.info(f"Dask array shape: {dask_array.shape}")
         logger.info(f"Chunk size: {dask_array.chunksize}")
         
@@ -68,8 +103,8 @@ def save_as_zarr(data, output_path, channel_names, chunks):
         output_path.mkdir(parents=True, exist_ok=True)
         logger.info(f"Creating output directory at: {output_path}")
 
-        # Create Zarr store
-        store = zarr.DirectoryStore(str(output_path))
+        # Create Zarr store - use the path directly
+        store = str(output_path)
         root = zarr.group(store=store, overwrite=True)
 
         # Add metadata
@@ -88,8 +123,7 @@ def save_as_zarr(data, output_path, channel_names, chunks):
             'data',
             shape=data.shape,
             chunks=chunks,
-            dtype=data.dtype,
-            compressor=zarr.Blosc(cname='zstd', clevel=3)
+            dtype=data.dtype
         )
 
         # Write data with progress bar
