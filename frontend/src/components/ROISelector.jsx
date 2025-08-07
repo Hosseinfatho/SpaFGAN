@@ -283,7 +283,9 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     <div className="roi-selector-container">
       <h4 style={{ fontSize: '14px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
       <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type </p>
-             {interactionGroups.map(group => (
+             {interactionGroups.map(group => {
+               console.log('ROISelector: Rendering radio button for:', group, 'checked:', selectedGroups.includes(group));
+               return (
          <label key={group} className="checkbox-item" style={{ fontSize: '11px', marginBottom: '1px', color: '#000' }}>
            <input
              type="radio"
@@ -305,11 +307,17 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
                 console.log('ROISelector: Event type:', e.type);
                 console.log('ROISelector: ===== RADIO BUTTON onClick END =====');
               }}
+              onMouseDown={(e) => {
+                console.log('ROISelector: ===== RADIO BUTTON onMouseDown START =====');
+                console.log('ROISelector: Radio button onMouseDown for:', group);
+                console.log('ROISelector: ===== RADIO BUTTON onMouseDown END =====');
+              }}
              style={{ marginRight: '4px' }}
            />
            {group}
          </label>
-       ))}
+       );
+       })}
       
       {selectedGroups.length === 0 && (
         <div style={{ marginTop: "5px", padding: "5px", backgroundColor: "rgba(255, 243, 205, 0.8)", border: "1px solid rgba(255, 193, 7, 0.3)", borderRadius: "4px", color: "#856404", fontSize: "8px" }}>
