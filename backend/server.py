@@ -1,162 +1,84 @@
-# Backend server code
+# Backend server code will go here 
 import json
 import logging
-import subprocess
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, Response, stream_with_context
+from flask import Flask, jsonify, request, Response, stream_with_context, send_file
 from flask_cors import CORS
-
-import zarr as pyzarr
-import s3fs
+import requests
+from vitessce import (
+    VitessceConfig,
+    CoordinationLevel as CL,
+    get_initial_coordination_scope_prefix,
+    Component
+)
+# Removed unused ipywidgets import
+import zarr # Use zarr directly
+import numpy as np
+from scipy import ndimage
+from skimage.measure import label # Used for connected components if needed, optional
+import traceback # For better error logging
+import s3fs # Needed for opening S3 Zarr store
+import time # For timing operations, used in copied functions
+import base64
+import io
+from PIL import Image # Pillow import
+import os
+import pickle
 from pathlib import Path
 
+# --- Analysis Functions (Copied from test_zarr_exploration.py) ---
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+# Enable CORS for all routes during development
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Constants for Zarr Access
-ZARR_BASE_URL = "s3://lsp-public-data/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ"
-ZARR_IMAGE_GROUP_PATH = "0"
-TARGET_RESOLUTION_PATH = "3"
-
+# --- Constants for Zarr Access ---
+# Use local Zarr file
+ZARR_BASE_URL = None  # We'll use local file
+LOCAL_ZARR_PATH = Path(__file__).parent / 'input' / 'selected_channels.zarr'
+ZARR_IMAGE_GROUP_PATH = "data"
+TARGET_RESOLUTION_PATH = "" # Use the root of data directory
+# ---
+REQUIRED_CHANNEL_INDICES_FOR_RGB_INTERACTION = {
+    'CD31': 0,
+    'CD11b': 1,
+    'Catalase': 2,
+    'CD4': 3,
+    'CD20': 4,
+    'CD11c': 5
+}
+# Define the interaction compositions and their target RGB channels
+RGB_INTERACTION_DEFINITIONS = [
+    {'name': 'Vascular inflammation + oxidative stress', 'channels': ['CD31', 'CD11b', 'Catalase'], 'rgb_target': 0}, # Red
+    {'name': 'Complex immune cell interaction', 'channels': ['CD4', 'CD20', 'CD11b'], 'rgb_target': 2}, # Blue
+    {'name': 'T/B cell entry via vessels', 'channels': ['CD31', 'CD4', 'CD20'], 'rgb_target': 1}  # Green
+]
+# --- New Endpoint for Channel Names ---
 @app.route('/api/channel_names')
 def get_channel_names():
     """Reads OME-Zarr metadata to get channel names."""
     logger.info("Request received for /api/channel_names")
-<<<<<<< HEAD
-    
-    # Return default channel mapping for local development
-    channel_map = {
-        '0': 'CD31',
-        '1': 'CD11b', 
-        '2': 'Catalase',
-        '3': 'CD4',
-        '4': 'CD20',
-        '5': 'CD11c'
-    }
-    
-    logger.info(f"Returning default channel names: {channel_map}")
-    return jsonify(channel_map)
-# --- End Channel Names Endpoint ---
-
-def open_target_zarr_array():
-    """Opens and returns the target Zarr array from local file. Returns None on failure."""
-    target_image_arr = None
-    try:
-        # Use local Zarr file - open as group first
-        zarr_path = LOCAL_ZARR_PATH
-        
-        logger.info(f"Attempting to open local Zarr group from: {zarr_path}")
-        
-        # Check if path exists
-        if not zarr_path.exists():
-            logger.error(f"Zarr path does not exist: {zarr_path}")
-            return None
-        
-        # Open the Zarr group
-        zarr_group = zarr.open_group(str(zarr_path), mode='r')
-        logger.info(f"Zarr group keys: {list(zarr_group.keys())}")
-        
-        # Look for the data array - handle nested structure
-        if 'data' in zarr_group:
-            data_group = zarr_group['data']
-            logger.info(f"Found 'data' group. Keys: {list(data_group.keys())}")
-            
-            # Check if data is directly an array or has nested structure
-            if hasattr(data_group, 'shape'):
-                # data is directly an array
-                target_image_arr = data_group
-                logger.info(f"✅ Successfully opened target Zarr array from local file")
-                logger.info(f"Array shape: {target_image_arr.shape}")
-                logger.info(f"Array dtype: {target_image_arr.dtype}")
-                return target_image_arr
-            else:
-                # data is a group, look for the actual array
-                for key in data_group.keys():
-                    if hasattr(data_group[key], 'shape'):
-                        target_image_arr = data_group[key]
-                        logger.info(f"✅ Successfully opened target Zarr array from local file (nested)")
-                        logger.info(f"Array shape: {target_image_arr.shape}")
-                        logger.info(f"Array dtype: {target_image_arr.dtype}")
-                        return target_image_arr
-                    elif hasattr(data_group[key], 'keys'):
-                        # Check nested groups (like data/c/0)
-                        nested_group = data_group[key]
-                        logger.info(f"Found nested group '{key}'. Keys: {list(nested_group.keys())}")
-                        for nested_key in nested_group.keys():
-                            if hasattr(nested_group[nested_key], 'shape'):
-                                target_image_arr = nested_group[nested_key]
-                                logger.info(f"✅ Successfully opened target Zarr array from nested group '{key}/{nested_key}'")
-                                logger.info(f"Array shape: {target_image_arr.shape}")
-                                logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                return target_image_arr
-                            elif hasattr(nested_group[nested_key], 'keys'):
-                                # Check deeper nested groups (like data/c/0/0)
-                                deep_nested_group = nested_group[nested_key]
-                                logger.info(f"Found deep nested group '{key}/{nested_key}'. Keys: {list(deep_nested_group.keys())}")
-                                for deep_key in deep_nested_group.keys():
-                                    if hasattr(deep_nested_group[deep_key], 'shape'):
-                                        target_image_arr = deep_nested_group[deep_key]
-                                        logger.info(f"✅ Successfully opened target Zarr array from deep nested group '{key}/{nested_key}/{deep_key}'")
-                                        logger.info(f"Array shape: {target_image_arr.shape}")
-                                        logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                        return target_image_arr
-                                    elif hasattr(deep_nested_group[deep_key], 'keys'):
-                                        # Check even deeper nested groups (like data/c/0/0/100)
-                                        deeper_nested_group = deep_nested_group[deep_key]
-                                        logger.info(f"Found deeper nested group '{key}/{nested_key}/{deep_key}'. Keys: {list(deeper_nested_group.keys())}")
-                                        # For this level, we'll use the first available key as a sample
-                                        if deeper_nested_group.keys():
-                                            sample_key = list(deeper_nested_group.keys())[0]
-                                            sample_group = deeper_nested_group[sample_key]
-                                            if hasattr(sample_group, 'shape'):
-                                                target_image_arr = sample_group
-                                                logger.info(f"✅ Successfully opened target Zarr array from deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}'")
-                                                logger.info(f"Array shape: {target_image_arr.shape}")
-                                                logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                                return target_image_arr
-                                            elif hasattr(sample_group, 'keys'):
-                                                # Check even deeper nested groups (like data/c/0/0/100/0)
-                                                even_deeper_nested_group = sample_group
-                                                logger.info(f"Found even deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}'. Keys: {list(even_deeper_nested_group.keys())}")
-                                                # For this level, we'll use the first available key as a sample
-                                                if even_deeper_nested_group.keys():
-                                                    even_sample_key = list(even_deeper_nested_group.keys())[0]
-                                                    even_sample_group = even_deeper_nested_group[even_sample_key]
-                                                    if hasattr(even_sample_group, 'shape'):
-                                                        target_image_arr = even_sample_group
-                                                        logger.info(f"✅ Successfully opened target Zarr array from even deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}/{even_sample_key}'")
-                                                        logger.info(f"Array shape: {target_image_arr.shape}")
-                                                        logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                                        return target_image_arr
-                
-                logger.error(f"No array found in 'data' group. Available keys: {list(data_group.keys())}")
-                return None
-        else:
-            logger.error(f"No 'data' group found in Zarr group. Available keys: {list(zarr_group.keys())}")
-            return None
-=======
     channel_map = {}
-    root_store = None
-    root_group = None
+    s3_local = None
+    root_store = None # Initialize here for broader scope in logging
+    root_group = None # Initialize here
     try:
         logger.info("Attempting to create S3FileSystem...")
         s3_local = s3fs.S3FileSystem(anon=True)
-        logger.info("S3FileSystem created successfully.")
-        
-        logger.info(f"Attempting to create S3Map for root: {ZARR_BASE_URL}")
         root_store = s3fs.S3Map(root=ZARR_BASE_URL, s3=s3_local, check=False)
         logger.info("S3Map created successfully.")
 
         logger.info("Attempting to open root Zarr group...")
-        root_group = pyzarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else pyzarr.open_group(store=root_store, mode='r')
+        # Open the root group, not a specific resolution array
+        root_group = zarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else zarr.open_group(store=root_store, mode='r')
         logger.info(f"Root group opened successfully. Type: {type(root_group)}")
 
         # Access OME metadata: Look inside the image group (e.g., '0')
         omero_meta = None
-        image_group_key = '0'
+        image_group_key = '0' # Assuming the main image data is in group '0'
         logger.info(f"Checking for image group '{image_group_key}'...")
         if root_group and image_group_key in root_group:
             image_group = root_group[image_group_key]
@@ -166,6 +88,9 @@ def open_target_zarr_array():
                 logger.info(f"Found 'omero' metadata in image group '{image_group_key}' attributes.")
             else:
                  logger.warning(f"Could not find 'omero' metadata in image group '{image_group_key}' attributes.")
+                 # Optional: Log available attributes for debugging
+                 # if hasattr(image_group, 'attrs'):
+                 #    logger.debug(f"Available image group attributes: {list(image_group.attrs.keys())}")
         else:
              logger.warning(f"Image group '{image_group_key}' not found in root group.")
 
@@ -173,50 +98,135 @@ def open_target_zarr_array():
         if omero_meta and 'channels' in omero_meta:
             logger.info(f"Found {len(omero_meta['channels'])} channels in metadata.")
             for i, channel_info in enumerate(omero_meta['channels']): 
+                # Ensure key is string for JSON compatibility
                 channel_map[str(i)] = channel_info.get('label', f'Channel {i}') 
             logger.info(f" Successfully extracted channel names: {channel_map}")
             return jsonify(channel_map)
         else:
             logger.warning("Could not find valid 'omero' metadata with 'channels'. Returning 404.")
+            # Return empty map or error?
             return jsonify({"error": "Channel metadata ('omero' with 'channels') not found in Zarr store"}), 404
 
     except Exception as e:
         logger.error(f" Failed during channel name retrieval: {e}", exc_info=True)
+        # Log details about variables at the time of error
         logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}, root_store={'Exists' if root_store else 'None'}, root_group={'Exists' if root_group else 'None'}")
         return jsonify({"error": f"Failed to read channel names: {e}"}), 500
+# --- End Channel Names Endpoint ---
 
-# === STANDARD VITESSCE CONFIG GENERATOR ===
->>>>>>> parent of 4025829 (cleaner code)
+def open_target_zarr_array():
+    """Opens and returns the target Zarr array from local file. Returns None on failure."""
+    target_image_arr = None
+    try:
+        # Use local Zarr file
+        zarr_path = LOCAL_ZARR_PATH / ZARR_IMAGE_GROUP_PATH / TARGET_RESOLUTION_PATH
+        
+        logger.info(f"Attempting to open local Zarr array from: {zarr_path}")
+        
+        # Check if path exists
+        if not zarr_path.exists():
+            logger.error(f"Zarr path does not exist: {zarr_path}")
+            return None
+        
+        # Open the Zarr array
+        target_image_arr = zarr.open_array(str(zarr_path), mode='r')
+        
+        logger.info(f"✅ Successfully opened target Zarr array from local file")
+        logger.info(f"Array shape: {target_image_arr.shape}")
+        logger.info(f"Array dtype: {target_image_arr.dtype}")
+        return target_image_arr
 
-def generate_vitessce_config():
-    """Generate Vitessce configuration in Python"""
-    
-    # Channel configuration
-    channels = [
-        {'id': 0, 'name': "CD31", 'color': [0, 255, 0], 'window': [300, 20000], 'targetC': 19},      # Green
-        {'id': 1, 'name': "CD20", 'color': [255, 255, 0], 'window': [1000, 7000], 'targetC': 27},    # Yellow
-        {'id': 2, 'name': "CD11b", 'color': [255, 0, 255], 'window': [700, 6000], 'targetC': 37},    # Magenta
-        {'id': 3, 'name': "CD4", 'color': [0, 255, 255], 'window': [1638, 10000], 'targetC': 25},    # Cyan
-        {'id': 4, 'name': "CD11c", 'color': [128, 0, 128], 'window': [370, 1432], 'targetC': 42}     # Purple
-    ]
+    except Exception as e:
+        logger.error(f"Failed to open target Zarr array: {e}", exc_info=True)
+        return None
 
-    # Build coordination space
-    coordination_space = {
-        'dataset': {"A": "bv"},
-        'imageChannel': {},
-        'imageLayer': {"init_bv_image_0": "__dummy__"},
-        'metaCoordinationScopes': {
-            "A": {'obsType': "A"},
-            "init_bv_image_0": {
-                'imageLayer': ["init_bv_image_0"],
-                'spatialRenderingMode': "init_bv_image_0",
-                'spatialTargetT': "init_bv_image_0",
-                'spatialTargetX': "init_bv_image_0",
-                'spatialTargetY': "init_bv_image_0",
-                'spatialTargetZ': "init_bv_image_0",
-                'spatialZoom': "init_bv_image_0"
+def calculate_z_projection_heatmap(zarr_array, channel_index, roi_z, roi_y, roi_x, projection_type='sum'):
+    """Calculates the Z-projection (heatmap) for a specific channel within a defined ROI."""
+    if zarr_array is None:
+        return {'error': 'Zarr array is None.'}
+    valid_projection_types = ['sum', 'mean', 'max']
+    if projection_type not in valid_projection_types:
+        return {'error': f"Invalid projection_type '{projection_type}'. Must be one of {valid_projection_types}"}
+    try:
+        if zarr_array.ndim != 5:
+            logger.warning(f"[Heatmap] Expected 5D array (t,c,z,y,x), but got {zarr_array.ndim}D. Proceeding cautiously.")
+        channel_axis = 1
+        if not (0 <= channel_index < zarr_array.shape[channel_axis]):
+            return {'error': f'Invalid channel_index {channel_index}. Must be between 0 and {zarr_array.shape[channel_axis] - 1}. Array shape: {zarr_array.shape}'}
+        
+        # Log array shape and ROI values
+        logger.info(f"Array shape: {zarr_array.shape}")
+        logger.info(f"ROI values - Z: {roi_z}, Y: {roi_y}, X: {roi_x}")
+        
+        max_z_arr, max_y_arr, max_x_arr = zarr_array.shape[2:]
+        if not (0 <= roi_z[0] < roi_z[1] <= max_z_arr and
+                0 <= roi_y[0] < roi_y[1] <= max_y_arr and
+                0 <= roi_x[0] < roi_x[1] <= max_x_arr):
+            return {'error': f'ROI Z{roi_z}, Y{roi_y}, X{roi_x} is out of bounds for array shape Z{max_z_arr}, Y{max_y_arr}, X{max_x_arr}.'}
+        
+        total_y_height_in_zarr = zarr_array.shape[3]
+        zarr_slice_y_start = total_y_height_in_zarr - roi_y[1]
+        zarr_slice_y_end = total_y_height_in_zarr - roi_y[0]
+        zarr_slice_y_start = max(0, zarr_slice_y_start)
+        zarr_slice_y_end = min(total_y_height_in_zarr, zarr_slice_y_end)
+
+        if zarr_slice_y_start >= zarr_slice_y_end and not (roi_y[0] == 0 and roi_y[1] == total_y_height_in_zarr):
+            return {'error': f'Transformed Y ROI resulted in invalid slice: [{zarr_slice_y_start}, {zarr_slice_y_end}). Original roi_y: {roi_y}, Zarr Y height: {total_y_height_in_zarr}'}
+        
+        logger.info(f"[Heatmap] Original roi_y (bottom-up): {roi_y}")
+        logger.info(f"[Heatmap] Transformed Zarr Y slice (top-down): [{zarr_slice_y_start}, {zarr_slice_y_end})")
+        
+        # Use ROI Z range for projection instead of full Z range
+        roi_slice = (
+            slice(0, 1),
+            slice(channel_index, channel_index + 1),
+            slice(roi_z[0], roi_z[1]),  # Use ROI Z range instead of full Z range
+            slice(zarr_slice_y_start, zarr_slice_y_end),
+            slice(roi_x[0], roi_x[1])
+        )
+        
+        logger.info(f"[Heatmap] Reading slice: Ch={channel_index}, Z_roi={roi_z}, Y_ZARR_SLICE=[{zarr_slice_y_start}:{zarr_slice_y_end}], X_roi={roi_x}")
+        start_read = time.time()
+        
+        try:
+            data_roi = zarr_array[roi_slice]
+            end_read = time.time()
+            logger.info(f"[Heatmap] Read in {end_read - start_read:.2f}s. Result shape: {data_roi.shape}, Size: {data_roi.size}")
+            
+            if data_roi.size == 0:
+                return {'error': 'Specified ROI resulted in an empty data slice.'}
+            
+            # Convert to float32 for calculations
+            data_roi = data_roi.astype(np.float32)
+            
+            if projection_type == 'sum':
+                # Additive projection (sum along Z axis)
+                projected_data = np.sum(data_roi, axis=2)
+            elif projection_type == 'mean':
+                # Mean projection along Z axis
+                projected_data = np.mean(data_roi, axis=2)
+            elif projection_type == 'max':
+                # Max projection along Z axis
+                projected_data = np.max(data_roi, axis=2)
+            
+            heatmap_2d = np.squeeze(projected_data, axis=(0, 1))
+            
+            # Normalize the heatmap to [0, 1]
+            min_val = np.min(heatmap_2d)
+            max_val = np.max(heatmap_2d)
+            if max_val > min_val:
+                heatmap_2d = (heatmap_2d - min_val) / (max_val - min_val)
+            else:
+                heatmap_2d = np.zeros_like(heatmap_2d)
+            
+            logger.info(f"[Heatmap] Final heatmap shape: {heatmap_2d.shape}, Range: [{np.min(heatmap_2d):.3f}, {np.max(heatmap_2d):.3f}]")
+            
+            return {
+                'heatmap': heatmap_2d.tolist(),
+                'shape': heatmap_2d.shape,
+                'min_val': float(min_val),
+                'max_val': float(max_val)
             }
-<<<<<<< HEAD
             
         except Exception as read_error:
             logger.error(f"[Heatmap] Error reading data slice: {str(read_error)}")
@@ -485,217 +495,175 @@ def analyze_heatmaps():
                 'yMax': int(roi['yMax']),
                 'xMin': int(roi['xMin']),
                 'xMax': int(roi['xMax'])
-=======
-        },
-        'metaCoordinationScopesBy': {
-            "A": {},
-            "init_bv_image_0": {
-                'imageChannel': {
-                    'spatialChannelColor': {},
-                    'spatialChannelOpacity': {},
-                    'spatialChannelVisible': {},
-                    'spatialChannelWindow': {},
-                    'spatialTargetC': {}
-                },
-                'imageLayer': {
-                    'imageChannel': {"init_bv_image_0": []},
-                    'photometricInterpretation': {"init_bv_image_0": "init_bv_image_0"},
-                    'spatialLayerOpacity': {"init_bv_image_0": "init_bv_image_0"},
-                    'spatialLayerVisible': {"init_bv_image_0": "init_bv_image_0"},
-                    'spatialTargetResolution': {"init_bv_image_0": "init_bv_image_0"}
-                }
             }
-        },
-        'obsType': {
-            "A": "ROI_B-cell",
-            "B": "ROI_Inflammatory", 
-            "C": "ROI_T-cell",
-            "D": "ROI_Oxidative"
-        },
-        'obsColorEncoding': {
-            "A": "cellSetSelection",
-            "B": "cellSetSelection",
-            "C": "cellSetSelection",
-            "D": "cellSetSelection"
-        },
-        'photometricInterpretation': {"init_bv_image_0": "BlackIsZero"},
-        'spatialChannelColor': {},
-        'spatialChannelOpacity': {},
-        'spatialChannelVisible': {},
-        'spatialChannelWindow': {},
-        'spatialLayerOpacity': {"init_bv_image_0": 1.0},
-        'spatialLayerVisible': {"init_bv_image_0": True},
-        'spatialRenderingMode': {"init_bv_image_0": "3D"},
-        'spatialTargetC': {},
-        'spatialTargetResolution': {"init_bv_image_0": 3},
-        'spatialTargetT': {"init_bv_image_0": 0},
-        'spatialTargetX': {"init_bv_image_0": 5454},
-        'spatialTargetY': {"init_bv_image_0": 2754},
-        'spatialTargetZ': {"init_bv_image_0": 0},
-        'spatialZoom': {"init_bv_image_0": -3.5},
-        'spatialSegmentationLayer': {
-            "A": {
-                "radius": 200,
-                "stroked": True,
-                "visible": True,
-                "opacity": 0.2,
-                "color": [255, 100, 100]  # Red for B-cell infiltration
-            },
-            "B": {
-                "radius": 200,
-                "stroked": True,
-                "visible": True,
-                "opacity": 0.2,
-                "color": [0, 255, 0]  # Green for Inflammatory zone
-            },
-            "C": {
-                "radius": 200,
-                "stroked": True,
-                "visible": True,
-                "opacity": 0.2,
-                "color": [0, 0, 255]  # Blue for T-cell entry site
-            },
-            "D": {
-                "radius": 200,
-                "stroked": True,
-                "visible": True,
-                "opacity": 0.2,
-                "color": [255, 255, 0]  # Yellow for Oxidative stress niche
->>>>>>> parent of 4025829 (cleaner code)
-            }
-        }
-    }
-
-    # Add channel-specific coordination values
-    for i, channel in enumerate(channels):
-        ch_id = f'init_bv_image_{i}'
-        coordination_space['imageChannel'][ch_id] = "__dummy__"
-        coordination_space['spatialChannelColor'][ch_id] = channel['color']
-        coordination_space['spatialChannelOpacity'][ch_id] = 1.0
-        coordination_space['spatialChannelVisible'][ch_id] = True
-        coordination_space['spatialChannelWindow'][ch_id] = channel['window']
-        coordination_space['spatialTargetC'][ch_id] = channel['targetC']
+        except ValueError as ve:
+            logger.error(f"Invalid ROI values: {ve}")
+            return jsonify({'error': 'Invalid ROI values - all values must be integers'}), 400
         
-        # Add to meta coordination scopes
-        for key in ['spatialChannelColor', 'spatialChannelOpacity', 'spatialChannelVisible', 'spatialChannelWindow', 'spatialTargetC']:
-            coordination_space['metaCoordinationScopesBy']['init_bv_image_0']['imageChannel'][key][ch_id] = ch_id
-
-    config = {
-        'version': '1.0.16',
-        'name': 'BioMedVis Challenge',
-        'description': 'ROI annotations for the BioMedVis Challenge',
-        'datasets': [{
-            'uid': 'bv',
-            'name': 'Blood Vessel',
-            'files': [
-                {
-                    'fileType': 'image.ome-zarr',
-                    'url': 'https://lsp-public-data.s3.amazonaws.com/biomedvis-challenge-2025/Dataset1-LSP13626-melanoma-in-situ/0',
-                },
-                {
-                    'fileType': 'obsSegmentations.json',
-                    'url': 'http://localhost:5000/api/roi_segmentation_B-cell_infiltration.json',
-                    'coordinationValues': {
-                        'obsType': 'ROI_B-cell',
-                    },
-                },
-                {
-                    'fileType': 'obsSegmentations.json',
-                    'url': 'http://localhost:5000/api/roi_segmentation_Inflammatory_zone.json',
-                    'coordinationValues': {
-                        'obsType': 'ROI_Inflammatory',
-                    },
-                },
-                {
-                    'fileType': 'obsSegmentations.json',
-                    'url': 'http://localhost:5000/api/roi_segmentation_T-cell_entry_site.json',
-                    'coordinationValues': {
-                        'obsType': 'ROI_T-cell',
-                    },
-                },
-                {
-                    'fileType': 'obsSegmentations.json',
-                    'url': 'http://localhost:5000/api/roi_segmentation_Oxidative_stress_niche.json',
-                    'coordinationValues': {
-                        'obsType': 'ROI_Oxidative',
-                    },
-                }
-            ]
-        }],
-        'initStrategy': 'auto',
-        'coordinationSpace': coordination_space,
-        'layout': [
-            {
-                'component': 'spatialBeta',
-                'coordinationScopes': {
-                    'dataset': "A",
-                    'metaCoordinationScopes': ["init_bv_image_0", "A"],
-                    'metaCoordinationScopesBy': ["init_bv_image_0", "A"],
-                    'spatialSegmentationLayer': ["A", "B", "C", "D"],
-                    'obsType': ["A", "B", "C", "D"],
-                    'obsColorEncoding': ["A", "B", "C", "D"]
-                },
-                'x': 0, 'y': 0, 'w': 6, 'h': 12
-            },
-            {
-                'component': 'layerControllerBeta',
-                'coordinationScopes': {
-                    'dataset': "A",
-                    'metaCoordinationScopes': ["init_bv_image_0", "A"],
-                    'metaCoordinationScopesBy': ["init_bv_image_0", "A"],
-                    'spatialSegmentationLayer': ["A", "B", "C", "D"],
-                    'obsType': ["A", "B", "C", "D"]
-                },
-                'x': 6, 'y': 0, 'w': 6, 'h': 12
-            }
-        ]
-    }
-
-    return config
-
-@app.route('/api/config', methods=['GET'])
-def get_config():
-    """Get the standard Vitessce config using Python generator"""
-    logger.info("Request received for /api/config [GET]")
-    
-    try:
-        config = generate_vitessce_config()
-        return jsonify(config)
+        # Define channel mapping
+        channel_mapping = {
+            'CD31': 0,
+            'CD11b': 1,
+            'Catalase': 2,
+            'CD4': 3,
+            'CD20': 4,
+            'CD11c': 5
+        }
+        
+        # Process only specified channels
+        heatmaps = {}
+        for channel_name in channels:
+            if channel_name not in channel_mapping:
+                logger.warning(f"Skipping unknown channel: {channel_name}")
+                continue
+                
+            channel_index = channel_mapping[channel_name]
+            logger.info(f"Processing channel {channel_name} (index: {channel_index})")
+            
+            try:
+                heatmap_result = calculate_z_projection_heatmap(
+                    zarr_array=zarr_array,
+                    channel_index=channel_index,
+                    roi_z=(roi_values['zMin'], roi_values['zMax']),
+                    roi_y=(roi_values['yMin'], roi_values['yMax']),
+                    roi_x=(roi_values['xMin'], roi_values['xMax']),
+                    projection_type='sum'
+                )
+                
+                if 'error' not in heatmap_result:
+                    heatmaps[channel_name] = {
+                        "data": heatmap_result.get('heatmap', []),
+                        "shape": heatmap_result.get('shape'),
+                        "range": {
+                            "min": heatmap_result.get('min_val', 0),
+                            "max": heatmap_result.get('max_val', 1),
+                            "mean": np.mean(heatmap_result.get('heatmap', [])) if heatmap_result.get('heatmap') else 0
+                        }
+                    }
+                    logger.info(f"Successfully processed channel {channel_name}")
+                else:
+                    logger.error(f"Error processing channel {channel_name}: {heatmap_result['error']}")
+            except Exception as channel_error:
+                logger.error(f"Error processing channel {channel_name}: {str(channel_error)}", exc_info=True)
+                continue
+        
+        if not heatmaps:
+            logger.error("No results were generated for any channel")
+            return jsonify({'error': 'Failed to generate heatmaps for any channel'}), 500
+        
+        # Calculate overall statistics
+        all_values = []
+        for channel_data in heatmaps.values():
+            if isinstance(channel_data['data'], list):
+                all_values.extend([val for row in channel_data['data'] for val in row])
+        # what happend here why we have hardcode for value
+        statistics = {
+            "mean_intensity": np.mean(all_values) if all_values else 0.5,
+            "max_intensity": np.max(all_values) if all_values else 1.0,
+            "min_intensity": np.min(all_values) if all_values else 0.1,
+            "total_channels": len(heatmaps),
+            "available_channels": list(heatmaps.keys())
+        }
+            
+        logger.info(f"Returning results for {len(heatmaps)} channels")
+        
+        heatmap_data = {
+            "roi_info": roi_info,
+            "roi_bounds": roi,
+            "channels": channels,
+            "heatmaps": heatmaps,
+            "statistics": statistics
+        }
+        
+        return jsonify(heatmap_data)
         
     except Exception as e:
-        logger.error(f"Error generating config: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to generate config: {e}"}), 500
+        logger.error(f"Error in analyze_heatmaps: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/config', methods=['POST'])
-def update_config():
-    """Update the Vitessce config based on selected interaction types"""
-    logger.info("Request received for /api/config [POST]")
-    
+@app.route('/api/analyze_interaction_heatmap', methods=['POST'])
+def analyze_interaction_heatmap():
+    """API endpoint to analyze interaction heatmaps for defined groups in a given ROI."""
     try:
         data = request.get_json()
-        selected_groups = data.get('selectedGroups', [])
+        if not data:
+            logger.error("No data provided in request")
+            return jsonify({'error': 'No data provided'}), 400
         
-        logger.info(f"Updating config with selected groups: {selected_groups}")
+        roi = data.get('roi')
+        if not roi or not all(k in roi for k in ['xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax']):
+            logger.error(f"Invalid ROI format: {roi}")
+            return jsonify({'error': 'Invalid ROI format'}), 400
         
-        # Generate config based on selected groups
-        config = generate_vitessce_config()
-        return jsonify(config)
+        # Get the Zarr array
+        zarr_array = open_target_zarr_array()
+        if zarr_array is None:
+            logger.error("Failed to open Zarr array")
+            return jsonify({'error': 'Failed to open Zarr array'}), 500
+        
+        logger.info(f"Processing ROI for interaction analysis: {roi}")
+        
+        # Convert ROI format to match the expected format
+        roi_formatted = {
+            'z': [int(roi['zMin']), int(roi['zMax'])],
+            'y': [int(roi['yMin']), int(roi['yMax'])],
+            'x': [int(roi['xMin']), int(roi['xMax'])]
+        }
+        
+        # Calculate interaction heatmap
+        result = calculate_rgb_interaction_heatmap_py(
+            zarr_array,
+            roi_formatted['z'],
+            roi_formatted['y'],
+            roi_formatted['x'],
+            'sum'
+        )
+        
+        if 'error' in result:
+            logger.error(f"Error in interaction heatmap calculation: {result['error']}")
+            return jsonify(result), 400
+            
+        logger.info("Successfully calculated interaction heatmaps")
+        return jsonify(result)
         
     except Exception as e:
-        logger.error(f"Error updating config: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to update config: {e}"}), 500
+        logger.error(f"Error in analyze_interaction_heatmap: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/api/roi_segmentation.json', methods=['GET'])
+def get_roi_segmentation():
+    """Serve the roi_Segmentation.json file"""
+    logger.info("Request received for /api/roi_segmentation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_Segmentation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"roi_Segmentation.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_Segmentation.json file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving roi_Segmentation.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_Segmentation.json: {e}"}), 500
 
 @app.route('/api/roi_segmentation_B-cell_infiltration.json', methods=['GET'])
 def get_roi_segmentation_b_cell():
-    """Serve the B-cell infiltration ROI segmentation JSON file"""
+    """Serve the roi_segmentation_B-cell_infiltration.json file"""
     logger.info("Request received for /api/roi_segmentation_B-cell_infiltration.json [GET]")
     
     try:
         roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_B-cell_infiltration.json'
         
         if not roi_file_path.exists():
-            logger.error(f"B-cell infiltration ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "B-cell infiltration ROI segmentation file not found"}), 404
+            logger.error(f"roi_segmentation_B-cell_infiltration.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_B-cell_infiltration.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -703,41 +671,20 @@ def get_roi_segmentation_b_cell():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving B-cell infiltration ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve B-cell infiltration ROI segmentation: {e}"}), 500
-
-@app.route('/api/roi_segmentation_T-cell_entry_site.json', methods=['GET'])
-def get_roi_segmentation_t_cell():
-    """Serve the T-cell entry site ROI segmentation JSON file"""
-    logger.info("Request received for /api/roi_segmentation_T-cell_entry_site.json [GET]")
-    
-    try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_entry_site.json'
-        
-        if not roi_file_path.exists():
-            logger.error(f"T-cell entry site ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "T-cell entry site ROI segmentation file not found"}), 404
-        
-        with open(roi_file_path, 'r') as f:
-            roi_data = json.load(f)
-        
-        return jsonify(roi_data)
-        
-    except Exception as e:
-        logger.error(f"Error serving T-cell entry site ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve T-cell entry site ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_B-cell_infiltration.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_B-cell_infiltration.json: {e}"}), 500
 
 @app.route('/api/roi_segmentation_Inflammatory_zone.json', methods=['GET'])
 def get_roi_segmentation_inflammatory():
-    """Serve the Inflammatory zone ROI segmentation JSON file"""
+    """Serve the roi_segmentation_Inflammatory_zone.json file"""
     logger.info("Request received for /api/roi_segmentation_Inflammatory_zone.json [GET]")
     
     try:
         roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Inflammatory_zone.json'
         
         if not roi_file_path.exists():
-            logger.error(f"Inflammatory zone ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "Inflammatory zone ROI segmentation file not found"}), 404
+            logger.error(f"roi_segmentation_Inflammatory_zone.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_Inflammatory_zone.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -745,20 +692,20 @@ def get_roi_segmentation_inflammatory():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving Inflammatory zone ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve Inflammatory zone ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_Inflammatory_zone.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_Inflammatory_zone.json: {e}"}), 500
 
-@app.route('/api/roi_segmentation_Oxidative_stress_niche.json', methods=['GET'])
-def get_roi_segmentation_oxidative():
-    """Serve the Oxidative stress niche ROI segmentation JSON file"""
-    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_niche.json [GET]")
+@app.route('/api/roi_segmentation_T-cell_maturation.json', methods=['GET'])
+def get_roi_segmentation_t_cell():
+    """Serve the roi_segmentation_T-cell_maturation.json file"""
+    logger.info("Request received for /api/roi_segmentation_T-cell_maturation.json [GET]")
     
     try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_niche.json'
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_maturation.json'
         
         if not roi_file_path.exists():
-            logger.error(f"Oxidative stress niche ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "Oxidative stress niche ROI segmentation file not found"}), 404
+            logger.error(f"roi_segmentation_T-cell_maturation.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_T-cell_maturation.json file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -766,8 +713,29 @@ def get_roi_segmentation_oxidative():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving Oxidative stress niche ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve Oxidative stress niche ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving roi_segmentation_T-cell_maturation.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_T-cell_maturation.json: {e}"}), 500
+
+@app.route('/api/roi_segmentation_Oxidative_stress_regulation.json', methods=['GET'])
+def get_roi_segmentation_oxidative():
+    """Serve the roi_segmentation_Oxidative_stress_regulation.json file"""
+    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_regulation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_regulation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"roi_segmentation_Oxidative_stress_regulation.json file not found: {roi_file_path}")
+            return jsonify({"error": "roi_segmentation_Oxidative_stress_regulation.json file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving roi_segmentation_Oxidative_stress_regulation.json: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve roi_segmentation_Oxidative_stress_regulation.json: {e}"}), 500
 
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
@@ -792,27 +760,99 @@ def serve_roi_shapes():
                     # Ensure 'name' field exists
                     if 'name' not in feature['properties'] and 'id' in feature['properties']:
                         feature['properties']['name'] = feature['properties']['id']
+                    
+                    # Add tooltip_name for better tooltip display
+                    if 'interaction' in feature['properties'] and 'score' in feature['properties']:
+                        interaction = feature['properties']['interaction']
+                        roi_id = feature['properties'].get('id', 'Unknown')
+                        score = feature['properties']['score']
+                        feature['properties']['tooltip_name'] = f"{interaction}_{roi_id}_Score:{score:.3f}"
             
         return jsonify(roi_data)
     except Exception as e:
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI shapes: {e}"}), 500
 
-@app.route('/api/roi_rectangles_annotation', methods=['GET'])
-def serve_roi_rectangles_annotation():
+@app.route("/api/segmentation/<path:filename>", methods=["GET"])
+def serve_segmentation_file(filename):
+    """Serve segmentation files (ome-tif and offsets) with proper headers"""
     try:
-        roi_path = Path(__file__).parent / "output" / "roi_rectangles_annotation.json"
-        if not roi_path.exists():
-            logger.warning("ROI rectangles annotation file not found.")
-            return jsonify({"error": "ROI rectangles annotation not found"}), 404
-
-        with open(roi_path, 'r') as f:
-            roi_data = json.load(f)
-
-        return jsonify(roi_data)
+        logger.info(f"Serving segmentation file: {filename}")
+        
+        # First try vitessce_files directory
+        segmentation_dir = Path(__file__).parent / "output" / "vitessce_files"
+        file_path = segmentation_dir / filename
+        
+        if file_path.exists():
+            response = send_from_directory(segmentation_dir, filename)
+            # Add headers to prevent range request issues
+            response.headers['Accept-Ranges'] = 'none'
+            response.headers['Cache-Control'] = 'public, max-age=3600'
+            return response
+        else:
+            # If not found in vitessce_files, try output directory
+            segmentation_dir = Path(__file__).parent / "output"
+            file_path = segmentation_dir / filename
+            
+            if file_path.exists():
+                response = send_from_directory(segmentation_dir, filename)
+                # Add headers to prevent range request issues
+                response.headers['Accept-Ranges'] = 'none'
+                response.headers['Cache-Control'] = 'public, max-age=3600'
+                return response
+            else:
+                logger.error(f"Segmentation file not found: {filename}")
+                return jsonify({"error": f"Segmentation file not found: {filename}"}), 404
+                
     except Exception as e:
-        logger.error(f"Error serving ROI rectangles annotation: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+        logger.error(f"Error serving segmentation file '{filename}': {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve segmentation file '{filename}': {e}"}), 500
+
+# Dynamic config generation based on selected interaction types
+
+
+# Config generation moved to frontend - backend config API removed
+# Backend now only serves ROI files and other static data
+
+@app.route('/api/updateconfig', methods=['GET', 'POST'])
+def get_current_config():
+    """Get or update the current config"""
+    logger.info(f"Request received for /api/updateconfig [{request.method}]")
+    
+    try:
+        if request.method == 'POST':
+            # Receive config from frontend
+            config_data = request.get_json()
+            if config_data:
+                # Store the config in memory
+                app.config['current_vitessce_config'] = config_data
+                logger.info("Config updated from frontend")
+                return jsonify({"message": "Config updated successfully", "status": "success"})
+            else:
+                return jsonify({"error": "No config data received"}), 400
+        
+        elif request.method == 'GET':
+            # Return the stored config
+            stored_config = app.config.get('current_vitessce_config')
+            if stored_config:
+                return jsonify(stored_config)
+            else:
+                return jsonify({
+                    "message": "No config available yet",
+                    "instructions": [
+                        "1. Open frontend at http://localhost:5173",
+                        "2. Select some ROI groups",
+                        "3. Config will be automatically sent to this endpoint",
+                        "4. Refresh this page to see the updated config"
+                    ],
+                    "status": "waiting_for_config"
+                })
+        
+    except Exception as e:
+        logger.error(f"Error in updateconfig endpoint: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to handle config: {e}"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 
+    
