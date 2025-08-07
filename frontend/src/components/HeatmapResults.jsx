@@ -1,13 +1,14 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
 
-// Function to convert RGB color to Plotly colorscale
+// Function to convert RGB color to Plotly colorscale with black transparent
 const rgbToColorscale = (rgbColor) => {
   const [r, g, b] = rgbColor;
   return [
-    [0, `rgb(0, 0, 0)`],
-    [0.5, `rgb(${r/2}, ${g/2}, ${b/2})`],
-    [1, `rgb(${r}, ${g}, ${b})`]
+    [0, 'rgba(0, 0, 0, 0)'],  // Black transparent
+    [0.3, `rgba(${r/3}, ${g/3}, ${b/3}, 0.3)`],
+    [0.6, `rgba(${r/2}, ${g/2}, ${b/2}, 0.6)`],
+    [1, `rgba(${r}, ${g}, ${b}, 1)`]
   ];
 };
 
@@ -35,7 +36,7 @@ const HeatmapResults = ({
       </button>
 
       {/* Regular Heatmaps - Horizontal Layout */}
-      {heatmapResults && heatmapResults.heatmaps && Object.keys(heatmapResults.heatmaps).length > 0 && (
+      {heatmapResults && heatmapResults.heatmaps && (
         <div className="heatmap-grid">
 
           
@@ -49,7 +50,7 @@ const HeatmapResults = ({
 
               <Plot
                 data={[{
-                  z: channelData.data.slice().reverse(),
+                  z: channelData.slice().reverse(),
                   type: 'heatmap',
                   colorscale: imageChannels && imageChannels[channelName] ? 
                     rgbToColorscale(imageChannels[channelName].color) : 'Viridis',
@@ -168,13 +169,10 @@ const HeatmapResults = ({
                 z: normalizedData,
                 type: 'heatmap',
                 colorscale: [
-                  [0, 'rgba(0,0,0,0)'],
-                  [0.1, groupColors[groupId] + '20'], // 12% opacity
-                  [0.2, groupColors[groupId] + '40'], // 25% opacity
-                  [0.4, groupColors[groupId] + '60'], // 37% opacity
-                  [0.6, groupColors[groupId] + '80'], // 50% opacity
-                  [0.8, groupColors[groupId] + 'B0'], // 69% opacity
-                  [1, groupColors[groupId]]
+                  [0, 'rgba(0, 0, 0, 0)'],  // Black transparent
+                  [0.3, groupColors[groupId] + '30'], // 30% opacity
+                  [0.6, groupColors[groupId] + '60'], // 60% opacity
+                  [1, groupColors[groupId]] // Full opacity
                 ],
                 showscale: false,
                 opacity: 1.0,

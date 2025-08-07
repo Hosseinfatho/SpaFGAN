@@ -19,7 +19,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Constants for Zarr Access
-ZARR_BASE_URL = "s3://lsp-public-data/yapp-2023-3d-melanoma/Dataset1-LSP13626-melanoma-in-situ"
+ZARR_BASE_URL = "s3://lsp-public-data.s3.amazonaws.com/biomedvis-challenge-2025/Dataset1-LSP13626-melanoma-in-situ"
 ZARR_IMAGE_GROUP_PATH = "0"
 TARGET_RESOLUTION_PATH = "3"
 
@@ -48,7 +48,7 @@ def open_target_zarr_array():
 
     try:
         # Use local Zarr file - open as group first
-        zarr_path = Path(__file__).parent / "output" / "zarr_data"
+        zarr_path = Path(__file__).parent / "input" / "selected_channels.zarr"
         
         logger.info(f"Attempting to open local Zarr group from: {zarr_path}")
         
@@ -64,77 +64,20 @@ def open_target_zarr_array():
         # Look for the data array - handle nested structure
         if 'data' in zarr_group:
             data_group = zarr_group['data']
-            logger.info(f"Found 'data' group. Keys: {list(data_group.keys())}")
+            logger.info(f"Found 'data' group. Type: {type(data_group)}")
             
-            # Check if data is directly an array or has nested structure
+            # Check if data_group is directly an array
             if hasattr(data_group, 'shape'):
-                # data is directly an array
                 target_image_arr = data_group
-                logger.info(f"✅ Successfully opened target Zarr array from local file")
+                logger.info(f"✅ Successfully opened target Zarr array directly from 'data' group")
                 logger.info(f"Array shape: {target_image_arr.shape}")
                 logger.info(f"Array dtype: {target_image_arr.dtype}")
                 return target_image_arr
             else:
-                # data is a group, look for the actual array
-                for key in data_group.keys():
-                    if hasattr(data_group[key], 'shape'):
-                        target_image_arr = data_group[key]
-                        logger.info(f"✅ Successfully opened target Zarr array from local file (nested)")
-                        logger.info(f"Array shape: {target_image_arr.shape}")
-                        logger.info(f"Array dtype: {target_image_arr.dtype}")
-                        return target_image_arr
-                    elif hasattr(data_group[key], 'keys'):
-                        # Check nested groups (like data/c/0)
-                        nested_group = data_group[key]
-                        logger.info(f"Found nested group '{key}'. Keys: {list(nested_group.keys())}")
-                        for nested_key in nested_group.keys():
-                            if hasattr(nested_group[nested_key], 'shape'):
-                                target_image_arr = nested_group[nested_key]
-                                logger.info(f"✅ Successfully opened target Zarr array from nested group '{key}/{nested_key}'")
-                                logger.info(f"Array shape: {target_image_arr.shape}")
-                                logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                return target_image_arr
-                            elif hasattr(nested_group[nested_key], 'keys'):
-                                # Check deeper nested groups (like data/c/0/0)
-                                deep_nested_group = nested_group[nested_key]
-                                logger.info(f"Found deep nested group '{key}/{nested_key}'. Keys: {list(deep_nested_group.keys())}")
-                                for deep_key in deep_nested_group.keys():
-                                    if hasattr(deep_nested_group[deep_key], 'shape'):
-                                        target_image_arr = deep_nested_group[deep_key]
-                                        logger.info(f"✅ Successfully opened target Zarr array from deep nested group '{key}/{nested_key}/{deep_key}'")
-                                        logger.info(f"Array shape: {target_image_arr.shape}")
-                                        logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                        return target_image_arr
-                                    elif hasattr(deep_nested_group[deep_key], 'keys'):
-                                        # Check even deeper nested groups (like data/c/0/0/100)
-                                        deeper_nested_group = deep_nested_group[deep_key]
-                                        logger.info(f"Found deeper nested group '{key}/{nested_key}/{deep_key}'. Keys: {list(deeper_nested_group.keys())}")
-                                        # For this level, we'll use the first available key as a sample
-                                        if deeper_nested_group.keys():
-                                            sample_key = list(deeper_nested_group.keys())[0]
-                                            sample_group = deeper_nested_group[sample_key]
-                                            if hasattr(sample_group, 'shape'):
-                                                target_image_arr = sample_group
-                                                logger.info(f"✅ Successfully opened target Zarr array from deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}'")
-                                                logger.info(f"Array shape: {target_image_arr.shape}")
-                                                logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                                return target_image_arr
-                                            elif hasattr(sample_group, 'keys'):
-                                                # Check even deeper nested groups (like data/c/0/0/100/0)
-                                                even_deeper_nested_group = sample_group
-                                                logger.info(f"Found even deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}'. Keys: {list(even_deeper_nested_group.keys())}")
-                                                # For this level, we'll use the first available key as a sample
-                                                if even_deeper_nested_group.keys():
-                                                    even_sample_key = list(even_deeper_nested_group.keys())[0]
-                                                    even_sample_group = even_deeper_nested_group[even_sample_key]
-                                                    if hasattr(even_sample_group, 'shape'):
-                                                        target_image_arr = even_sample_group
-                                                        logger.info(f"✅ Successfully opened target Zarr array from even deeper nested group '{key}/{nested_key}/{deep_key}/{sample_key}/{even_sample_key}'")
-                                                        logger.info(f"Array shape: {target_image_arr.shape}")
-                                                        logger.info(f"Array dtype: {target_image_arr.dtype}")
-                                                        return target_image_arr
-                
-                logger.error(f"No array found in 'data' group. Available keys: {list(data_group.keys())}")
+                logger.info(f"Found 'data' group. Keys: {list(data_group.keys())}")
+                # If it's a group, continue with the nested structure...
+                # (This part can be removed if data_group is always an array)
+                logger.error("Data group is not an array, but we expect it to be")
                 return None
         else:
                     logger.error(f"No 'data' group found in Zarr group. Available keys: {list(zarr_group.keys())}")
@@ -829,6 +772,55 @@ def serve_roi_shapes():
     except Exception as e:
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI shapes: {e}"}), 500
+
+@app.route('/api/analyze_interaction_heatmap', methods=['POST'])
+def analyze_interaction_heatmap():
+    """API endpoint to analyze interaction heatmaps for defined groups in a given ROI."""
+    try:
+        data = request.get_json()
+        if not data:
+            logger.error("No data provided in request")
+            return jsonify({'error': 'No data provided'}), 400
+        
+        roi = data.get('roi')
+        if not roi or not all(k in roi for k in ['xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax']):
+            logger.error(f"Invalid ROI format: {roi}")
+            return jsonify({'error': 'Invalid ROI format'}), 400
+        
+        # Get the Zarr array
+        zarr_array = open_target_zarr_array()
+        if zarr_array is None:
+            logger.error("Failed to open Zarr array")
+            return jsonify({'error': 'Failed to open Zarr array'}), 500
+        
+        logger.info(f"Processing ROI for interaction analysis: {roi}")
+        
+        # Convert ROI format to match the expected format
+        roi_formatted = {
+            'z': [int(roi['zMin']), int(roi['zMax'])],
+            'y': [int(roi['yMin']), int(roi['yMax'])],
+            'x': [int(roi['xMin']), int(roi['xMax'])]
+        }
+        
+        # Calculate interaction heatmap
+        result = calculate_rgb_interaction_heatmap_py(
+            zarr_array,
+            roi_formatted['z'],
+            roi_formatted['y'],
+            roi_formatted['x'],
+            'sum'
+        )
+        
+        if 'error' in result:
+            logger.error(f"Error in interaction heatmap calculation: {result['error']}")
+            return jsonify(result), 400
+            
+        logger.info("Successfully calculated interaction heatmaps")
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error in analyze_interaction_heatmap: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/top5_roi_B-cell_infiltration.json', methods=['GET'])
 def serve_top5_roi_b_cell():

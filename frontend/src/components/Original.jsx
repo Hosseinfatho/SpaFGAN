@@ -500,7 +500,32 @@ const MainView = ({ onSetView }) => {
 
   const handleHeatmapResults = (results) => {
     console.log('Received heatmap results:', results);
-    setHeatmapResults(results);
+    
+    // Check if results contain interaction heatmaps (group_1, group_2, etc.)
+    const hasInteractionHeatmaps = results.heatmaps && 
+      Object.keys(results.heatmaps).some(key => key.startsWith('group_'));
+    
+    if (hasInteractionHeatmaps) {
+      // Extract interaction heatmaps
+      const interactionHeatmaps = {};
+      const regularHeatmaps = {};
+      
+      Object.entries(results.heatmaps).forEach(([key, value]) => {
+        if (key.startsWith('group_')) {
+          interactionHeatmaps[key] = value;
+        } else {
+          regularHeatmaps[key] = value;
+        }
+      });
+      
+      // Always set regular heatmaps if they exist, even if empty
+      setHeatmapResults({ heatmaps: regularHeatmaps });
+      setInteractionHeatmapResult({ heatmaps: interactionHeatmaps });
+    } else {
+      // Only regular heatmaps
+      setHeatmapResults(results);
+      setInteractionHeatmapResult(null);
+    }
   };
 
   const handleInteractionResults = (results) => {
