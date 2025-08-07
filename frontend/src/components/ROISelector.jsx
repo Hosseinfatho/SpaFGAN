@@ -93,16 +93,14 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
          console.log("ROISelector: Processing", roisArray.length, "ROI features");
          console.log("ROISelector: First ROI sample:", roisArray[0]);
 
-         // Use ROIs in original order from file (no sorting)
-         const sortedRois = roisArray.slice(0, 4);
-         console.log("ROISelector: ROIs in original order:", sortedRois);
+         // Sort ROIs by score in descending order (highest score first)
+         const sortedRois = roisArray.sort((a, b) => b.scores.combined_score - a.scores.combined_score).slice(0, 4);
+         console.log("ROISelector: Sorted ROIs:", sortedRois);
         
         const extracted = sortedRois.map((roi, index) => {
-          const roiId = index + 1; // Start from 1 and increment
+          const roiId = index + 1; // Start from 1
           console.log("ROISelector: Processing ROI", roiId, "with score:", roi.scores.combined_score);
-          console.log("ROISelector: Full ROI object:", roi);
-          console.log("ROISelector: ROI position x:", roi.position.x, "y:", roi.position.y);
-          const newTooltipName = `ROI_${roiId} Score: ${roi.scores.combined_score.toFixed(3)}`;
+          const newTooltipName = `ROI_${roiId}_Score:${roi.scores.combined_score.toFixed(3)}`;
           
           const extractedRoi = {
             id: newTooltipName,
@@ -112,9 +110,8 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
             score: 0.5, // Default score since segmentation files don't have scores
             interactions: [interactionType], // Use the current interaction type
             tooltip_name: newTooltipName,
-            roi_id: roiId, // This will be 1, 2, 3, 4
-            raw: roi,
-            useTop5RoiFile: true // Flag to indicate we want to use top5_roi file
+            roi_id: roiId,
+            raw: roi
           };
           
           console.log("ROISelector: Extracted ROI", roiId, ":", extractedRoi);
@@ -139,8 +136,14 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   //   }
   // }, [selectedGroups, onSetView]);
 
-  // Use the loaded ROI data instead of the rois from Original.jsx
-  const filteredRois = rois;
+  const filteredRois = selectedGroups.length > 0
+    ? rois.filter(roi => {
+        if (!roi.interactions || !Array.isArray(roi.interactions)) {
+          return false;
+        }
+        return roi.interactions.some(interaction => selectedGroups.includes(interaction));
+      })
+    : rois;
 
   console.log('ROISelector Debug:', {
     totalRois: rois.length,
@@ -156,21 +159,17 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   const currentROI = filteredRois[currentIndex] || {};
   
   // Debug: Log currentROI to see what data we have
-        console.log('ROISelector Debug - currentROI:', currentROI);
-      console.log('ROISelector Debug - currentROI.score:', currentROI.score);
-      console.log('ROISelector Debug - currentROI.x:', currentROI.x);
-      console.log('ROISelector Debug - currentROI.y:', currentROI.y);
-      console.log('ROISelector Debug - currentROI.roi_id:', currentROI.roi_id);
-      console.log('ROISelector Debug - filteredRois length:', filteredRois.length);
-      console.log('ROISelector Debug - currentIndex:', currentIndex);
-      console.log('ROISelector Debug - all filteredRois:', filteredRois);
-      console.log('ROISelector Debug - selectedGroups:', selectedGroups);
+  console.log('ROISelector Debug - currentROI:', currentROI);
+  console.log('ROISelector Debug - currentROI.score:', currentROI.score);
+  console.log('ROISelector Debug - filteredRois length:', filteredRois.length);
+  console.log('ROISelector Debug - currentIndex:', currentIndex);
+  console.log('ROISelector Debug - all filteredRois:', filteredRois);
 
   const handleSetView = () => {
     if (currentROI && currentROI.x !== undefined && currentROI.y !== undefined) {
       // Transform coordinates: X = x*8, Y = (5508 - y*8) (flipped)
-      const roiX = currentROI.x * 8;
-      const roiY = 5508 - (currentROI.y * 8);
+      const roiX = (currentROI.x+25) * 8;
+      const roiY = 5508 - (currentROI.y+25) * 8;
       
       // Find the interaction group for the current ROI
       const currentROIGroup = currentROI.interactions && currentROI.interactions.length > 0 
@@ -182,17 +181,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
         spatialTargetY: roiY,
         spatialZoom: -1.0,  // Moderate zoom to show ROI with range x±200, y±200
         refreshConfig: true,
-        currentROIGroup: currentROIGroup, // Pass the current ROI group
-        useSegmentationFile: true // Flag to indicate we want to use segmentation file
+        currentROIGroup: currentROIGroup // Pass the current ROI group
       };
       
-      console.log('=== SET VIEW CALCULATION ===');
-      console.log('Original coordinates from file:', currentROI.x, currentROI.y);
-      console.log('X calculation:', currentROI.x, '* 8 =', roiX);
-      console.log('Y calculation:', '5508 - (', currentROI.y, '* 8) = 5508 -', (currentROI.y * 8), '=', roiY);
       console.log('Setting view to ROI:', currentROI.id, 'at position:', roiX, roiY, 'with group:', currentROIGroup);
-      console.log('Using segmentation file for ROI display');
-      console.log('=== END SET VIEW CALCULATION ===');
+      console.log('Original coordinates from file:', currentROI.x, currentROI.y);
+      console.log('Transformed coordinates:', roiX, roiY);
       onSetView(viewConfig);
     } else {
       console.warn('No valid ROI selected for Set View');
@@ -252,21 +246,11 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
   };
 
   const next = () => {
-    console.log('ROISelector: Next button clicked, currentIndex:', currentIndex, 'filteredRois.length:', filteredRois.length);
-    setCurrentIndex(i => {
-      const newIndex = (i + 1) % filteredRois.length;
-      console.log('ROISelector: Next - new index:', newIndex);
-      return newIndex;
-    });
+    setCurrentIndex(i => (i + 1) % filteredRois.length);
   };
 
   const prev = () => {
-    console.log('ROISelector: Prev button clicked, currentIndex:', currentIndex, 'filteredRois.length:', filteredRois.length);
-    setCurrentIndex(i => {
-      const newIndex = (i - 1 + filteredRois.length) % filteredRois.length;
-      console.log('ROISelector: Prev - new index:', newIndex);
-      return newIndex;
-    });
+    setCurrentIndex(i => (i - 1 + filteredRois.length) % filteredRois.length);
   };
 
   if (interactionGroups.length === 0) {
@@ -347,7 +331,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
         <>
           <div className="text-center" style={{ marginBottom: "3px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px" }}>
             <span style={{ fontSize: "11px", fontWeight: "600", color: "#000" }}>
-              {currentROI.roi_id ? `ROI ${currentROI.roi_id}` : `ROI ${currentIndex + 1}`}
+              {currentROI.id ? currentROI.id : `ROI ${currentIndex + 1}`}
             </span>
             <span style={{ fontSize: "10px", fontWeight: "bold", color: "#000" }}>
               Score: {currentROI.score ? currentROI.score.toFixed(3) : "0.000"}
