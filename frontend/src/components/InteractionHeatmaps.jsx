@@ -4,14 +4,6 @@ function InteractionHeatmaps({ currentROI, onInteractionResults }) {
   const [isAnalyzingInteractionHeatmap, setIsAnalyzingInteractionHeatmap] = useState(false);
 
   const analyzeInteractionHeatmap = async () => {
-    // Check if we're on GitHub Pages (no backend available)
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    
-    if (!isLocalhost) {
-      alert('Interaction heatmap analysis is only available in local development mode. Please run the application locally to use this feature.');
-      return;
-    }
-
     setIsAnalyzingInteractionHeatmap(true);
     try {
       const factor = 1;
