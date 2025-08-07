@@ -43,6 +43,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     // Load ROI data for the first interaction type by default
     if (interactionTypes.length > 0) {
+      console.log('ROISelector: Loading initial ROI data for:', interactionTypes[0]);
       loadROIData(interactionTypes[0]);
     }
   }, []);
@@ -289,9 +290,11 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       {selectedGroups.length > 0 ? (
         <>
           <div className="text-center" style={{ marginBottom: "3px", display: "flex", justifyContent: "center", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "11px", fontWeight: "600", color: "#000" }}>{currentROI.id || `ROI ${currentIndex + 1}`}</span>
+            <span style={{ fontSize: "11px", fontWeight: "600", color: "#000" }}>
+              {currentROI.id ? currentROI.id : `ROI ${currentIndex + 1}`}
+            </span>
             <span style={{ fontSize: "10px", fontWeight: "bold", color: "#000" }}>
-              Score: {currentROI.score?.toFixed(3) || "0.000"}
+              Score: {currentROI.score ? currentROI.score.toFixed(3) : "0.000"}
             </span>
           </div>
 
