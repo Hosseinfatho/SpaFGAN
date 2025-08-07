@@ -292,6 +292,26 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
        >
          Test Button
        </button>
+       <div style={{ marginBottom: '5px' }}>
+         <label style={{ fontSize: '10px', marginRight: '10px' }}>
+           <input
+             type="radio"
+             name="testRadio"
+             onChange={() => console.log('ROISelector: ===== TEST RADIO CHANGED =====')}
+             onClick={() => console.log('ROISelector: ===== TEST RADIO CLICKED =====')}
+           />
+           Test Radio
+         </label>
+         <button 
+           onClick={() => {
+             console.log('ROISelector: ===== DIRECT LOAD TEST =====');
+             loadROIData('B-cell infiltration');
+           }}
+           style={{ marginLeft: '10px', padding: '2px 5px', fontSize: '10px' }}
+         >
+           Load ROI Data
+         </button>
+       </div>
              {interactionGroups.map(group => {
                console.log('ROISelector: Rendering radio button for:', group, 'checked:', selectedGroups.includes(group));
                return (
