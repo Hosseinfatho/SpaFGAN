@@ -60,12 +60,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     
     let url;
     if (isLocalhost) {
-      // Use API for local development - load from roi_segmentation files
+      // Use API for local development - load from top5_roi files
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      url = `${apiBaseUrl}/api/roi_segmentation_${filename}.json`;
+      url = `${apiBaseUrl}/api/top5_roi_${filename}.json`;
     } else {
       // Use local JSON files for GitHub Pages
-      url = `/SpaFGAN/data/roi_segmentation_${filename}.json`;
+      url = `/SpaFGAN/data/top5_roi_${filename}.json`;
     }
     
     console.log('ROISelector: Generated URL:', url);
@@ -77,42 +77,45 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
         }
         return res.json();
       })
-             .then((data) => {
-         console.log("ROISelector: Received ROI data for", interactionType, ":", data);
-         console.log("ROISelector: Data keys:", Object.keys(data));
-         
-         // Handle both API format (rois) and local JSON format (top_rois)
-         const roisArray = data.rois || data.top_rois || [];
-         console.log("ROISelector: roisArray:", roisArray);
-         
-         if (!Array.isArray(roisArray)) {
-           console.error("ROISelector: Invalid ROI data structure:", data);
-           return;
-         }
+      .then((data) => {
+        console.log("ROISelector: Received ROI data for", interactionType, ":", data);
+        console.log("ROISelector: Data keys:", Object.keys(data));
+        
+        // Handle top5_roi format (top_rois array)
+        const roisArray = data.top_rois || [];
+        console.log("ROISelector: roisArray:", roisArray);
+        
+        if (!Array.isArray(roisArray)) {
+          console.error("ROISelector: Invalid ROI data structure:", data);
+          return;
+        }
 
-         console.log("ROISelector: Processing", roisArray.length, "ROI features");
-         console.log("ROISelector: First ROI sample:", roisArray[0]);
+        console.log("ROISelector: Processing", roisArray.length, "ROI features");
+        console.log("ROISelector: First ROI sample:", roisArray[0]);
 
-         // Use ROIs in original order from file (no sorting)
-         const sortedRois = roisArray.slice(0, 4);
-         console.log("ROISelector: ROIs in original order:", sortedRois);
+        // Use ROIs in original order from file (no sorting)
+        const sortedRois = roisArray.slice(0, 4);
+        console.log("ROISelector: ROIs in original order:", sortedRois);
         
         const extracted = sortedRois.map((roi, index) => {
-          const roiId = index + 1; // Start from 1 and increment
+          const roiId = roi.roi_id || (index + 1); // Use roi_id from file or fallback to index
           console.log("ROISelector: Processing ROI", roiId, "with score:", roi.scores.combined_score);
           console.log("ROISelector: Full ROI object:", roi);
           console.log("ROISelector: ROI position x:", roi.position.x, "y:", roi.position.y);
           const newTooltipName = `ROI_${roiId} Score: ${roi.scores.combined_score.toFixed(3)}`;
           
+          // Calculate centroid from ROI position
+          const centroid = [roi.position.x, roi.position.y];
+          
           const extractedRoi = {
             id: newTooltipName,
             x: centroid[0],
             y: centroid[1],
-            z: 0, // Default Z coordinate
-            score: 0.5, // Default score since segmentation files don't have scores
+            z: roi.position.z || 0, // Use z from file or default to 0
+            score: roi.scores.combined_score, // Use actual score from file
             interactions: [interactionType], // Use the current interaction type
             tooltip_name: newTooltipName,
-            roi_id: roiId, // This will be 1, 2, 3, 4
+            roi_id: roiId, // Use roi_id from file
             raw: roi,
             useTop5RoiFile: true // Flag to indicate we want to use top5_roi file
           };
@@ -299,52 +302,6 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
     <div className="roi-selector-container">
       <h4 style={{ fontSize: '14px', marginBottom: '2px', fontWeight: '600', color: '#000' }}>ROI Navigator</h4>
              <p style={{ fontSize: '11px', marginBottom: '2px', color: '#000' }}>Select Interaction Type </p>
-       <button 
-         onClick={() => {
-           console.log('ROISelector: ===== TEST BUTTON CLICKED =====');
-           console.log('ROISelector: Test button works!');
-         }}
-         style={{ marginBottom: '5px', padding: '2px 5px', fontSize: '10px' }}
-       >
-         Test Button
-       </button>
-       <div style={{ marginBottom: '5px' }}>
-         <label style={{ fontSize: '10px', marginRight: '10px' }}>
-           <input
-             type="radio"
-             name="testRadio"
-             onChange={() => console.log('ROISelector: ===== TEST RADIO CHANGED =====')}
-             onClick={() => console.log('ROISelector: ===== TEST RADIO CLICKED =====')}
-           />
-           Test Radio
-         </label>
-         <button 
-           onClick={() => {
-             console.log('ROISelector: ===== DIRECT LOAD TEST =====');
-             loadROIData('B-cell infiltration');
-           }}
-           style={{ marginLeft: '10px', padding: '2px 5px', fontSize: '10px' }}
-         >
-           Load ROI Data
-         </button>
-       </div>
-       <div 
-         onClick={() => {
-           console.log('ROISelector: ===== TEST DIV CLICKED =====');
-         }}
-         style={{ 
-           fontSize: '10px', 
-           marginBottom: '5px', 
-           color: '#000',
-           cursor: 'pointer',
-           padding: '2px 4px',
-           backgroundColor: '#f0f0f0',
-           border: '1px solid #ccc',
-           borderRadius: '3px'
-         }}
-       >
-         Test Div (Click Me)
-       </div>
              {interactionGroups.map(group => {
                console.log('ROISelector: Rendering radio button for:', group, 'checked:', selectedGroups.includes(group));
                console.log('ROISelector: About to render div for:', group);
@@ -377,16 +334,12 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
              readOnly
              style={{ marginRight: '4px', pointerEvents: 'none' }}
            />
-           {group} [CLICKABLE]
+           {group}
          </div>
        );
        })}
       
-      {selectedGroups.length === 0 && (
-        <div style={{ marginTop: "5px", padding: "5px", backgroundColor: "rgba(255, 243, 205, 0.8)", border: "1px solid rgba(255, 193, 7, 0.3)", borderRadius: "4px", color: "#856404", fontSize: "8px" }}>
-          <strong>Note:</strong> Please select one interaction type above to view ROIs.
-        </div>
-      )}
+
 
       <hr style={{ borderColor: "rgba(255, 255, 255, 0.2)" }} />
       {selectedGroups.length > 0 ? (

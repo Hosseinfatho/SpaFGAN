@@ -2,6 +2,8 @@
 import json
 import logging
 import subprocess
+import numpy as np
+import zarr
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
@@ -25,7 +27,6 @@ TARGET_RESOLUTION_PATH = "3"
 def get_channel_names():
     """Reads OME-Zarr metadata to get channel names."""
     logger.info("Request received for /api/channel_names")
-<<<<<<< HEAD
     
     # Return default channel mapping for local development
     channel_map = {
@@ -44,9 +45,10 @@ def get_channel_names():
 def open_target_zarr_array():
     """Opens and returns the target Zarr array from local file. Returns None on failure."""
     target_image_arr = None
+
     try:
         # Use local Zarr file - open as group first
-        zarr_path = LOCAL_ZARR_PATH
+        zarr_path = Path(__file__).parent / "output" / "zarr_data"
         
         logger.info(f"Attempting to open local Zarr group from: {zarr_path}")
         
@@ -135,58 +137,12 @@ def open_target_zarr_array():
                 logger.error(f"No array found in 'data' group. Available keys: {list(data_group.keys())}")
                 return None
         else:
-            logger.error(f"No 'data' group found in Zarr group. Available keys: {list(zarr_group.keys())}")
-            return None
-=======
-    channel_map = {}
-    root_store = None
-    root_group = None
-    try:
-        logger.info("Attempting to create S3FileSystem...")
-        s3_local = s3fs.S3FileSystem(anon=True)
-        logger.info("S3FileSystem created successfully.")
+                    logger.error(f"No 'data' group found in Zarr group. Available keys: {list(zarr_group.keys())}")
+        return None
         
-        logger.info(f"Attempting to create S3Map for root: {ZARR_BASE_URL}")
-        root_store = s3fs.S3Map(root=ZARR_BASE_URL, s3=s3_local, check=False)
-        logger.info("S3Map created successfully.")
-
-        logger.info("Attempting to open root Zarr group...")
-        root_group = pyzarr.open_consolidated(store=root_store) if '.zmetadata' in root_store else pyzarr.open_group(store=root_store, mode='r')
-        logger.info(f"Root group opened successfully. Type: {type(root_group)}")
-
-        # Access OME metadata: Look inside the image group (e.g., '0')
-        omero_meta = None
-        image_group_key = '0'
-        logger.info(f"Checking for image group '{image_group_key}'...")
-        if root_group and image_group_key in root_group:
-            image_group = root_group[image_group_key]
-            logger.info(f"Image group '{image_group_key}' found. Checking for 'omero' in its attributes...")
-            if hasattr(image_group, 'attrs') and 'omero' in image_group.attrs:
-                omero_meta = image_group.attrs['omero']
-                logger.info(f"Found 'omero' metadata in image group '{image_group_key}' attributes.")
-            else:
-                 logger.warning(f"Could not find 'omero' metadata in image group '{image_group_key}' attributes.")
-        else:
-             logger.warning(f"Image group '{image_group_key}' not found in root group.")
-
-        # Now check the extracted omero_meta for channels
-        if omero_meta and 'channels' in omero_meta:
-            logger.info(f"Found {len(omero_meta['channels'])} channels in metadata.")
-            for i, channel_info in enumerate(omero_meta['channels']): 
-                channel_map[str(i)] = channel_info.get('label', f'Channel {i}') 
-            logger.info(f" Successfully extracted channel names: {channel_map}")
-            return jsonify(channel_map)
-        else:
-            logger.warning("Could not find valid 'omero' metadata with 'channels'. Returning 404.")
-            return jsonify({"error": "Channel metadata ('omero' with 'channels') not found in Zarr store"}), 404
-
     except Exception as e:
-        logger.error(f" Failed during channel name retrieval: {e}", exc_info=True)
-        logger.error(f"State at error: s3_local={'Exists' if s3_local else 'None'}, root_store={'Exists' if root_store else 'None'}, root_group={'Exists' if root_group else 'None'}")
-        return jsonify({"error": f"Failed to read channel names: {e}"}), 500
-
-# === STANDARD VITESSCE CONFIG GENERATOR ===
->>>>>>> parent of 4025829 (cleaner code)
+        logger.error(f"Error opening Zarr array: {e}")
+        return None
 
 def generate_vitessce_config():
     """Generate Vitessce configuration in Python"""
@@ -216,15 +172,8 @@ def generate_vitessce_config():
                 'spatialTargetZ': "init_bv_image_0",
                 'spatialZoom': "init_bv_image_0"
             }
-<<<<<<< HEAD
-            
-        except Exception as read_error:
-            logger.error(f"[Heatmap] Error reading data slice: {str(read_error)}")
-            return {'error': f'Error reading data slice: {str(read_error)}'}
-            
-    except Exception as e:
-        logger.error(f"[Heatmap] Unexpected Error: {e}", exc_info=True)
-        return {'error': f'Unexpected error during heatmap calculation: {e}'}
+        }
+    }
 
 # Helper function for normalization
 def normalize_array(arr):
@@ -448,15 +397,16 @@ def serve_top_roi_scores(interaction_type):
 @app.route('/api/analyze_heatmaps', methods=['POST'])
 def analyze_heatmaps():
     """API endpoint to analyze heatmaps for specific channels in a given ROI."""
-    data = request.get_json()
-    if not data:
-        logger.error("No data provided in request")
-        return jsonify({'error': 'No data provided'}), 400
-    
-    roi = data.get('roi')
-    if not roi or not all(k in roi for k in ['xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax']):
-        logger.error(f"Invalid ROI format: {roi}")
-        return jsonify({'error': 'Invalid ROI format'}), 400
+    try:
+        data = request.get_json()
+        if not data:
+            logger.error("No data provided in request")
+            return jsonify({'error': 'No data provided'}), 400
+        
+        roi = data.get('roi')
+        if not roi or not all(k in roi for k in ['xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax']):
+            logger.error(f"Invalid ROI format: {roi}")
+            return jsonify({'error': 'Invalid ROI format'}), 400
 
         channels = data.get('channels', ['CD31', 'CD11b', 'Catalase', 'CD4', 'CD20', 'CD11c'])
         if not channels:
@@ -476,15 +426,57 @@ def analyze_heatmaps():
         logger.info(f"Zarr array shape: {zarr_array.shape}")
         
         # Validate ROI values
-        try:
-            roi_values = {
-                'zMin': int(roi['zMin']),
-                'zMax': int(roi['zMax']),
-                'yMin': int(roi['yMin']),
-                'yMax': int(roi['yMax']),
-                'xMin': int(roi['xMin']),
-                'xMax': int(roi['xMax'])
-=======
+        roi_values = {
+            'zMin': int(roi['zMin']),
+            'zMax': int(roi['zMax']),
+            'yMin': int(roi['yMin']),
+            'yMax': int(roi['yMax']),
+            'xMin': int(roi['xMin']),
+            'xMax': int(roi['xMax'])
+        }
+        
+        # Process the heatmap calculation
+        result = calculate_rgb_interaction_heatmap_py(
+            zarr_array, 
+            [roi_values['zMin'], roi_values['zMax']], 
+            [roi_values['yMin'], roi_values['yMax']], 
+            [roi_values['xMin'], roi_values['xMax']]
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error in analyze_heatmaps: {e}", exc_info=True)
+        return jsonify({'error': f'Error analyzing heatmaps: {e}'}), 500
+
+def generate_vitessce_config():
+    """Generate Vitessce configuration in Python"""
+    
+    # Channel configuration
+    channels = [
+        {'id': 0, 'name': "CD31", 'color': [0, 255, 0], 'window': [300, 20000], 'targetC': 19},      # Green
+        {'id': 1, 'name': "CD20", 'color': [255, 255, 0], 'window': [1000, 7000], 'targetC': 27},    # Yellow
+        {'id': 2, 'name': "CD11b", 'color': [255, 0, 255], 'window': [700, 6000], 'targetC': 37},    # Magenta
+        {'id': 3, 'name': "CD4", 'color': [0, 255, 255], 'window': [1638, 10000], 'targetC': 25},    # Cyan
+        {'id': 4, 'name': "CD11c", 'color': [128, 0, 128], 'window': [370, 1432], 'targetC': 42}     # Purple
+    ]
+
+    # Build coordination space
+    coordination_space = {
+        'dataset': {"A": "bv"},
+        'imageChannel': {},
+        'imageLayer': {"init_bv_image_0": "__dummy__"},
+        'metaCoordinationScopes': {
+            "A": {'obsType': "A"},
+            "init_bv_image_0": {
+                'imageLayer': ["init_bv_image_0"],
+                'spatialRenderingMode': "init_bv_image_0",
+                'spatialTargetT': "init_bv_image_0",
+                'spatialTargetX': "init_bv_image_0",
+                'spatialTargetY': "init_bv_image_0",
+                'spatialTargetZ': "init_bv_image_0",
+                'spatialZoom': "init_bv_image_0"
+            }
         },
         'metaCoordinationScopesBy': {
             "A": {},
@@ -560,7 +552,6 @@ def analyze_heatmaps():
                 "visible": True,
                 "opacity": 0.2,
                 "color": [255, 255, 0]  # Yellow for Oxidative stress niche
->>>>>>> parent of 4025829 (cleaner code)
             }
         }
     }
@@ -705,17 +696,17 @@ def get_roi_segmentation_b_cell():
         logger.error(f"Error serving B-cell infiltration ROI segmentation: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve B-cell infiltration ROI segmentation: {e}"}), 500
 
-@app.route('/api/roi_segmentation_T-cell_entry_site.json', methods=['GET'])
+@app.route('/api/roi_segmentation_T-cell_maturation.json', methods=['GET'])
 def get_roi_segmentation_t_cell():
-    """Serve the T-cell entry site ROI segmentation JSON file"""
-    logger.info("Request received for /api/roi_segmentation_T-cell_entry_site.json [GET]")
+    """Serve the T-cell maturation ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_T-cell_maturation.json [GET]")
     
     try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_entry_site.json'
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_maturation.json'
         
         if not roi_file_path.exists():
-            logger.error(f"T-cell entry site ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "T-cell entry site ROI segmentation file not found"}), 404
+            logger.error(f"T-cell maturation ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "T-cell maturation ROI segmentation file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -723,8 +714,29 @@ def get_roi_segmentation_t_cell():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving T-cell entry site ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve T-cell entry site ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving T-cell maturation ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve T-cell maturation ROI segmentation: {e}"}), 500
+
+@app.route('/api/roi_segmentation_T-cell_maturation.json', methods=['GET'])
+def get_roi_segmentation_t_cell_maturation():
+    """Serve the T-cell maturation ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_T-cell_maturation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_T-cell_maturation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"T-cell maturation ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "T-cell maturation ROI segmentation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving T-cell maturation ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve T-cell maturation ROI segmentation: {e}"}), 500
 
 @app.route('/api/roi_segmentation_Inflammatory_zone.json', methods=['GET'])
 def get_roi_segmentation_inflammatory():
@@ -747,17 +759,17 @@ def get_roi_segmentation_inflammatory():
         logger.error(f"Error serving Inflammatory zone ROI segmentation: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve Inflammatory zone ROI segmentation: {e}"}), 500
 
-@app.route('/api/roi_segmentation_Oxidative_stress_niche.json', methods=['GET'])
+@app.route('/api/roi_segmentation_Oxidative_stress_regulation.json', methods=['GET'])
 def get_roi_segmentation_oxidative():
-    """Serve the Oxidative stress niche ROI segmentation JSON file"""
-    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_niche.json [GET]")
+    """Serve the Oxidative stress regulation ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_regulation.json [GET]")
     
     try:
-        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_niche.json'
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_regulation.json'
         
         if not roi_file_path.exists():
-            logger.error(f"Oxidative stress niche ROI segmentation file not found: {roi_file_path}")
-            return jsonify({"error": "Oxidative stress niche ROI segmentation file not found"}), 404
+            logger.error(f"Oxidative stress regulation ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "Oxidative stress regulation ROI segmentation file not found"}), 404
         
         with open(roi_file_path, 'r') as f:
             roi_data = json.load(f)
@@ -765,8 +777,29 @@ def get_roi_segmentation_oxidative():
         return jsonify(roi_data)
         
     except Exception as e:
-        logger.error(f"Error serving Oxidative stress niche ROI segmentation: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to serve Oxidative stress niche ROI segmentation: {e}"}), 500
+        logger.error(f"Error serving Oxidative stress regulation ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve Oxidative stress regulation ROI segmentation: {e}"}), 500
+
+@app.route('/api/roi_segmentation_Oxidative_stress_regulation.json', methods=['GET'])
+def get_roi_segmentation_oxidative_regulation():
+    """Serve the Oxidative stress regulation ROI segmentation JSON file"""
+    logger.info("Request received for /api/roi_segmentation_Oxidative_stress_regulation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'roi_segmentation_Oxidative_stress_regulation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"Oxidative stress regulation ROI segmentation file not found: {roi_file_path}")
+            return jsonify({"error": "Oxidative stress regulation ROI segmentation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving Oxidative stress regulation ROI segmentation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve Oxidative stress regulation ROI segmentation: {e}"}), 500
 
 @app.route('/api/roi_shapes', methods=['GET'])
 def serve_roi_shapes():
@@ -796,6 +829,90 @@ def serve_roi_shapes():
     except Exception as e:
         logger.error(f"Error serving ROI shapes: {e}", exc_info=True)
         return jsonify({"error": f"Failed to serve ROI shapes: {e}"}), 500
+
+@app.route('/api/top5_roi_B-cell_infiltration.json', methods=['GET'])
+def serve_top5_roi_b_cell():
+    """Serve the top5 ROI B-cell infiltration JSON file"""
+    logger.info("Request received for /api/top5_roi_B-cell_infiltration.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'top5_roi_B-cell_infiltration.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"Top5 ROI B-cell infiltration file not found: {roi_file_path}")
+            return jsonify({"error": "Top5 ROI B-cell infiltration file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving top5 ROI B-cell infiltration: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve top5 ROI B-cell infiltration: {e}"}), 500
+
+@app.route('/api/top5_roi_Inflammatory_zone.json', methods=['GET'])
+def serve_top5_roi_inflammatory():
+    """Serve the top5 ROI Inflammatory zone JSON file"""
+    logger.info("Request received for /api/top5_roi_Inflammatory_zone.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'top5_roi_Inflammatory_zone.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"Top5 ROI Inflammatory zone file not found: {roi_file_path}")
+            return jsonify({"error": "Top5 ROI Inflammatory zone file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving top5 ROI Inflammatory zone: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve top5 ROI Inflammatory zone: {e}"}), 500
+
+@app.route('/api/top5_roi_T-cell_maturation.json', methods=['GET'])
+def serve_top5_roi_t_cell():
+    """Serve the top5 ROI T-cell maturation JSON file"""
+    logger.info("Request received for /api/top5_roi_T-cell_maturation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'top5_roi_T-cell_maturation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"Top5 ROI T-cell maturation file not found: {roi_file_path}")
+            return jsonify({"error": "Top5 ROI T-cell maturation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving top5 ROI T-cell maturation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve top5 ROI T-cell maturation: {e}"}), 500
+
+@app.route('/api/top5_roi_Oxidative_stress_regulation.json', methods=['GET'])
+def serve_top5_roi_oxidative():
+    """Serve the top5 ROI Oxidative stress regulation JSON file"""
+    logger.info("Request received for /api/top5_roi_Oxidative_stress_regulation.json [GET]")
+    
+    try:
+        roi_file_path = Path(__file__).parent / 'output' / 'top5_roi_Oxidative_stress_regulation.json'
+        
+        if not roi_file_path.exists():
+            logger.error(f"Top5 ROI Oxidative stress regulation file not found: {roi_file_path}")
+            return jsonify({"error": "Top5 ROI Oxidative stress regulation file not found"}), 404
+        
+        with open(roi_file_path, 'r') as f:
+            roi_data = json.load(f)
+        
+        return jsonify(roi_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving top5 ROI Oxidative stress regulation: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to serve top5 ROI Oxidative stress regulation: {e}"}), 500
 
 @app.route('/api/roi_rectangles_annotation', methods=['GET'])
 def serve_roi_rectangles_annotation():
