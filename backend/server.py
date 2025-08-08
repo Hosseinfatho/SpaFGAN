@@ -386,6 +386,49 @@ def analyze_heatmaps():
             [roi_values['xMin'], roi_values['xMax']]
         )
         
+        # If channels are specified, calculate individual channel heatmaps
+        if channels and len(channels) > 0:
+            # Map channel names to indices
+            channel_mapping = {
+                'CD31': 0,
+                'CD11b': 1, 
+                'Catalase': 2,
+                'CD4': 3,
+                'CD20': 4,
+                'CD11c': 5
+            }
+            
+            # Calculate individual channel heatmaps
+            channel_heatmaps = {}
+            for channel_name in channels:
+                if channel_name in channel_mapping:
+                    ch_idx = channel_mapping[channel_name]
+                    
+                    # Get channel data
+                    roi_channel_slice = (
+                        slice(0, 1),
+                        slice(ch_idx, ch_idx + 1),
+                        slice(roi_values['zMin'], roi_values['zMax']),
+                        slice(roi_values['yMin'], roi_values['yMax']),
+                        slice(roi_values['xMin'], roi_values['xMax'])
+                    )
+                    channel_data = zarr_array[roi_channel_slice]
+                    
+                    # Calculate 2D projection
+                    heatmap_2d = np.sum(channel_data, axis=2)
+                    heatmap_2d = np.squeeze(heatmap_2d, axis=(0, 1))
+                    
+                    # Normalize to 0-1 range
+                    min_val = np.min(heatmap_2d)
+                    max_val = np.max(heatmap_2d)
+                    if max_val > min_val:
+                        heatmap_2d = (heatmap_2d - min_val) / (max_val - min_val)
+                    
+                    channel_heatmaps[channel_name] = heatmap_2d.tolist()
+            
+            # Return both interaction and individual channel heatmaps
+            result['channel_heatmaps'] = channel_heatmaps
+        
         return jsonify(result)
         
     except Exception as e:

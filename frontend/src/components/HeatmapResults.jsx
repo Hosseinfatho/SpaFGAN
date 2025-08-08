@@ -27,7 +27,7 @@ const HeatmapResults = ({
   if (!heatmapResults && !interactionHeatmapResult) return null;
 
   return (
-    <div className="heatmap-results-container">
+    <div className="heatmap-results-container" style={{ position: 'relative', zIndex: 1001 }}>
       <button 
         onClick={onClose}
         className="btn-close"
@@ -36,11 +36,11 @@ const HeatmapResults = ({
       </button>
 
       {/* Regular Heatmaps - Horizontal Layout */}
-      {heatmapResults && heatmapResults.heatmaps && Object.keys(heatmapResults.heatmaps).length > 0 && (
-        <div className="heatmap-grid">
+      {heatmapResults && heatmapResults.channel_heatmaps && Object.keys(heatmapResults.channel_heatmaps).length > 0 && (
+        <div className="heatmap-grid" style={{ position: 'relative', zIndex: 1000 }}>
 
           
-          {Object.entries(heatmapResults.heatmaps).map(([channelName, channelData]) => (
+          {Object.entries(heatmapResults.channel_heatmaps).map(([channelName, channelData]) => (
             <div key={channelName} style={{ 
               position: 'relative',
               minWidth: '280px',
@@ -95,7 +95,7 @@ const HeatmapResults = ({
 
       {/* Interaction Heatmap - Simple Checkboxes */}
       {interactionHeatmapResult && (
-        <div className="interaction-heatmap-container" style={{ marginLeft: '20px' }}>
+        <div className="interaction-heatmap-container" style={{ marginLeft: '20px', position: 'relative', zIndex: 999 }}>
           {/* Title */}
           <h3 style={{ 
             color: 'white', 
