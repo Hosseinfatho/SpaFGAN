@@ -65,7 +65,7 @@ function ROISelector({ onSetView, onHeatmapResults, onInteractionResults, onGrou
       url = `${apiBaseUrl}/api/top5_roi_${filename}.json`;
     } else {
       // Use local JSON files for GitHub Pages
-      url = `/SpaFGAN/data/top5_roi_${filename}.json`;
+              url = `/SSGAT/data/top5_roi_${filename}.json`;
     }
     
     console.log('ROISelector: Generated URL:', url);

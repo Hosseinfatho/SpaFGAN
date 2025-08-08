@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "name": "SpaFGAN ROIs",
-  "description": "ROIs generated from SpaFGAN analysis",
+  "name": "SSGAT ROIs",
+  "description": "ROIs generated from SSGAT analysis",
   "interactions": {
     "T-cell entry site": {
       "color": "#FF0000"

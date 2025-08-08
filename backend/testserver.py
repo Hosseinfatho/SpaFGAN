@@ -364,12 +364,12 @@ def generate_vitessce_config():
     # Create the config dictionary exactly like simplere.json
     config = {
         "version": "1.0.16",
-        "name": "SpaFGAN Interactions",
+        "name": "SSGAT Interactions",
         "description": "4teractions: B-cell infiltration, Inflammatory zone, Oxidative stress niche, T-cell entry site",
         "datasets": [
             {
-                "uid": "spafgan",
-                "name": "SpaFGAN Dataset",
+                        "uid": "ssgat",
+        "name": "SSGAT Dataset",
                 "files": [
                     {
                         "fileType": "obsSegmentations.ome-tiff",
@@ -378,7 +378,7 @@ def generate_vitessce_config():
                             "offsetsUrl": "http://localhost:5000/api/segmentation/obsSegmentations.offsets.json"
                         },
                         # "coordinationValues": {
-                        #     "fileUid": "spafgan"
+                        #     "fileUid": "ssgat"
                         # }
                     }
                 ]
@@ -387,7 +387,7 @@ def generate_vitessce_config():
         "initStrategy": "auto",
         "coordinationSpace": {
             "fileUid": {
-                "bitmask": "spafgan"
+                "bitmask": "ssgat"
             },
             "segmentationLayer": {
                 "ml": "ml"
@@ -655,7 +655,7 @@ from flask import send_from_directory, jsonify
 from pathlib import Path
 
 # Define absolute path to the .sdata.zarr directory
-ZARR_BASE_DIR = Path("D:/VIS2025/BIoVisChallenges/SpaFGAN/backend/output/roi_shapes.spatialdata.zarr")
+ZARR_BASE_DIR = Path("D:/VIS2025/BIoVisChallenges/SSGAT/backend/output/roi_shapes.spatialdata.zarr")
 
 @app.route("/api/zarr/<path:filename>", methods=["GET"])
 def serve_zarr_file(filename):

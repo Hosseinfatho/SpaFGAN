@@ -172,7 +172,7 @@ const generateVitessceConfig = (selectedGroups = [], hasHeatmapResults = false, 
         roiUrl = `http://localhost:5000/api/${roi_info["file"]}`;
       } else {
         // Use local JSON files for GitHub Pages
-        roiUrl = `/SpaFGAN/data/${roi_info["file"]}`;
+                    roiUrl = `/SSGAT/data/${roi_info["file"]}`;
       }
       
       console.log('Adding ROI file:', roiUrl, 'for group:', group, 'useSegmentationFiles:', useSegmentationFiles);

@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class SpaFGAN(nn.Module):
+class SSGAT(nn.Module):
     def __init__(self, in_channels, hidden_channels=32, out_channels=1, heads=2, dropout=0.6):
         """
         Graph Attention Network with strong regularization
@@ -18,7 +18,7 @@ class SpaFGAN(nn.Module):
             heads (int): Number of attention heads
             dropout (float): Dropout rate
         """
-        super(SpaFGAN, self).__init__()
+        super(SSGAT, self).__init__()
         
         # Feature preprocessing with strong regularization
         self.preprocess = nn.Sequential(
@@ -57,7 +57,7 @@ class SpaFGAN(nn.Module):
             nn.Linear(hidden_channels // 2, out_channels)
         )
         
-        logger.info(f"Initialized Regularized SpaFGAN model:")
+        logger.info(f"Initialized Regularized SSGAT model:")
         logger.info(f"Input dimension: {in_channels}")
         logger.info(f"Hidden dimension: {hidden_channels}")
         logger.info(f"Number of attention heads: {heads}")
